@@ -14,4 +14,10 @@
     <PackageReference Include="SaltWood.TeraIO" Version="1.0.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update=".env.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
