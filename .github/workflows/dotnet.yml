@@ -1,0 +1,41 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: .NET
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration $env:Configuration --no-restore
+        env:
+          Configuration: ${{ matrix.configuration }}
+      - name: Test
+        run: dotnet test --configuration $env:Configuration
+        env:
+          Configuration: ${{ matrix.configuration }}
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-debug
+          path: |
+            bin/Debug
+            bin/Release
