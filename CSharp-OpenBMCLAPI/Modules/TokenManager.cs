@@ -19,7 +19,7 @@ namespace CSharpOpenBMCLAPI.Modules
             this.CLUSTER_SECRET = info.ClusterSecret;
         }
 
-        public async void FetchToken()
+        public async Task<Token> FetchToken()
         {
             // 获取公用 client
             HttpClient client = HttpRequest.client;
@@ -46,7 +46,7 @@ namespace CSharpOpenBMCLAPI.Modules
             string tokenJson = await resp.Content.ReadAsStringAsync();
             Token token = JsonConvert.DeserializeObject<Token>(tokenJson);
 
-            return returns;
+            return token;
         }
     }
 }

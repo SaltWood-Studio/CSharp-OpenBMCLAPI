@@ -15,48 +15,7 @@ namespace CSharpOpenBMCLAPI
 {
     internal class Program : RunnableBase
     {
-        public static void PrintTypeInfo<T>(T instance)
-        {
-            Type type = typeof(T);
-            Console.WriteLine($"Type: {type.Name}");
-
-            // Print fields
-            Console.WriteLine("Fields:");
-            foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
-            {
-                Console.WriteLine($"|---{field.Name}: {field.FieldType.Name} = {field.GetValue(instance)}");
-            }
-
-            // Print private fields
-            Console.WriteLine("NonPublic fields:");
-            foreach (FieldInfo field in type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance))
-            {
-                Console.WriteLine($"|---{field.Name}: {field.FieldType.Name} = {field.GetValue(instance)}");
-            }
-
-            // Print properties
-            Console.WriteLine("Properties:");
-            foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-            {
-                Console.WriteLine($"|---{property.Name}: {property.PropertyType.Name} = {property.GetValue(instance)}");
-            }
-
-            // Print methods
-            Console.WriteLine("Methods:");
-            foreach (MethodInfo method in type.GetMethods(BindingFlags.Public | BindingFlags.Instance))
-            {
-                Console.WriteLine($"|---{method.Name}({string.Join(", ", method.GetParameters().Select(p => $"{p.ParameterType.Name} {p.Name}"))})");
-                if (method.ReturnType != typeof(void))
-                {
-                    Console.WriteLine($"|---returns: {method.ReturnType.Name}");
-                }
-            }
-        }
-
-        public Program() : base()
-        {
-
-        }
+        public Program() : base() { }
 
         static void Main(string[] args)
         {
@@ -76,7 +35,10 @@ namespace CSharpOpenBMCLAPI
         {
             int returns = 0;
 
-            // TODO
+            // 从 .env.json 读取密钥然后 FetchToken
+            ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(await File.ReadAllTextAsync(".env.json"));
+            TokenManager manager = new TokenManager(info);
+            ExtensionMethods.PrintTypeInfo(await manager.FetchToken());
 
             return returns;
         }
