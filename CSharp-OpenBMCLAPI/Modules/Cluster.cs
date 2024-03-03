@@ -25,6 +25,7 @@ namespace CSharpOpenBMCLAPI.Modules
         public Guid guid;
         private SocketIOClient.SocketIO socket;
         public bool IsEnabled { get; private set; }
+        private Task? _keepAlive;
         //List<Task> tasks = new List<Task>();
 
         public Cluster(ClusterInfo info, TokenManager token) : base()
@@ -36,7 +37,7 @@ namespace CSharpOpenBMCLAPI.Modules
             // Fetch 一下以免出现问题
             this.token.FetchToken().Wait();
 
-            this.socket = new(HttpRequest.client.BaseAddress, new SocketIOOptions()
+            this.socket = new(HttpRequest.client.BaseAddress?.ToString(), new SocketIOOptions()
             {
                 Transport = SocketIOClient.Transport.TransportProtocol.WebSocket,
                 Auth = new
@@ -85,16 +86,26 @@ namespace CSharpOpenBMCLAPI.Modules
 
             await Enable();
 
+            _keepAlive = Task.Run(() =>
+            {
+                while (true)
+                {
+                    Thread.Sleep(25 * 1000);
+                    KeepAlive().Wait();
+                }
+            });
+
+            _keepAlive.Wait();
+
             return returns;
         }
 
         public async Task Enable()
         {
-            socket.Connected.Dump();
             await socket.EmitAsync("enable",
                 (SocketIOResponse resp) =>
                 {
-                    SharedData.Logger.LogInfo($"启用成功");
+                    Console.WriteLine($"启用成功");
                 },
                 new
                 {
@@ -109,10 +120,11 @@ namespace CSharpOpenBMCLAPI.Modules
         public async Task KeepAlive()
         {
             string time = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+            socket.Connected.Dump();
             await socket.EmitAsync("keep-alive",
                 (SocketIOResponse resp) =>
                 {
-                    SharedData.Logger.LogInfo($"保活成功 at {time}");
+                    Console.WriteLine($"保活成功 at {time}");
                 },
                 new
                 {
