@@ -10,6 +10,10 @@ using TeraIO.Runnable;
 using ZstdSharp;
 using Avro.Generic;
 using Downloader;
+using System.Security.Cryptography;
+using Microsoft.VisualBasic.FileIO;
+using System.IO;
+using System.Security.Policy;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
@@ -19,6 +23,7 @@ namespace CSharpOpenBMCLAPI.Modules
         private TokenManager token;
         private HttpClient client;
         public Guid guid;
+        //List<Task> tasks = new List<Task>();
 
         public Cluster(ClusterInfo info, TokenManager token) : base()
         {
@@ -79,18 +84,16 @@ namespace CSharpOpenBMCLAPI.Modules
                 ChunkCount = 10,
                 ParallelDownload = true,
                 RequestConfiguration =
-                                {
-                                    Headers =
-                                    {
-                                        ["Authorization"] = $"Bearer {client.DefaultRequestHeaders.Authorization?.Parameter}",
-                                        ["User-Agent"] = client.DefaultRequestHeaders.UserAgent.ToString()
-                                    }
-                                }
+                {
+                    Headers =
+                    {
+                        ["Authorization"] = $"Bearer {client.DefaultRequestHeaders.Authorization?.Parameter}",
+                        ["User-Agent"] = client.DefaultRequestHeaders.UserAgent.ToString()
+                    }
+                }
             };
 
-            List<Task> tasks = new List<Task>();
-
-            foreach (var obj in f)
+            Parallel.ForEach(f, (obj) =>
             {
                 GenericRecord? record = obj as GenericRecord;
                 if (record != null)
@@ -105,19 +108,37 @@ namespace CSharpOpenBMCLAPI.Modules
 
                     if (long.TryParse(t.ToString().ThrowIfNull(), out size))
                     {
-                        if (!File.Exists($"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}"))
-                        {
-                            DownloadService service = new DownloadService(option);
-
-                            service.DownloadFileCompleted += (sender, e) => SharedData.Logger.LogInfo($"文件 {path} 下载完毕");
-
-                            tasks.Add(service.DownloadFileTaskAsync($"{client.BaseAddress}openbmclapi/download/{hash}", $"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}"));
-                        }
+                        DownloadService service = new DownloadService(option);
+                        DownloadFile(service, path, hash).Wait();
                     }
                 }
-            }
+            });
+        }
 
-            tasks.ForEach(task => task.Wait());
+        protected async Task DownloadFile(DownloadService service, string path, string hash)
+        {
+            if (!File.Exists($"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}"))
+            {
+                service.DownloadFileCompleted += (sender, e) => Service_DownloadFileCompleted(sender, e, path, hash, service);
+                await service.DownloadFileTaskAsync($"{client.BaseAddress}openbmclapi/download/{hash}", $"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}");
+            }
+        }
+
+        private void Service_DownloadFileCompleted(object? sender, System.ComponentModel.AsyncCompletedEventArgs e, string path, string hash, DownloadService service)
+        {
+            SharedData.Logger.LogInfo($"文件 {path} 下载完毕");
+            // CheckFileAfterDownload(path, hash, service);
+        }
+
+        private void CheckFileAfterDownload(string path, string hash, DownloadService service)
+        {
+            var file = File.ReadAllBytes($"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}");
+            string realHash = Convert.ToHexString(MD5.HashData(file)).ToLower();
+            if (realHash != hash.ToLower())
+            {
+                SharedData.Logger.LogInfo($"文件损坏：{path}，期望 “{hash}”，但结果为{realHash}");
+                service.DownloadFileTaskAsync($"{client.BaseAddress}openbmclapi/download/{hash}").Wait();
+            }
         }
     }
 }
