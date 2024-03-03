@@ -16,12 +16,22 @@ namespace CSharpOpenBMCLAPI.Modules
         // 指示节点端的版本，不应由用户更改
         [Browsable(false)]
         public string clusterVersion;
+        // Host
+        public string host;
+        public int port;
+        public string byoc;
+        public bool noFastEnable;
 
         public Config()
         {
             this.refreshTokenTime = 1800000;
             this.clusterFileDirectory = "./";
             this.clusterVersion = "1.9.7";
+
+            this.host = "";
+            this.port = 4000;
+            this.byoc = "";
+            this.noFastEnable = false;
         }
     }
 }

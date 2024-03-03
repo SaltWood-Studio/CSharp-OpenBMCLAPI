@@ -11,9 +11,9 @@ using ZstdSharp;
 using Avro.Generic;
 using Downloader;
 using System.Security.Cryptography;
-using Microsoft.VisualBasic.FileIO;
-using System.IO;
-using System.Security.Policy;
+using SocketIOClient;
+using SocketIO.Core;
+using TeraIO.Extension;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
@@ -23,6 +23,8 @@ namespace CSharpOpenBMCLAPI.Modules
         private TokenManager token;
         private HttpClient client;
         public Guid guid;
+        private SocketIOClient.SocketIO socket;
+        public bool IsEnabled { get; private set; }
         //List<Task> tasks = new List<Task>();
 
         public Cluster(ClusterInfo info, TokenManager token) : base()
@@ -34,10 +36,35 @@ namespace CSharpOpenBMCLAPI.Modules
             // Fetch 一下以免出现问题
             this.token.FetchToken().Wait();
 
+            this.socket = new(HttpRequest.client.BaseAddress, new SocketIOOptions()
+            {
+                Transport = SocketIOClient.Transport.TransportProtocol.WebSocket,
+                Auth = new
+                {
+                    token = token.Token
+                }
+            });
+
+            this.socket.ConnectAsync().Wait();
+
+            this.socket.On("error", error => HandleError(error));
+            this.socket.On("message", msg => SharedData.Logger.LogInfo(msg));
+            this.socket.On("connect", (_) => SharedData.Logger.LogInfo("与主控连接成功"));
+            this.socket.On("disconnect", (r) =>
+            {
+                SharedData.Logger.LogWarn($"与主控断开连接：{r}");
+                this.IsEnabled = false;
+            });
+
             client = new HttpClient();
             client.BaseAddress = HttpRequest.client.BaseAddress;
             client.DefaultRequestHeaders.Add("User-Agent", $"openbmclapi-cluster/{SharedData.Config.clusterVersion}");
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token.Token.token}");
+        }
+
+        private void HandleError(SocketIOResponse resp)
+        {
+            return;
         }
 
         protected override int Run(string[] args)
@@ -54,9 +81,43 @@ namespace CSharpOpenBMCLAPI.Modules
             int returns = 0;
 
             // 检查文件
-            await CheckFiles();
+            // await CheckFiles();
+
+            await Enable();
 
             return returns;
+        }
+
+        public async Task Enable()
+        {
+            socket.Connected.Dump();
+            await socket.EmitAsync("enable",
+                (SocketIOResponse resp) =>
+                {
+                    SharedData.Logger.LogInfo($"启用成功");
+                },
+                new
+                {
+                    host = SharedData.Config.host,
+                    port = SharedData.Config.port,
+                    version = SharedData.Config.clusterVersion,
+                    byoc = SharedData.Config.byoc,
+                    noFastEnable = SharedData.Config.noFastEnable
+                });
+        }
+
+        public async Task KeepAlive()
+        {
+            string time = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+            await socket.EmitAsync("keep-alive",
+                (SocketIOResponse resp) =>
+                {
+                    SharedData.Logger.LogInfo($"保活成功 at {time}");
+                },
+                new
+                {
+                    time = time
+                });
         }
 
         protected async Task CheckFiles()
@@ -115,7 +176,7 @@ namespace CSharpOpenBMCLAPI.Modules
             });
         }
 
-        protected async Task DownloadFile(DownloadService service, string path, string hash)
+        private async Task DownloadFile(DownloadService service, string path, string hash)
         {
             if (!File.Exists($"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}"))
             {
