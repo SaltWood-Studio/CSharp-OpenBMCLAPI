@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
-    internal class TokenManager
+    public class TokenManager
     {
         private readonly string CLUSTER_ID, CLUSTER_SECRET;
         private Task? _updateTask;
