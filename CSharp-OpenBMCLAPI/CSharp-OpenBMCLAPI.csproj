@@ -9,12 +9,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="DefaultConfig.json5" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Apache.Avro" Version="1.11.3" />
     <PackageReference Include="Downloader" Version="3.0.6" />
     <PackageReference Include="log4net" Version="2.0.15" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="SaltWood.TeraIO" Version="1.0.2" />
     <PackageReference Include="ZstdSharp.Port" Version="0.7.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="DefaultConfig.json5" />
   </ItemGroup>
 
   <ItemGroup>

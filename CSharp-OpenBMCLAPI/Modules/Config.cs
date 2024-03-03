@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,6 +13,8 @@ namespace CSharpOpenBMCLAPI.Modules
         public int refreshTokenTime;
         // 指示应该将要服务的文件放在哪里（服务路径）
         public string clusterFileDirectory;
+        // 指示节点端的版本，不应由用户更改
+        [Browsable(false)]
         public string clusterVersion;
 
         public Config()

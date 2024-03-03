@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using CSharpOpenBMCLAPI.Modules;
 using Newtonsoft.Json;
 using TeraIO.Runnable;
@@ -27,9 +28,54 @@ namespace CSharpOpenBMCLAPI
 
         protected override int Run(string[] args)
         {
+            SharedData.Config = GetConfig();
             Task<int> task = AsyncRun();
             task.Wait();
             return task.Result;
+        }
+
+        protected Config GetConfig()
+        {
+            if (!File.Exists("config.json5"))
+            {
+                // 获取正在运行方法所在的命名空间空间
+                Type? type = MethodBase.GetCurrentMethod()?.DeclaringType;
+
+                string? _namespace = type?.Namespace;
+
+                // 获取当前运行的 Assembly
+                Assembly _assembly = Assembly.GetExecutingAssembly();
+
+                // 获取资源名称
+                string resourceName = $"{_namespace}.DefaultConfig.json5";
+
+                // 从 Assembly 中提取资源
+                Stream? stream = _assembly.GetManifestResourceStream(resourceName);
+
+                if (stream != null)
+                {
+                    using (var file = File.Create("config.json5"))
+                    {
+                        file.Seek(0, SeekOrigin.Begin);
+                        stream.CopyTo(file);
+                    }
+                }
+
+                return new Config();
+            }
+            else
+            {
+                string file = File.ReadAllText("config.json5");
+                Config? config = JsonConvert.DeserializeObject<Config>(file);
+                if (config != null)
+                {
+                    return config;
+                }
+                else
+                {
+                    return new Config();
+                }
+            }
         }
 
         protected async Task<int> AsyncRun()
