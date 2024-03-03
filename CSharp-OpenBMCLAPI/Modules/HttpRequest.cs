@@ -16,7 +16,7 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 BaseAddress = new Uri("https://openbmclapi.bangbang93.com/")
             };
-            client.DefaultRequestHeaders.Add("User-Agent", "openbmclapi-cluster/1.9.7");
+            client.DefaultRequestHeaders.UserAgent.Add(new("openbmclapi-cluster", SharedData.Config.clusterVersion));
         }
     }
 }

@@ -19,6 +19,7 @@ namespace CSharpOpenBMCLAPI
 
         static void Main(string[] args)
         {
+            SharedData.Logger.LogInfo($"Starting CSharp-OpenBMCLAPI v{SharedData.Config.clusterVersion}");
             Program program = new Program();
             program.Start();
             program.WaitForStop();
@@ -37,9 +38,10 @@ namespace CSharpOpenBMCLAPI
 
             // 从 .env.json 读取密钥然后 FetchToken
             ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(await File.ReadAllTextAsync(".env.json"));
+            SharedData.Logger.LogInfo($"Cluster id: {info.ClusterID}");
             TokenManager token = new TokenManager(info);
-            ExtensionMethods.PrintTypeInfo(await token.FetchToken());
 
+            SharedData.Logger.LogInfo($"成功创建 Cluster 实例");
             Cluster cluster = new(info, token);
             cluster.Start();
             cluster.WaitForStop();

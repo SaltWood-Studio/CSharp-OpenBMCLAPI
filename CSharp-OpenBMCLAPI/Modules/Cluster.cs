@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using TeraIO.Runnable;
 using ZstdSharp;
 using Avro.Generic;
-using TeraIO.Extension;
+using Downloader;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
@@ -18,18 +18,27 @@ namespace CSharpOpenBMCLAPI.Modules
         private ClusterInfo clusterInfo;
         private TokenManager token;
         private HttpClient client;
+        public Guid guid;
 
         public Cluster(ClusterInfo info, TokenManager token) : base()
         {
             this.clusterInfo = info;
             this.token = token;
+            this.guid = Guid.NewGuid();
+
+            // Fetch 一下以免出现问题
+            this.token.FetchToken().Wait();
+
             client = new HttpClient();
             client.BaseAddress = HttpRequest.client.BaseAddress;
-            client.DefaultRequestHeaders.Add("User-Agent", "openbmclapi-cluster/1.9.7");
+            client.DefaultRequestHeaders.Add("User-Agent", $"openbmclapi-cluster/{SharedData.Config.clusterVersion}");
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token.Token.token}");
         }
 
         protected override int Run(string[] args)
         {
+            // 工作进程启动
+            SharedData.Logger.LogInfo($"工作进程 {guid} 已启动");
             Task<int> task = AsyncRun();
             task.Wait();
             return task.Result;
@@ -39,7 +48,14 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             int returns = 0;
 
-            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {this.token.Token.token}");
+            // 检查文件
+            await CheckFiles();
+
+            return returns;
+        }
+
+        protected async Task CheckFiles()
+        {
             var resp = await client.GetAsync("openbmclapi/files");
             byte[] buffer = await resp.Content.ReadAsByteArrayAsync();
             var decomporess = new Decompressor();
@@ -49,8 +65,6 @@ namespace CSharpOpenBMCLAPI.Modules
                 buffer = new byte[data.Length];
                 data.CopyTo(buffer);
             }).Wait();
-            StreamWriter sw = new("a.json");
-            sw.BaseStream.Write(buffer);
 
             string avroString = @"{""type"": ""array"",""items"": {""type"": ""record"",""name"": ""fileinfo"",""fields"": [{""name"": ""path"", ""type"": ""string""},{""name"": ""hash"", ""type"": ""string""},{""name"": ""size"", ""type"": ""long""}]}}";
 
@@ -60,7 +74,23 @@ namespace CSharpOpenBMCLAPI.Modules
 
             object[] f = new GenericDatumReader<object[]>(schema, schema).Read(null!, decoder);
 
-            foreach (var obj in f )
+            DownloadConfiguration option = new DownloadConfiguration()
+            {
+                ChunkCount = 10,
+                ParallelDownload = true,
+                RequestConfiguration =
+                                {
+                                    Headers =
+                                    {
+                                        ["Authorization"] = $"Bearer {client.DefaultRequestHeaders.Authorization?.Parameter}",
+                                        ["User-Agent"] = client.DefaultRequestHeaders.UserAgent.ToString()
+                                    }
+                                }
+            };
+
+            List<Task> tasks = new List<Task>();
+
+            foreach (var obj in f)
             {
                 GenericRecord? record = obj as GenericRecord;
                 if (record != null)
@@ -75,19 +105,19 @@ namespace CSharpOpenBMCLAPI.Modules
 
                     if (long.TryParse(t.ToString().ThrowIfNull(), out size))
                     {
+                        if (!File.Exists($"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}"))
+                        {
+                            DownloadService service = new DownloadService(option);
 
+                            service.DownloadFileCompleted += (sender, e) => SharedData.Logger.LogInfo($"文件 {path} 下载完毕");
+
+                            tasks.Add(service.DownloadFileTaskAsync($"{client.BaseAddress}openbmclapi/download/{hash}", $"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}"));
+                        }
                     }
                 }
             }
 
-            return returns;
+            tasks.ForEach(task => task.Wait());
         }
-    }
-
-    class FileInfo
-    {
-        public string path = "";
-        public string hash = "";
-        public long size = 0;
     }
 }
