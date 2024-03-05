@@ -37,15 +37,6 @@ namespace CSharpOpenBMCLAPI.Modules
             // Fetch 一下以免出现问题
             this.token.FetchToken().Wait();
 
-            this.socket = new(HttpRequest.client.BaseAddress?.ToString(), new SocketIOOptions()
-            {
-                Transport = SocketIOClient.Transport.TransportProtocol.WebSocket,
-                Auth = new
-                {
-                    token = token.Token
-                }
-            });
-
             this.socket.ConnectAsync().Wait();
 
             this.socket.On("error", error => HandleError(error));
@@ -98,6 +89,18 @@ namespace CSharpOpenBMCLAPI.Modules
             _keepAlive.Wait();
 
             return returns;
+        }
+
+        public async Task Connect()
+        {
+            this.socket = new(HttpRequest.client.BaseAddress?.ToString(), new SocketIOOptions()
+            {
+                Transport = SocketIOClient.Transport.TransportProtocol.WebSocket,
+                Auth = new
+                {
+                    token = token.Token.token
+                }
+            });
         }
 
         public async Task Enable()
