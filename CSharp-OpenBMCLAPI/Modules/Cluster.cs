@@ -73,7 +73,9 @@ namespace CSharpOpenBMCLAPI.Modules
             int returns = 0;
 
             // 检查文件
-            // await CheckFiles();
+            await CheckFiles();
+
+            await Connect();
 
             await Enable();
 
