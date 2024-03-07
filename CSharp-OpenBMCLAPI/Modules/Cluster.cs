@@ -127,8 +127,8 @@ namespace CSharpOpenBMCLAPI.Modules
             await socket.EmitAsync("disable",
                 (SocketIOResponse resp) =>
                 {
-                    SharedData.Logger.LogInfo($"禁用成功"):
-                }
+                    SharedData.Logger.LogInfo($"禁用成功");
+                });
         }
 
         public async Task KeepAlive()
