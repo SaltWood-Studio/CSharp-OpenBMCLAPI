@@ -110,7 +110,7 @@ namespace CSharpOpenBMCLAPI.Modules
             await socket.EmitAsync("enable",
                 (SocketIOResponse resp) =>
                 {
-                    Console.WriteLine($"启用成功");
+                    SharedData.Logger.LogInfo($"启用成功");
                 },
                 new
                 {
@@ -122,6 +122,15 @@ namespace CSharpOpenBMCLAPI.Modules
                 });
         }
 
+        public async Task Disable()
+        {
+            await socket.EmitAsync("disable",
+                (SocketIOResponse resp) =>
+                {
+                    SharedData.Logger.LogInfo($"禁用成功"):
+                }
+        }
+
         public async Task KeepAlive()
         {
             string time = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
@@ -129,7 +138,7 @@ namespace CSharpOpenBMCLAPI.Modules
             await socket.EmitAsync("keep-alive",
                 (SocketIOResponse resp) =>
                 {
-                    Console.WriteLine($"保活成功 at {time}");
+                    SharedData.Logger.LogInfo($"保活成功 at {time}");
                 },
                 new
                 {
