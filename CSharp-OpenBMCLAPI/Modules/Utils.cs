@@ -9,7 +9,7 @@ namespace CSharpOpenBMCLAPI.Modules
 {
     public static class Utils
     {
-        public static bool CheckSign(string hash, string secret, string s, string e)
+        public static bool CheckSign(string hash, string secret, string? s, string? e)
         {
             if (string.IsNullOrEmpty(e) || string.IsNullOrEmpty(s))
             {

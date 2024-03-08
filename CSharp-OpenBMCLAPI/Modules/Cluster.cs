@@ -64,6 +64,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             int returns = 0;
 
+            await GetConfiguration();
             // 检查文件
             await CheckFiles();
 
@@ -161,6 +162,12 @@ namespace CSharpOpenBMCLAPI.Modules
                 {
                     time = time
                 });
+        }
+
+        public async Task GetConfiguration()
+        {
+            var resp = await this.client.GetAsync("openbmclapi/configuration");
+            var content = await resp.Content.ReadAsStringAsync();
         }
 
         protected async Task CheckFiles()

@@ -84,6 +84,7 @@ namespace CSharpOpenBMCLAPI
 
             // 从 .env.json 读取密钥然后 FetchToken
             ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(await File.ReadAllTextAsync(".env.json"));
+            SharedData.ClusterInfo = info;
             SharedData.Logger.LogInfo($"Cluster id: {info.ClusterID}");
             TokenManager token = new TokenManager(info);
 

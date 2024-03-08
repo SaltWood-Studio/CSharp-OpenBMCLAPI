@@ -10,5 +10,6 @@ namespace CSharpOpenBMCLAPI.Modules
     {
         public static Config Config { get; set; } = new Config();
         public static Logger Logger { get; set; } = new Logger();
+        public static ClusterInfo ClusterInfo { get; set; }
     }
 }
