@@ -7,6 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharp-OpenBMCLAPI", "CShar
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "解决方案项", "解决方案项", "{09EEA2BF-7069-4835-95CE-2BFAC2F2B8D0}"
 	ProjectSection(SolutionItems) = preProject
+		.github\workflows\dotnet.yml = .github\workflows\dotnet.yml
 		README.MD = README.MD
 	EndProjectSection
 EndProject
