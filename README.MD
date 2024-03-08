@@ -25,6 +25,20 @@
 
 - 还没做完（甚至基本不可用），暂无任何特性
 
+# 使用
+
+## 从源码启动
+
+1. 克隆仓库
+2. 在 `CSharp-OpenBMCLAPI/CSharp-OpenBMCLAPI` 下新建 `.env.json`，按照如下方式填入 `ClusterId` 和 `ClusterSecret`：
+```
+{
+	"ClusterId": "************************",
+	"ClusterSecret": "********************************"
+}
+```
+3. 运行 `dotnet build` 或打开项目，运行构建好的程序
+
 # TODO
 
 - [ ] 上线节点，能够被主控登记为在线

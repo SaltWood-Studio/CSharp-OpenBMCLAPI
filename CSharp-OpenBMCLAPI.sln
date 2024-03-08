@@ -3,7 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34622.214
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharp-OpenBMCLAPI", "CSharp-OpenBMCLAPI\CSharp-OpenBMCLAPI.csproj", "{F01E0E3F-BF3E-4D0D-BCB7-7DFEF1926310}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharp-OpenBMCLAPI", "CSharp-OpenBMCLAPI\CSharp-OpenBMCLAPI.csproj", "{F01E0E3F-BF3E-4D0D-BCB7-7DFEF1926310}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "解决方案项", "解决方案项", "{09EEA2BF-7069-4835-95CE-2BFAC2F2B8D0}"
+	ProjectSection(SolutionItems) = preProject
+		README.MD = README.MD
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
