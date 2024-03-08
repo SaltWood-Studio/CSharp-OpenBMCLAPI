@@ -37,17 +37,6 @@ namespace CSharpOpenBMCLAPI.Modules
             // Fetch 一下以免出现问题
             this.token.FetchToken().Wait();
 
-            this.socket.ConnectAsync().Wait();
-
-            this.socket.On("error", error => HandleError(error));
-            this.socket.On("message", msg => SharedData.Logger.LogInfo(msg));
-            this.socket.On("connect", (_) => SharedData.Logger.LogInfo("与主控连接成功"));
-            this.socket.On("disconnect", (r) =>
-            {
-                SharedData.Logger.LogWarn($"与主控断开连接：{r}");
-                this.IsEnabled = false;
-            });
-
             client = new HttpClient();
             client.BaseAddress = HttpRequest.client.BaseAddress;
             client.DefaultRequestHeaders.Add("User-Agent", $"openbmclapi-cluster/{SharedData.Config.clusterVersion}");
@@ -75,7 +64,7 @@ namespace CSharpOpenBMCLAPI.Modules
             // 检查文件
             await CheckFiles();
 
-            await Connect();
+            Connect();
 
             await Enable();
 
@@ -93,7 +82,7 @@ namespace CSharpOpenBMCLAPI.Modules
             return returns;
         }
 
-        public async Task Connect()
+        public void Connect()
         {
             this.socket = new(HttpRequest.client.BaseAddress?.ToString(), new SocketIOOptions()
             {
@@ -102,6 +91,17 @@ namespace CSharpOpenBMCLAPI.Modules
                 {
                     token = token.Token.token
                 }
+            });
+
+            this.socket.ConnectAsync().Wait();
+
+            this.socket.On("error", error => HandleError(error));
+            this.socket.On("message", msg => SharedData.Logger.LogInfo(msg));
+            this.socket.On("connect", (_) => SharedData.Logger.LogInfo("与主控连接成功"));
+            this.socket.On("disconnect", (r) =>
+            {
+                SharedData.Logger.LogWarn($"与主控断开连接：{r}");
+                this.IsEnabled = false;
             });
         }
 
