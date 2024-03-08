@@ -16,6 +16,7 @@ using SocketIO.Core;
 using TeraIO.Extension;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Net;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
@@ -68,9 +69,20 @@ namespace CSharpOpenBMCLAPI.Modules
 
             Connect();
 
+            HttpServer hs = new();
+            hs.PORT = 4000;
+            hs.UriPrefixes = new()
+            {
+                "http://localhost:4000/"
+            };
+            hs.Load();
+            hs.Start();
+
             await RequestCertification();
 
             await Enable();
+
+            SharedData.Logger.LogInfo($"工作进程 {guid} 在 {SharedData.Config.HOST}:{SharedData.Config.PORT} 提供服务");
 
             _keepAlive = Task.Run(() =>
             {
@@ -170,7 +182,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
             Avro.IO.Decoder decoder = new BinaryDecoder(new MemoryStream(buffer));
 
-            object[] f = new GenericDatumReader<object[]>(schema, schema).Read(null!, decoder);
+            object[] files = new GenericDatumReader<object[]>(schema, schema).Read(null!, decoder);
 
             DownloadConfiguration option = new DownloadConfiguration()
             {
@@ -186,7 +198,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 }
             };
 
-            Parallel.ForEach(f, (obj) =>
+            Parallel.ForEach(files, (obj) =>
             {
                 GenericRecord? record = obj as GenericRecord;
                 if (record != null)

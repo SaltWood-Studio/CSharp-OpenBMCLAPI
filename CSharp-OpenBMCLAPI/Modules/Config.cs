@@ -19,7 +19,19 @@ namespace CSharpOpenBMCLAPI.Modules
         public string clusterVersion;
         // 用户访问时使用的 IP 或域名
         [JsonProperty("host")]
-        public string HOST { get; set; }
+        public string HOST
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(this._host))
+                {
+                    HttpClient client = new HttpClient();
+                    this._host = client.GetAsync("https://4.ipw.cn/").Result.Content.ReadAsStringAsync().Result;
+                }
+                return this._host;
+            }
+            set => this._host = value;
+        }
         // 对外服务端口
         [JsonProperty("port")]
         public int PORT { get; set; }

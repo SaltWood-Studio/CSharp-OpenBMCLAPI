@@ -17,7 +17,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
         public static string ToStandardTimeString(this DateTime dt) => dt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
 
-        public static void PrintTypeInfo<T>(T instance)
+        public static void PrintTypeInfo<T>(this T instance)
         {
             Type type = typeof(T);
             Console.WriteLine($"Type: {type.Name}");
