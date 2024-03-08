@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -16,11 +17,18 @@ namespace CSharpOpenBMCLAPI.Modules
         // 指示节点端的版本，不应由用户更改
         [Browsable(false)]
         public string clusterVersion;
-        // Host
-        public string host;
-        public int port;
-        public string byoc;
+        // 用户访问时使用的 IP 或域名
+        [JsonProperty("host")]
+        public string HOST { get; set; }
+        // 对外服务端口
+        [JsonProperty("port")]
+        public int PORT { get; set; }
+        // 是否使用自定义域名
+        public bool byoc;
+        // 指示是否执行快速上线，若为 true 则每次都不执行
         public bool noFastEnable;
+
+        private string _host = "";
 
         public Config()
         {
@@ -28,9 +36,9 @@ namespace CSharpOpenBMCLAPI.Modules
             this.clusterFileDirectory = "./";
             this.clusterVersion = "1.9.7";
 
-            this.host = "";
-            this.port = 4000;
-            this.byoc = "";
+            this.HOST = "";
+            this.PORT = 4000;
+            this.byoc = false;
             this.noFastEnable = false;
         }
     }

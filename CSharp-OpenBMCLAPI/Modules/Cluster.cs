@@ -14,6 +14,8 @@ using System.Security.Cryptography;
 using SocketIOClient;
 using SocketIO.Core;
 using TeraIO.Extension;
+using System.Diagnostics;
+using System.Text.Json;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
@@ -66,6 +68,8 @@ namespace CSharpOpenBMCLAPI.Modules
 
             Connect();
 
+            await RequestCertification();
+
             await Enable();
 
             _keepAlive = Task.Run(() =>
@@ -74,6 +78,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 {
                     Thread.Sleep(25 * 1000);
                     KeepAlive().Wait();
+                    this.token.FetchToken().Wait();
                 }
             });
 
@@ -114,8 +119,8 @@ namespace CSharpOpenBMCLAPI.Modules
                 },
                 new
                 {
-                    host = SharedData.Config.host,
-                    port = SharedData.Config.port,
+                    host = SharedData.Config.HOST,
+                    port = SharedData.Config.PORT,
                     version = SharedData.Config.clusterVersion,
                     byoc = SharedData.Config.byoc,
                     noFastEnable = SharedData.Config.noFastEnable
@@ -133,8 +138,8 @@ namespace CSharpOpenBMCLAPI.Modules
 
         public async Task KeepAlive()
         {
-            string time = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-            socket.Connected.Dump();
+            string time = DateTime.Now.ToStandardTimeString();
+            // socket.Connected.Dump();
             await socket.EmitAsync("keep-alive",
                 (SocketIOResponse resp) =>
                 {
@@ -148,6 +153,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
         protected async Task CheckFiles()
         {
+            SharedData.Logger.LogInfo("开始检查文件");
             var resp = await client.GetAsync("openbmclapi/files");
             byte[] buffer = await resp.Content.ReadAsByteArrayAsync();
             var decomporess = new Decompressor();
@@ -226,6 +232,36 @@ namespace CSharpOpenBMCLAPI.Modules
                 SharedData.Logger.LogInfo($"文件损坏：{path}，期望 “{hash}”，但结果为{realHash}");
                 service.DownloadFileTaskAsync($"{client.BaseAddress}openbmclapi/download/{hash}").Wait();
             }
+        }
+
+        public async Task RequestCertification()
+        {
+            await socket.EmitAsync("request-cert", (SocketIOResponse resp) =>
+            {
+                var data = resp;
+                //Debugger.Break();
+                var json = data.GetValue<JsonElement>(0)[1];
+                JsonElement cert; json.TryGetProperty("cert", out cert);
+                JsonElement key; json.TryGetProperty("key", out key);
+
+                string? certString = cert.GetString();
+                string? keyString = key.GetString();
+
+                string certPath = $"{SharedData.Config.clusterFileDirectory}certifications/cert.pem";
+                string keyPath = $"{SharedData.Config.clusterFileDirectory}certifications/key.pem";
+
+                Directory.CreateDirectory($"{SharedData.Config.clusterFileDirectory}certifications");
+
+                using (var file = File.Create(certPath))
+                {
+                    if (certString != null) file.Write(Encoding.UTF8.GetBytes(certString));
+                }
+
+                using (var file = File.Create(keyPath))
+                {
+                    if (keyString != null) file.Write(Encoding.UTF8.GetBytes(keyString));
+                }
+            });
         }
     }
 }
