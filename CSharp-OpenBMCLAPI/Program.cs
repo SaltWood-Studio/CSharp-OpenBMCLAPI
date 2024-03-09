@@ -1,6 +1,7 @@
 ﻿using CSharpOpenBMCLAPI.Modules;
 using Newtonsoft.Json;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using TeraIO.Runnable;
 
 namespace CSharpOpenBMCLAPI
@@ -84,6 +85,15 @@ namespace CSharpOpenBMCLAPI
                 {
                     SharedData.Logger.LogWarn("用户拒绝了管理员权限，集群可能无法正常运行！");
                 }
+            }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Utils.CreatePortRule("CSharp-OpenBMCLAPI",
+                    SharedData.Config.PORT,
+                    WindowsFirewallHelper.FirewallAction.Allow,
+                    WindowsFirewallHelper.FirewallDirection.Inbound
+                );
             }
 
             // 从 .env.json 读取密钥然后 FetchToken

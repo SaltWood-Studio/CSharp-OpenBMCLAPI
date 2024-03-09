@@ -14,23 +14,10 @@ namespace CSharpOpenBMCLAPI.Modules
         public string clusterVersion;
         // 用户访问时使用的 IP 或域名
         [JsonProperty("host")]
-        public string HOST
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(this._host))
-                {
-                    //HttpClient client = new HttpClient();
-                    //this._host = client.GetAsync("https://4.ipw.cn/").Result.Content.ReadAsStringAsync().Result;
-                    this._host = $"";
-                }
-                return this._host;
-            }
-            set => this._host = value;
-        }
+        public string HOST { get; set; }
         // 对外服务端口
         [JsonProperty("port")]
-        public int PORT { get; set; }
+        public ushort PORT { get; set; }
         // 是否使用自定义域名
         public bool byoc;
         // 指示是否执行快速上线，若为 true 则每次都不执行

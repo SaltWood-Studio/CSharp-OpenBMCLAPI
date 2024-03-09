@@ -3,6 +3,8 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
+using WindowsFirewallHelper;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
@@ -71,6 +73,53 @@ namespace CSharpOpenBMCLAPI.Modules
             catch
             {
                 return false;
+            }
+        }
+
+        public static string ExceptionToDetail(Exception ex)
+        {
+            return $"""
+                {ex.GetType().FullName}: {ex.Message}
+                {ex.StackTrace}
+                """;
+        }
+
+        public static void CreatePortRule(string newPortRuleName, ushort portNumber, FirewallAction firewallAction, FirewallDirection firewallDirection)
+        {
+            //搜索规则
+            var rule = FirewallManager.Instance.Rules.Where(r =>
+            r.Direction == firewallDirection &&
+            r.Name.Equals(newPortRuleName)
+            ).FirstOrDefault();
+
+            if (rule == null) // 指定的规则不存在
+            {
+                try
+                {
+                    rule = FirewallManager.Instance.CreatePortRule(
+                        FirewallProfiles.Domain | FirewallProfiles.Private | FirewallProfiles.Public, // 生效的配置文件
+                        newPortRuleName,
+                        firewallAction, // 运作：允许或阻止
+                        portNumber,
+                        FirewallProtocol.TCP //协议
+
+                    );
+
+                    rule.Direction = firewallDirection; //方向
+
+                    FirewallManager.Instance.Rules.Add(rule);
+
+                    SharedData.Logger.LogInfo($"添加防火墙规则成功：<IFirewallRule {rule.Name} {string.Join(',', rule.LocalPorts)} => {string.Join(',', rule.RemotePorts)} {rule.Protocol} {rule.Action}>");
+                }
+                catch (Exception ex)
+                {
+                    SharedData.Logger.LogWarn($"添加防火墙规则失败：{ExceptionToDetail(ex)}");
+                }
+            }
+            else
+            {
+                // FirewallManager.Instance.Rules.Remove(rule);
+                SharedData.Logger.LogInfo($"防火墙规则已存在：<IFirewallRule {rule.Name} {string.Join(',', rule.LocalPorts)} => {string.Join(',', rule.RemotePorts)} {rule.Protocol} {rule.Action}>");
             }
         }
     }

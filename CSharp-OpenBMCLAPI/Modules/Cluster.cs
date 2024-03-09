@@ -103,7 +103,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             server.UriPrefixes = new()
             {
-                $"http://*:4000/"
+                $"http://*:{SharedData.Config.PORT}/"
             };
             server.Started += (current, e) => SharedData.Logger.LogInfo($"HTTP 服务实例 \"<{server} {server.GetHashCode()}>\" 已启动");
             server.Stopped += (current, e) => SharedData.Logger.LogInfo($"HTTP 服务实例 \"<{server} {server.GetHashCode()}>\" 已停止");
