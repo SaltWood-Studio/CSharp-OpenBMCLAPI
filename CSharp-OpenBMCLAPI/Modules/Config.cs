@@ -23,7 +23,7 @@ namespace CSharpOpenBMCLAPI.Modules
         // 指示是否执行快速上线，若为 true 则每次都不执行
         public bool noFastEnable;
 
-        private string _host = "";
+        public bool disableAccessLog;
 
         public Config()
         {
@@ -35,6 +35,8 @@ namespace CSharpOpenBMCLAPI.Modules
             this.PORT = 4000;
             this.byoc = false;
             this.noFastEnable = false;
+
+            this.disableAccessLog = false;
         }
     }
 }

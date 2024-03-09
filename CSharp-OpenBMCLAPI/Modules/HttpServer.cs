@@ -37,6 +37,12 @@ namespace CSharpOpenBMCLAPI.Modules
 
         public static async Task DownloadHash(HttpContext context)
         {
+            if (!SharedData.Config.disableAccessLog)
+            {
+                StringValues ua;
+                context.Request.Headers.TryGetValue("User-Agent", out ua);
+                SharedData.Logger.LogInfo($"{context.Request.Method} {context.Request.Path} - [{context.Connection.RemoteIpAddress}] {ua.FirstOrDefault()}");
+            }
             var pairs = Utils.GetQueryStrings(context.Request.QueryString.Value);
             string? hash = context.Request.Path.Value?.Split('/').LastOrDefault();
             string? s = pairs.GetValueOrDefault("s");

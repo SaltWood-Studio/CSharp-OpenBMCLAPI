@@ -10,5 +10,7 @@
   // 是否使用自定义域名
   "byoc": false,
   // 指示是否执行快速上线，若为 true 则每次都不执行
-  "noFastEnable": false
+  "noFastEnable": false,
+  // 指示是否禁用访问日志
+  "disableAccessLog": false
 }
