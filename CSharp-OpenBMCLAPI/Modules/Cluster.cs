@@ -5,6 +5,7 @@ using Downloader;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 using SocketIOClient;
 using System.Diagnostics;
 using System.Net;
@@ -108,22 +109,33 @@ namespace CSharpOpenBMCLAPI.Modules
         private void InitializeService()
         {
             var builder = WebApplication.CreateBuilder();
-            X509Certificate2 cert = X509Certificate2.CreateFromPemFile($"{SharedData.Config.clusterFileDirectory}certifications/cert.pem",
-                $"{SharedData.Config.clusterFileDirectory}certifications/key.pem");
-            builder.WebHost.UseUrls(new[]
+            X509Certificate2 cert = LoadAndConvertCert();
+            builder.WebHost.UseKestrel(options =>
             {
-                //$"https://{SharedData.ClusterInfo.ClusterID}.openbmclapi.933.moe:4000/",
-                //$"https://localhost:4000/",
-                $"https://{SharedData.ClusterInfo.ClusterID}.openbmclapi.933.moe:4000/",
-                //$"https://localhost:4000/"
+                options.ListenAnyIP(4000, listenOptions =>
+                {
+                    listenOptions.UseHttps(cert);
+                });
             });
-            //builder.WebHost.UseKestrel(option => option.ConfigureHttpsDefaults(i => i.ServerCertificate = cert));
             var app = builder.Build();
             var path = $"{SharedData.Config.clusterFileDirectory}cache";
             app.UseStaticFiles();
             app.MapGet("/download/{hash}", (context) => HttpServerUtils.DownloadHash(context));
             app.Map("/measure/{size}", (context) => HttpServerUtils.Measure(context));
-            var t = app.RunAsync();
+            Task task = app.RunAsync();
+        }
+
+        protected X509Certificate2 LoadAndConvertCert()
+        {
+            X509Certificate2 cert = X509Certificate2.CreateFromPemFile($"{SharedData.Config.clusterFileDirectory}certifications/cert.pem",
+                $"{SharedData.Config.clusterFileDirectory}certifications/key.pem");
+            byte[] pfxCert = cert.Export(X509ContentType.Pfx);
+            using (var file = File.Create($"{SharedData.Config.clusterFileDirectory}certifications/cert.pfx"))
+            {
+                file.Write(pfxCert);
+            }
+            cert = new X509Certificate2($"{SharedData.Config.clusterFileDirectory}certifications/cert.pfx");
+            return cert;
         }
 
         public void Connect()
