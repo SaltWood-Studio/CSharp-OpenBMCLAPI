@@ -143,13 +143,18 @@ namespace CSharpOpenBMCLAPI.Modules
             this.socket.ConnectAsync().Wait();
 
             this.socket.On("error", error => HandleError(error));
-            this.socket.On("message", msg => SharedData.Logger.LogInfo(msg));
+            this.socket.On("message", msg => PrintServerMessage(msg));
             this.socket.On("connect", (_) => SharedData.Logger.LogInfo("与主控连接成功"));
             this.socket.On("disconnect", (r) =>
             {
                 SharedData.Logger.LogWarn($"与主控断开连接：{r}");
                 this.IsEnabled = false;
             });
+        }
+
+        private static void PrintServerMessage(SocketIOResponse msg)
+        {
+            SharedData.Logger.LogInfo(msg);
         }
 
         public async Task Enable()

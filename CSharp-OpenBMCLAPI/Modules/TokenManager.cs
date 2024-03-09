@@ -56,6 +56,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 {
                     Thread.Sleep(this.token.ttl - SharedData.Config.refreshTokenTime);
                     RefreshToken();
+                    SharedData.Logger.LogInfo($"Token 刷新成功：有效时长{TimeSpan.FromMilliseconds(this.token.ttl).ToString(@"hh\:mm\:ss")}");
                 });
             }
 

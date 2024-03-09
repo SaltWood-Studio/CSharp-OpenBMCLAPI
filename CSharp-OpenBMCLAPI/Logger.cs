@@ -1,10 +1,12 @@
-﻿namespace CSharpOpenBMCLAPI
+﻿using CSharpOpenBMCLAPI.Modules;
+
+namespace CSharpOpenBMCLAPI
 {
     public class Logger
     {
         public Logger()
         {
-
+            
         }
 
         public void LogInfo(params object[] args)
