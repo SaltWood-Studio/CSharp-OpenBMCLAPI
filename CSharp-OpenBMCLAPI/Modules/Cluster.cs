@@ -89,7 +89,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
             await Enable();
 
-            SharedData.Logger.LogInfo($"工作进程 {guid} 在 {SharedData.Config.HOST}:{SharedData.Config.PORT} 提供服务");
+            SharedData.Logger.LogInfo($"工作进程 {guid} 在 <{SharedData.Config.HOST}:{SharedData.Config.PORT}> 提供服务");
 
             _keepAlive = Task.Run(() =>
             {
@@ -236,6 +236,9 @@ namespace CSharpOpenBMCLAPI.Modules
                 }
             };
 
+            object countLock = new();
+            int count = 0;
+
             Parallel.ForEach(files, (obj) =>
             {
                 GenericRecord? record = obj as GenericRecord;
@@ -253,9 +256,15 @@ namespace CSharpOpenBMCLAPI.Modules
                     {
                         DownloadService service = new DownloadService(option);
                         DownloadFile(service, path, hash).Wait();
+                        lock (countLock)
+                        {
+                            count++;
+                        }
+                        SharedData.Logger.LogInfoNoNewLine($"\r{count}/{files.Length}");
                     }
                 }
             });
+            SharedData.Logger.LogInfo("\n文件校验完毕");
         }
 
         private async Task DownloadFile(DownloadService service, string path, string hash)

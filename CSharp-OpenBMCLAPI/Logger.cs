@@ -22,5 +22,21 @@
                 Console.WriteLine(string.Join(" ", args));
             }
         }
+
+        public void LogInfoNoNewLine(params object[] args)
+        {
+            lock (this)
+            {
+                Console.Write(string.Join(" ", args));
+            }
+        }
+
+        public void LogWarnNoNewLine(params object[] args)
+        {
+            lock (this)
+            {
+                Console.Write(string.Join(" ", args));
+            }
+        }
     }
 }
