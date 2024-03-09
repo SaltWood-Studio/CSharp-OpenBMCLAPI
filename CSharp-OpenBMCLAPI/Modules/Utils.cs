@@ -52,7 +52,7 @@ namespace CSharpOpenBMCLAPI.Modules
             return windowsPrincipal.IsInRole(WindowsBuiltInRole.Administrator);
         }
 
-        public static void RunAsAdministrator()
+        public static bool RunAsAdministrator()
         {
             //创建启动对象
             ProcessStartInfo startInfo = new ProcessStartInfo()
@@ -66,12 +66,12 @@ namespace CSharpOpenBMCLAPI.Modules
             try
             {
                 Process.Start(startInfo);
+                return true;
             }
             catch
             {
-                return;
+                return false;
             }
-            Environment.Exit(0);
         }
     }
 }

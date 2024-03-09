@@ -75,7 +75,15 @@ namespace CSharpOpenBMCLAPI
 
             if (!Utils.IsAdministrator())
             {
-                Utils.RunAsAdministrator();
+                bool success = Utils.RunAsAdministrator();
+                if (success)
+                {
+                    Environment.Exit(0);
+                }
+                else
+                {
+                    SharedData.Logger.LogWarn("用户拒绝了管理员权限，集群可能无法正常运行！");
+                }
             }
 
             // 从 .env.json 读取密钥然后 FetchToken
