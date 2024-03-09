@@ -8,37 +8,34 @@ namespace CSharpOpenBMCLAPI.Modules
 {
     public class HttpServerUtils
     {
-        public static Task Measure(HttpContext context)
+        public static async Task Measure(HttpContext context)
         {
             var pairs = Utils.GetQueryStrings(context.Request.QueryString.Value);
-            bool valid = Utils.CheckSign(context.Request.Path.Value?.Split('/').LastOrDefault()
+            bool valid = Utils.CheckSign(context.Request.Path.Value
                 , SharedData.ClusterInfo.ClusterSecret
                 , pairs.GetValueOrDefault("s")
                 , pairs.GetValueOrDefault("e")
             );
             if (valid)
             {
-                byte[] bytes = new byte[1024];
+                context.Response.StatusCode = 200;
+                byte[] buffer = new byte[1024];
                 for (int i = 0; i < Convert.ToInt32(context.Request.Path.Value?.Split('/').LastOrDefault()); i++)
                 {
                     for (int j = 0; j < 1024; j++)
                     {
-                        context.Response.StatusCode = 200;
-                        context.Response.Body.Write(bytes);
+                        await context.Response.BodyWriter.WriteAsync(buffer);
                     }
                 }
             }
             else
             {
                 context.Response.StatusCode = 403;
-                context.Response.Body.Write(Encoding.UTF8.GetBytes($"Access to \"{context.Request.Path}\" has been blocked due to your request timeout or invalidity."));
+                await context.Response.WriteAsync($"Access to \"{context.Request.Path}\" has been blocked due to your request timeout or invalidity.");
             }
-
-            return Task.CompletedTask;
         }
 
-        [HttpHandler("/download/")]
-        public static Task DownloadHash(HttpContext context)
+        public static async Task DownloadHash(HttpContext context)
         {
             var pairs = Utils.GetQueryStrings(context.Request.QueryString.Value);
             string? hash = context.Request.Path.Value?.Split('/').LastOrDefault();
@@ -57,17 +54,23 @@ namespace CSharpOpenBMCLAPI.Modules
                 {
                     if (range != null)
                     {
-                        (int from, int to) = (Convert.ToInt32(range?.Split('-')[0]), Convert.ToInt32(range?.Split('-')[1]));
+                        range = range.Replace("bytes=", "");
+                        var rangeHeader = range?.Split('-');
+                        (long from, long to) = ToRangeByte(rangeHeader);
                         using var file = File.OpenRead($"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}");
+                        if (from == -1)
+                            from = 0;
+                        if (to == -1)
+                            to = file.Length - 1;
                         file.Position = from;
                         byte[] buffer = new byte[to - from + 1];
-                        file.Read(buffer, 0, to - from + 1);
+                        file.Read(buffer, 0, (int)(to - from + 1));
                         context.Response.StatusCode = 206;
-                        context.Response.Body.Write(buffer);
+                        await context.Response.BodyWriter.WriteAsync(buffer);
                     }
                     else
                     {
-                        context.Response.SendFileAsync($"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}").Wait();
+                        await context.Response.SendFileAsync($"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}");
                     }
                 }
                 catch
@@ -78,10 +81,22 @@ namespace CSharpOpenBMCLAPI.Modules
             else
             {
                 context.Response.StatusCode = 403;
-                context.Response.Body.Write(Encoding.UTF8.GetBytes($"Access to \"{context.Request.Path}\" has been blocked due to your request timeout or invalidity."));
+                await context.Response.WriteAsync($"Access to \"{context.Request.Path}\" has been blocked due to your request timeout or invalidity.");
             }
+        }
 
-            return Task.CompletedTask;
+        private static (long from, long to) ToRangeByte(string[]? rangeHeader)
+        {
+            int from, to;
+            if (string.IsNullOrWhiteSpace(rangeHeader?.FirstOrDefault()))
+                from = -1;
+            else
+                from = Convert.ToInt32(rangeHeader?.FirstOrDefault());
+            if (string.IsNullOrWhiteSpace(rangeHeader?.LastOrDefault()))
+                to = -1;
+            else
+                to = Convert.ToInt32(rangeHeader?.LastOrDefault());
+            return (from, to);
         }
     }
 }

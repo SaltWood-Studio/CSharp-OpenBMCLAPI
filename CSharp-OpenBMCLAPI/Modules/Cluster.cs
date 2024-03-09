@@ -3,10 +3,14 @@ using Avro.Generic;
 using Avro.IO;
 using Downloader;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using SocketIOClient;
+using System.Diagnostics;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Security.Policy;
 using System.Security.Principal;
 using System.Text;
@@ -27,7 +31,6 @@ namespace CSharpOpenBMCLAPI.Modules
         public bool IsEnabled { get; private set; }
         private Task? _keepAlive;
         //List<Task> tasks = new List<Task>();
-        private HttpServer server;
 
         public Cluster(ClusterInfo info, TokenManager token) : base()
         {
@@ -52,7 +55,6 @@ namespace CSharpOpenBMCLAPI.Modules
                 }
             });
 
-            this.server = new();
         }
 
         private void HandleError(SocketIOResponse resp)
@@ -82,7 +84,7 @@ namespace CSharpOpenBMCLAPI.Modules
             await RequestCertification();
             //t.Start();
 
-            InitializeHttpsServer();
+            InitializeService();
 
             await Enable();
 
@@ -106,30 +108,23 @@ namespace CSharpOpenBMCLAPI.Modules
         private void InitializeService()
         {
             var builder = WebApplication.CreateBuilder();
+            X509Certificate2 cert = X509Certificate2.CreateFromPemFile($"{SharedData.Config.clusterFileDirectory}certifications/cert.pem",
+                $"{SharedData.Config.clusterFileDirectory}certifications/key.pem");
+            builder.WebHost.UseUrls(new[]
+            {
+                //$"https://{SharedData.ClusterInfo.ClusterID}.openbmclapi.933.moe:4000/",
+                //$"https://localhost:4000/",
+                $"https://{SharedData.ClusterInfo.ClusterID}.openbmclapi.933.moe:4000/",
+                //$"https://localhost:4000/"
+            });
+            //builder.WebHost.UseKestrel(option => option.ConfigureHttpsDefaults(i => i.ServerCertificate = cert));
             var app = builder.Build();
             var path = $"{SharedData.Config.clusterFileDirectory}cache";
             app.UseStaticFiles();
-            app.MapGet("/download", (context) => HttpServerUtils.DownloadHash(context));
-            app.MapGet("/measure", (context) => HttpServerUtils.Measure(context));
+            app.MapGet("/download/{hash}", (context) => HttpServerUtils.DownloadHash(context));
+            app.Map("/measure/{size}", (context) => HttpServerUtils.Measure(context));
             var t = app.RunAsync();
         }
-
-        /*
-    private void RequestFirewall()
-    {
-        FtpWebRequest requestDownload;
-        requestDownload = (FtpWebRequest)WebRequest.Create(uri);
-        requestDownload.UsePassive = false;
-        requestDownload.KeepAlive = false;
-        requestDownload.UseBinary = true;
-        requestDownload.Method = WebRequestMethods.Ftp.DownloadFile;
-
-
-        requestDownload.Credentials = new NetworkCredential(ftpInfoDownload[3], ftpInfoDownload[4]);
-
-        responseDownload = (FtpWebResponse)requestDownload.GetResponse();
-        Stream ftpStream = responseDownload.GetResponseStream();
-    }*/
 
         public void Connect()
         {
