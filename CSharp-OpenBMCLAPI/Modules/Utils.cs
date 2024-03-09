@@ -9,15 +9,39 @@ namespace CSharpOpenBMCLAPI.Modules
 {
     public static class Utils
     {
-        public static bool CheckSign(string hash, string secret, string? s, string? e)
+        static long ToDecimal(string hex)
+        {
+            Dictionary<char, int> pairs = new();
+            int count = 0;
+            foreach (char i in "0123456789abcdefghijklmnopqrstuvwxyz")
+            {
+                pairs[i] = count;
+                count++;
+            }
+            long decimalValue = 0;
+            for (int i = 0; i < hex.Length; i++)
+            {
+                char c = hex[i];
+                int digit = pairs[c];
+                decimalValue = decimalValue * 36 + digit;
+            }
+            return decimalValue;
+        }
+
+        public static string ToUrlSafeBase64String(string b) => b.Replace('/', '_').Replace('+', '-').Replace("=", "");
+        public static string ToUrlSafeBase64String(byte[] b) => Convert.ToBase64String(b).Replace('/', '_').Replace('+', '-').Replace("=", "");
+
+        public static bool CheckSign(string? hash, string? secret, string? s, string? e)
         {
             if (string.IsNullOrEmpty(e) || string.IsNullOrEmpty(s))
             {
                 return false;
             }
             var sha1 = SHA1.Create();
-            var sign = Convert.ToBase64String(sha1.ComputeHash(Encoding.UTF8.GetBytes($"{secret}{hash}{e}")));
-            return sign == s && DateTime.Now.Ticks < (Convert.ToInt32(e, 36) / 100);
+            var sign = ToUrlSafeBase64String(sha1.ComputeHash(Encoding.UTF8.GetBytes($"{secret}{hash}{e}")));
+            var timestamp = DateTimeOffset.Now.ToUnixTimeSeconds();
+            var a = timestamp < (ToDecimal(e) / 100);
+            return sign == s && timestamp < (ToDecimal(e) / 100);
         }
 
     }

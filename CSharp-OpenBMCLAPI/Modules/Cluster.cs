@@ -44,6 +44,16 @@ namespace CSharpOpenBMCLAPI.Modules
             client.BaseAddress = HttpRequest.client.BaseAddress;
             client.DefaultRequestHeaders.Add("User-Agent", $"openbmclapi-cluster/{SharedData.Config.clusterVersion}");
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token.Token.token}");
+
+            this.socket = new(HttpRequest.client.BaseAddress?.ToString(), new SocketIOOptions()
+            {
+                Transport = SocketIOClient.Transport.TransportProtocol.WebSocket,
+                Auth = new
+                {
+                    token = token.Token.token
+                }
+            });
+
         }
 
         private void HandleError(SocketIOResponse resp)
@@ -76,7 +86,6 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 "http://localhost:4000/"
             };
-            hs.Load();
             hs.Start();
 
             await RequestCertification();
@@ -102,15 +111,6 @@ namespace CSharpOpenBMCLAPI.Modules
 
         public void Connect()
         {
-            this.socket = new(HttpRequest.client.BaseAddress?.ToString(), new SocketIOOptions()
-            {
-                Transport = SocketIOClient.Transport.TransportProtocol.WebSocket,
-                Auth = new
-                {
-                    token = token.Token.token
-                }
-            });
-
             this.socket.ConnectAsync().Wait();
 
             this.socket.On("error", error => HandleError(error));
