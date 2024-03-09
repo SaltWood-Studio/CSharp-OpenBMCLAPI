@@ -74,6 +74,7 @@ namespace CSharpOpenBMCLAPI
         {
             int returns = 0;
 
+            /*
             if (!Utils.IsAdministrator())
             {
                 bool success = Utils.RunAsAdministrator();
@@ -94,7 +95,7 @@ namespace CSharpOpenBMCLAPI
                     WindowsFirewallHelper.FirewallAction.Allow,
                     WindowsFirewallHelper.FirewallDirection.Inbound
                 );
-            }
+            }*/
 
             // 从 .env.json 读取密钥然后 FetchToken
             ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(await File.ReadAllTextAsync(".env.json"));
