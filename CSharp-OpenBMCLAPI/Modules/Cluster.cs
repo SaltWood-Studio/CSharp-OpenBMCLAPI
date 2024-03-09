@@ -2,9 +2,12 @@
 using Avro.Generic;
 using Avro.IO;
 using Downloader;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using SocketIOClient;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Security.Policy;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
@@ -76,9 +79,10 @@ namespace CSharpOpenBMCLAPI.Modules
 
             Connect();
 
-            InitializeHttpsServer(this.server);
-
             await RequestCertification();
+            //t.Start();
+
+            InitializeHttpsServer();
 
             await Enable();
 
@@ -99,15 +103,15 @@ namespace CSharpOpenBMCLAPI.Modules
             return returns;
         }
 
-        private void InitializeHttpsServer(HttpServerAppBase server)
+        private void InitializeService()
         {
-            server.UriPrefixes = new()
-            {
-                $"http://*:{SharedData.Config.PORT}/"
-            };
-            server.Started += (current, e) => SharedData.Logger.LogInfo($"HTTP 服务实例 \"<{server} {server.GetHashCode()}>\" 已启动");
-            server.Stopped += (current, e) => SharedData.Logger.LogInfo($"HTTP 服务实例 \"<{server} {server.GetHashCode()}>\" 已停止");
-            server.Start();
+            var builder = WebApplication.CreateBuilder();
+            var app = builder.Build();
+            var path = $"{SharedData.Config.clusterFileDirectory}cache";
+            app.UseStaticFiles();
+            app.MapGet("/download", (context) => HttpServerUtils.DownloadHash(context));
+            app.MapGet("/measure", (context) => HttpServerUtils.Measure(context));
+            var t = app.RunAsync();
         }
 
         /*

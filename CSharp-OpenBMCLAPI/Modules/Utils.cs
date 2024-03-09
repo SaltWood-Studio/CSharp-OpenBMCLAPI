@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
+using TeraIO.Runnable;
 using WindowsFirewallHelper;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -27,6 +28,17 @@ namespace CSharpOpenBMCLAPI.Modules
                 decimalValue = decimalValue * 36 + digit;
             }
             return decimalValue;
+        }
+
+        public static Dictionary<string, string> GetQueryStrings(string? query)
+        {
+            Dictionary<string, string> pairs = new();
+            query?[1..].Split('&').ForEach(s =>
+            {
+                var pair = s.Split('=');
+                pairs[pair[0]] = pair[1];
+            });
+            return pairs;
         }
 
         public static string ToUrlSafeBase64String(string b) => b.Replace('/', '_').Replace('+', '-').Replace("=", "");

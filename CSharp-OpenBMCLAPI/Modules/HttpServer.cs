@@ -1,51 +1,47 @@
-﻿using System.Security.Cryptography.X509Certificates;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using TeraIO.Network.Http;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
-    public class HttpServer : HttpServerAppBase
+    public class HttpServerUtils
     {
-        public HttpServer() : base()
+        public static Task Measure(HttpContext context)
         {
-            LoadNew();
-
-            X509Certificate2 certificate = new($"{SharedData.Config.clusterFileDirectory}certifications/cert.pem",
-                $"{SharedData.Config.clusterFileDirectory}certifications/key.pem");
-
-        }
-
-        [HttpHandler("/measure")]
-        public void Measure(HttpClientRequest req)
-        {
-            string? url = req.Request.RawUrl?.Split('?').FirstOrDefault();
-
-            Dictionary<string, string> pairs = ParseRequest(req);
-            bool valid = Utils.CheckSign(url, SharedData.ClusterInfo.ClusterSecret, pairs.GetValueOrDefault("s"), pairs.GetValueOrDefault("e"));
+            var pairs = Utils.GetQueryStrings(context.Request.QueryString.Value);
+            bool valid = Utils.CheckSign(context.Request.Path.Value?.Split('/').LastOrDefault()
+                , SharedData.ClusterInfo.ClusterSecret
+                , pairs.GetValueOrDefault("s")
+                , pairs.GetValueOrDefault("e")
+            );
             if (valid)
             {
                 byte[] bytes = new byte[1024];
-                for (int i = 0; i < Convert.ToInt32(url?.Split('/').LastOrDefault()); i++)
+                for (int i = 0; i < Convert.ToInt32(context.Request.Path.Value?.Split('/').LastOrDefault()); i++)
                 {
                     for (int j = 0; j < 1024; j++)
                     {
-                        req.ResponseStatusCode = 200;
-                        req.Send(bytes);
+                        context.Response.StatusCode = 200;
+                        context.Response.Body.Write(bytes);
                     }
                 }
-                req.Response.Close();
             }
             else
             {
-                req.ResponseStatusCode = 403;
-                req.Send($"Access to \"{req.Request.RawUrl}\" has been blocked due to your request timeout or invalidity.");
+                context.Response.StatusCode = 403;
+                context.Response.Body.Write(Encoding.UTF8.GetBytes($"Access to \"{context.Request.Path}\" has been blocked due to your request timeout or invalidity."));
             }
+
+            return Task.CompletedTask;
         }
 
         [HttpHandler("/download/")]
-        public void DownloadHash(HttpClientRequest req)
+        public static Task DownloadHash(HttpContext context)
         {
-            var pairs = ParseRequest(req);
-            string? hash = req.Request.RawUrl?.Split('?').FirstOrDefault()?.Split('/').LastOrDefault();
+            var pairs = Utils.GetQueryStrings(context.Request.QueryString.Value);
+            string? hash = context.Request.Path.Value?.Split('/').LastOrDefault();
             string? s = pairs.GetValueOrDefault("s");
             string? e = pairs.GetValueOrDefault("e");
 
@@ -53,7 +49,10 @@ namespace CSharpOpenBMCLAPI.Modules
 
             if (valid && hash != null && s != null && e != null)
             {
-                string? range = req.Request.Headers.GetValues("Range")?.FirstOrDefault();
+                StringValues value;
+                context.Request.Headers.TryGetValue("Range", out value);
+
+                string? range = value.FirstOrDefault();
                 try
                 {
                     if (range != null)
@@ -63,47 +62,26 @@ namespace CSharpOpenBMCLAPI.Modules
                         file.Position = from;
                         byte[] buffer = new byte[to - from + 1];
                         file.Read(buffer, 0, to - from + 1);
-                        req.ResponseStatusCode = 206;
-                        req.Send(buffer);
+                        context.Response.StatusCode = 206;
+                        context.Response.Body.Write(buffer);
                     }
                     else
                     {
-                        using var file = File.OpenRead($"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}");
-                        file.CopyTo(req.OutputStream);
+                        context.Response.SendFileAsync($"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}").Wait();
                     }
                 }
                 catch
                 {
-                    var destination = req.Request.Headers.GetValues("Referer")?.FirstOrDefault();
-                    if (destination != null)
-                    {
-                        req.ResponseStatusCode = 302;
-                        req.Response.AddHeader("Location", destination);
-                    }
-                    else
-                    {
-                        req.Response.Close();
-                    }
+                    context.Response.StatusCode = 404;
                 }
             }
             else
             {
-                req.ResponseStatusCode = 403;
-                req.Send($"Access to \"{req.Request.RawUrl}\" has been blocked due to your request timeout or invalidity.");
+                context.Response.StatusCode = 403;
+                context.Response.Body.Write(Encoding.UTF8.GetBytes($"Access to \"{context.Request.Path}\" has been blocked due to your request timeout or invalidity."));
             }
-        }
 
-        private static Dictionary<string, string> ParseRequest(HttpClientRequest req)
-        {
-            Dictionary<string, string> pairs = new();
-            if (req.Request.RawUrl != null)
-            {
-                foreach ((string? key, string? value) in req.Request.RawUrl.Split('?').Last().Split('&').Select(param => (param.Split('=').FirstOrDefault(), param.Split('=').LastOrDefault())))
-                {
-                    if (key != null && value != null) pairs[key] = value;
-                }
-            }
-            return pairs;
+            return Task.CompletedTask;
         }
     }
 }
