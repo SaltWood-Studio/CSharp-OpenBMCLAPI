@@ -97,7 +97,6 @@ namespace CSharpOpenBMCLAPI.Modules
                 {
                     Thread.Sleep(25 * 1000);
                     KeepAlive().Wait();
-                    this.token.FetchToken().Wait();
                 }
             });
 
