@@ -1,15 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using CSharpOpenBMCLAPI.Modules;
+﻿using CSharpOpenBMCLAPI.Modules;
 using Newtonsoft.Json;
+using System.Reflection;
 using TeraIO.Runnable;
 
 namespace CSharpOpenBMCLAPI
@@ -81,6 +72,11 @@ namespace CSharpOpenBMCLAPI
         protected async Task<int> AsyncRun()
         {
             int returns = 0;
+
+            if (!Utils.IsAdministrator())
+            {
+                Utils.RunAsAdministrator();
+            }
 
             // 从 .env.json 读取密钥然后 FetchToken
             ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(await File.ReadAllTextAsync(".env.json"));

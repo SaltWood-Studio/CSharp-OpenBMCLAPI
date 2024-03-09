@@ -1,17 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Security.Cryptography.X509Certificates;
 using TeraIO.Network.Http;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
     public class HttpServer : HttpServerAppBase
     {
-        public HttpServer() : base() => LoadNew();
+        public HttpServer() : base()
+        {
+            LoadNew();
+
+            X509Certificate2 certificate = new($"{SharedData.Config.clusterFileDirectory}certifications/cert.pem",
+                $"{SharedData.Config.clusterFileDirectory}certifications/key.pem");
+
+        }
 
         [HttpHandler("/measure")]
         public void Measure(HttpClientRequest req)

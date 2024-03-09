@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
@@ -44,5 +43,35 @@ namespace CSharpOpenBMCLAPI.Modules
             return sign == s && timestamp < (ToDecimal(e) / 100);
         }
 
+        public static bool IsAdministrator()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return true;
+            WindowsIdentity current = WindowsIdentity.GetCurrent();
+            WindowsPrincipal windowsPrincipal = new WindowsPrincipal(current);
+            //WindowsBuiltInRole可以枚举出很多权限，例如系统用户、User、Guest等等
+            return windowsPrincipal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
+
+        public static void RunAsAdministrator()
+        {
+            //创建启动对象
+            ProcessStartInfo startInfo = new ProcessStartInfo()
+            {
+                FileName = Process.GetCurrentProcess().MainModule?.FileName,
+                WorkingDirectory = Environment.CurrentDirectory,
+                Verb = "runas",
+                UseShellExecute = true,
+                CreateNoWindow = false
+            };
+            try
+            {
+                Process.Start(startInfo);
+            }
+            catch
+            {
+                return;
+            }
+            Environment.Exit(0);
+        }
     }
 }

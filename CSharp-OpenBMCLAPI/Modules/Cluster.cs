@@ -1,22 +1,16 @@
 ﻿using Avro;
+using Avro.Generic;
 using Avro.IO;
-using Avro.File;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Downloader;
+using SocketIOClient;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json;
+using TeraIO.Network.Http;
 using TeraIO.Runnable;
 using ZstdSharp;
-using Avro.Generic;
-using Downloader;
-using System.Security.Cryptography;
-using SocketIOClient;
-using SocketIO.Core;
-using TeraIO.Extension;
-using System.Diagnostics;
-using System.Text.Json;
-using System.Net;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
@@ -30,6 +24,7 @@ namespace CSharpOpenBMCLAPI.Modules
         public bool IsEnabled { get; private set; }
         private Task? _keepAlive;
         //List<Task> tasks = new List<Task>();
+        private HttpServer server;
 
         public Cluster(ClusterInfo info, TokenManager token) : base()
         {
@@ -54,6 +49,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 }
             });
 
+            this.server = new();
         }
 
         private void HandleError(SocketIOResponse resp)
@@ -80,13 +76,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
             Connect();
 
-            HttpServer hs = new();
-            hs.PORT = 4000;
-            hs.UriPrefixes = new()
-            {
-                "http://localhost:4000/"
-            };
-            hs.Start();
+            InitializeHttpsServer(this.server);
 
             await RequestCertification();
 
@@ -109,6 +99,34 @@ namespace CSharpOpenBMCLAPI.Modules
             return returns;
         }
 
+        private void InitializeHttpsServer(HttpServerAppBase server)
+        {
+            server.UriPrefixes = new()
+            {
+                $"http://*:4000/"
+            };
+            server.Started += (current, e) => SharedData.Logger.LogInfo($"HTTP 服务实例 \"<{server} {server.GetHashCode()}>\" 已启动");
+            server.Stopped += (current, e) => SharedData.Logger.LogInfo($"HTTP 服务实例 \"<{server} {server.GetHashCode()}>\" 已停止");
+            server.Start();
+        }
+
+        /*
+    private void RequestFirewall()
+    {
+        FtpWebRequest requestDownload;
+        requestDownload = (FtpWebRequest)WebRequest.Create(uri);
+        requestDownload.UsePassive = false;
+        requestDownload.KeepAlive = false;
+        requestDownload.UseBinary = true;
+        requestDownload.Method = WebRequestMethods.Ftp.DownloadFile;
+
+
+        requestDownload.Credentials = new NetworkCredential(ftpInfoDownload[3], ftpInfoDownload[4]);
+
+        responseDownload = (FtpWebResponse)requestDownload.GetResponse();
+        Stream ftpStream = responseDownload.GetResponseStream();
+    }*/
+
         public void Connect()
         {
             this.socket.ConnectAsync().Wait();
@@ -128,6 +146,8 @@ namespace CSharpOpenBMCLAPI.Modules
             await socket.EmitAsync("enable",
                 (SocketIOResponse resp) =>
                 {
+                    SharedData.Logger.LogInfo(resp);
+                    // Debugger.Break();
                     SharedData.Logger.LogInfo($"启用成功");
                 },
                 new

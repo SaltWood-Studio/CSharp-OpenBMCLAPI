@@ -1,10 +1,5 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
@@ -25,8 +20,9 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 if (string.IsNullOrEmpty(this._host))
                 {
-                    HttpClient client = new HttpClient();
-                    this._host = client.GetAsync("https://4.ipw.cn/").Result.Content.ReadAsStringAsync().Result;
+                    //HttpClient client = new HttpClient();
+                    //this._host = client.GetAsync("https://4.ipw.cn/").Result.Content.ReadAsStringAsync().Result;
+                    this._host = $"";
                 }
                 return this._host;
             }
