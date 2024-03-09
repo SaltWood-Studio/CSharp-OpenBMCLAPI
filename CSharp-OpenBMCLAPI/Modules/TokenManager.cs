@@ -59,7 +59,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 });
             }
 
-            SharedData.Logger.LogInfo($"Token 刷新成功：有效时长{TimeSpan.FromMilliseconds(this.token.ttl).ToString(@"hh\:mm\:ss")}");
+            SharedData.Logger.LogInfo($"Token 刷新成功：有效时长<{TimeSpan.FromMilliseconds(this.token.ttl).ToString(@"dd 天 hh 时 mm 分 ss 秒")}>");
             return token;
         }
 
