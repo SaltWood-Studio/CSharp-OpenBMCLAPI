@@ -13,6 +13,7 @@ namespace CSharpOpenBMCLAPI
         {
             lock (this)
             {
+                Console.Write("\r");
                 Console.WriteLine(string.Join(" ", args));
             }
         }
@@ -21,7 +22,21 @@ namespace CSharpOpenBMCLAPI
         {
             lock (this)
             {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.Write("\r");
                 Console.WriteLine(string.Join(" ", args));
+                Console.ForegroundColor = ConsoleColor.White;
+            }
+        }
+
+        public void LogError(params object[] args)
+        {
+            lock (this)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Write("\r");
+                Console.WriteLine(string.Join(" ", args));
+                Console.ForegroundColor = ConsoleColor.White;
             }
         }
 
@@ -29,6 +44,7 @@ namespace CSharpOpenBMCLAPI
         {
             lock (this)
             {
+                Console.Write("\r");
                 Console.Write(string.Join(" ", args));
             }
         }
@@ -37,7 +53,21 @@ namespace CSharpOpenBMCLAPI
         {
             lock (this)
             {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.Write("\r");
                 Console.Write(string.Join(" ", args));
+                Console.ForegroundColor = ConsoleColor.White;
+            }
+        }
+
+        public void LogErrorNoNewLine(params object[] args)
+        {
+            lock (this)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Write("\r");
+                Console.Write(string.Join(" ", args));
+                Console.ForegroundColor = ConsoleColor.White;
             }
         }
     }

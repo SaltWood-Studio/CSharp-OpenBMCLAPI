@@ -133,12 +133,6 @@ namespace CSharpOpenBMCLAPI.Modules
                 this.counter.Add(fai);
             });
             app.MapGet("/measure/{size}", (context) => HttpServerUtils.Measure(context));
-            app.MapGet("/shutdown", (HttpContext context) =>
-            {
-                context.Response.WriteAsync("Successfully disabled.");
-                SharedData.Logger.LogInfo("Successfully disabled via web request.");
-                Utils.ExitCluster(this).Wait();
-            });
             Task task = app.RunAsync();
             Utils.tasks.Add(Task.Run(async () =>
             {
