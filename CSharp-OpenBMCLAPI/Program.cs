@@ -21,7 +21,7 @@ namespace CSharpOpenBMCLAPI
         protected override int Run(string[] args)
         {
             SharedData.Config = GetConfig();
-            Task<int> task = AsyncRun();
+            Task<int> task = AsyncRun(args);
             task.Wait();
             return task.Result;
         }
@@ -70,7 +70,7 @@ namespace CSharpOpenBMCLAPI
             }
         }
 
-        protected async Task<int> AsyncRun()
+        protected async Task<int> AsyncRun(string[] args)
         {
             int returns = 0;
 

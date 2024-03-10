@@ -149,11 +149,13 @@ namespace CSharpOpenBMCLAPI.Modules
             X509Certificate2 cert = X509Certificate2.CreateFromPemFile($"{SharedData.Config.clusterFileDirectory}certifications/cert.pem",
                 $"{SharedData.Config.clusterFileDirectory}certifications/key.pem");
             byte[] pfxCert = cert.Export(X509ContentType.Pfx);
+            SharedData.Logger.LogInfo($"将 PEM 格式的证书转换为 PFX 格式");
             using (var file = File.Create($"{SharedData.Config.clusterFileDirectory}certifications/cert.pfx"))
             {
                 file.Write(pfxCert);
             }
             cert = new X509Certificate2($"{SharedData.Config.clusterFileDirectory}certifications/cert.pfx");
+            SharedData.Logger.LogInfo($"证书信息：{cert.ToString()}");
             return cert;
         }
 
