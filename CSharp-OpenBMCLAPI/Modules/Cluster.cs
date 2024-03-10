@@ -135,7 +135,8 @@ namespace CSharpOpenBMCLAPI.Modules
             app.MapGet("/measure/{size}", (context) => HttpServerUtils.Measure(context));
             app.MapGet("/shutdown", (HttpContext context) =>
             {
-                context.Response.WriteAsync("Successfully disabled").Wait();
+                context.Response.WriteAsync("Successfully disabled.");
+                SharedData.Logger.LogInfo("Successfully disabled via web request.");
                 Disable().Wait();
                 Environment.Exit(0);
             });
@@ -218,7 +219,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 (SocketIOResponse resp) =>
                 {
                     SharedData.Logger.LogInfo(resp);
-                    SharedData.Logger.LogInfo($"保活成功 at {time}，served {Utils.GetLength(this.counter.bytes)} / {this.counter.hits}");
+                    SharedData.Logger.LogInfo($"保活成功 at {time}，served {Utils.GetLength(this.counter.bytes)}({this.counter.bytes} bytes)/{this.counter.hits} hits");
                     this.counter.Reset();
                 },
                 new
