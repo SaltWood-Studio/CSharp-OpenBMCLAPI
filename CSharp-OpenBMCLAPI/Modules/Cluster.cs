@@ -137,8 +137,7 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 context.Response.WriteAsync("Successfully disabled.");
                 SharedData.Logger.LogInfo("Successfully disabled via web request.");
-                Disable().Wait();
-                Environment.Exit(0);
+                Utils.ExitCluster(this).Wait();
             });
             Task task = app.RunAsync();
             Utils.tasks.Add(Task.Run(async () =>

@@ -11,6 +11,12 @@ namespace CSharpOpenBMCLAPI.Modules
 {
     public static class Utils
     {
+        public static async Task ExitCluster(Cluster cluster)
+        {
+            await cluster.Disable();
+            cluster.Stop();
+        }
+
         public static string GetLength(long lengthOfDocument)
         {
 
