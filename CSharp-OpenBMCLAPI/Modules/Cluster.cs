@@ -103,7 +103,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 while (true)
                 {
                     Thread.Sleep(25 * 1000);
-                    Disable().Wait();
+                    // Disable().Wait();
                     KeepAlive().Wait();
                 }
             });
@@ -217,6 +217,7 @@ namespace CSharpOpenBMCLAPI.Modules
             await socket.EmitAsync("keep-alive",
                 (SocketIOResponse resp) =>
                 {
+                    SharedData.Logger.LogInfo(resp);
                     SharedData.Logger.LogInfo($"保活成功 at {time}");
                 },
                 new
