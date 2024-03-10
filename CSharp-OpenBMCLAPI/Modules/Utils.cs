@@ -11,6 +11,39 @@ namespace CSharpOpenBMCLAPI.Modules
 {
     public static class Utils
     {
+        public static List<Task> tasks = new List<Task>();
+
+        public static bool ValidateFile(byte[] buffer, string hash)
+        {
+            string checkSum;
+
+            if (hash.Length == 32)
+            {
+                checkSum = Convert.ToHexString(MD5.HashData(buffer)).ToLower();
+            }
+            else
+            {
+                checkSum = Convert.ToHexString(SHA1.HashData(buffer)).ToLower();
+            }
+            return checkSum == hash;
+        }
+
+        public static bool ValidateFile(byte[] buffer, string hash, out string realHash)
+        {
+            string checkSum;
+
+            if (hash.Length == 32)
+            {
+                checkSum = Convert.ToHexString(MD5.HashData(buffer)).ToLower();
+            }
+            else
+            {
+                checkSum = Convert.ToHexString(SHA1.HashData(buffer)).ToLower();
+            }
+            realHash = checkSum;
+            return checkSum == hash;
+        }
+
         static long ToDecimal(string hex)
         {
             Dictionary<char, int> pairs = new();

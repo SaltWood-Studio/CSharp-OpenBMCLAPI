@@ -96,6 +96,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 while (true)
                 {
                     Thread.Sleep(25 * 1000);
+                    Disable();
                     KeepAlive().Wait();
                 }
             });
@@ -120,8 +121,22 @@ namespace CSharpOpenBMCLAPI.Modules
             var path = $"{SharedData.Config.clusterFileDirectory}cache";
             app.UseStaticFiles();
             app.MapGet("/download/{hash}", (context) => HttpServerUtils.DownloadHash(context));
-            app.Map("/measure/{size}", (context) => HttpServerUtils.Measure(context));
+            app.MapGet("/measure/{size}", (context) => HttpServerUtils.Measure(context));
+            app.MapGet("/shutdown", (HttpContext context) =>
+            {
+                context.Response.WriteAsync("Successfully disabled").Wait();
+                Disable().Wait();
+                Environment.Exit(0);
+            });
             Task task = app.RunAsync();
+            Utils.tasks.Add(Task.Run(async () =>
+            {
+                Thread.Sleep(1000);
+                if (task.IsCompleted || task.IsFaulted || task.IsCanceled)
+                {
+                    await this.Disable();
+                }
+            }));
         }
 
         protected X509Certificate2 LoadAndConvertCert()
@@ -195,7 +210,9 @@ namespace CSharpOpenBMCLAPI.Modules
                 },
                 new
                 {
-                    time = time
+                    time = time,
+                    hits = 0,
+                    bytes = 0
                 });
         }
 
@@ -271,12 +288,27 @@ namespace CSharpOpenBMCLAPI.Modules
             SharedData.Logger.LogInfo("\n文件校验完毕");
         }
 
-        private async Task DownloadFile(DownloadService service, string path, string hash)
+        private async Task DownloadFile(DownloadService service, string path, string hash, bool fullcheck = false)
         {
-            if (!File.Exists($"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}"))
+            string filePath = $"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}";
+            if (!File.Exists(filePath))
             {
                 service.DownloadFileCompleted += (sender, e) => Service_DownloadFileCompleted(sender, e, path, hash, service);
-                await service.DownloadFileTaskAsync($"{client.BaseAddress}openbmclapi/download/{hash}", $"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}");
+                await service.DownloadFileTaskAsync($"{client.BaseAddress}openbmclapi/download/{hash}", filePath);
+            }
+            else
+            {
+                if (fullcheck)
+                {
+                    var file = File.ReadAllBytes(filePath);
+                    bool valid = Utils.ValidateFile(file, hash, out string realHash);
+                    if (!valid)
+                    {
+                        SharedData.Logger.LogInfo($"文件 {file} 损坏（期望哈希值为 {hash}，实际为 {realHash}）");
+                        File.Delete(filePath);
+                        await DownloadFile(service, path, hash);
+                    }
+                }
             }
         }
 
@@ -284,17 +316,6 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             SharedData.Logger.LogInfo($"文件 {path} 下载完毕");
             // CheckFileAfterDownload(path, hash, service);
-        }
-
-        private void CheckFileAfterDownload(string path, string hash, DownloadService service)
-        {
-            var file = File.ReadAllBytes($"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}");
-            string realHash = Convert.ToHexString(MD5.HashData(file)).ToLower();
-            if (realHash != hash.ToLower())
-            {
-                SharedData.Logger.LogInfo($"文件损坏：{path}，期望 “{hash}”，但结果为{realHash}");
-                service.DownloadFileTaskAsync($"{client.BaseAddress}openbmclapi/download/{hash}").Wait();
-            }
         }
 
         public async Task RequestCertification()
