@@ -58,6 +58,14 @@
 # 已知问题
 - 当一次性下载文件太多时，有概率报 **NullReferenceException**
 
+# 碎碎念
+# 关于版本号
+示例：v**1.9.7**-**1**-**1**
+|  | 1.9.7 | 1 | 1 |
+|--|-------|---|---|
+| 名称 | **兼容版本号** | **fix 版本号** | **本体版本号** |
+| 说明 | 表示该版本等效于 [OpenBMCLAPI](https://github.com/bangbang93/openbmclapi) 的哪个版本 | 表示在这个兼容版本号下第几个 Release，通常发生在 OpenBMCLAPI 没有更新但本仓库发现有 bug 并发布 Release 的情况下 | 表示这是第几个 Release |
+
 # 鸣谢
 
 **Newtonsoft**
