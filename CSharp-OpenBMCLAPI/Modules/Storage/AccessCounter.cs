@@ -15,8 +15,11 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
 
         public void Add(FileAccessInfo fai)
         {
-            hits += fai.hits;
-            bytes += fai.bytes;
+            lock (this)
+            {
+                hits += fai.hits;
+                bytes += fai.bytes;
+            }
         }
 
         public void Reset()

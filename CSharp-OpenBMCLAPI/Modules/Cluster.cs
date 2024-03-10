@@ -218,7 +218,8 @@ namespace CSharpOpenBMCLAPI.Modules
                 (SocketIOResponse resp) =>
                 {
                     SharedData.Logger.LogInfo(resp);
-                    SharedData.Logger.LogInfo($"保活成功 at {time}");
+                    SharedData.Logger.LogInfo($"保活成功 at {time}，served {Utils.GetLength(this.counter.bytes)} / {this.counter.hits}");
+                    this.counter.Reset();
                 },
                 new
                 {

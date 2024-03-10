@@ -11,6 +11,23 @@ namespace CSharpOpenBMCLAPI.Modules
 {
     public static class Utils
     {
+        public static string GetLength(long lengthOfDocument)
+        {
+
+            if (lengthOfDocument < 1024)
+                return $"{string.Format("{0:F2}", (lengthOfDocument))} B";
+            else if (lengthOfDocument > 1024 && lengthOfDocument <= Math.Pow(1024, 2))
+                return $"{string.Format("{0:F2}", (lengthOfDocument / 1024.0))} KB";
+            else if (lengthOfDocument > Math.Pow(1024, 2) && lengthOfDocument <= Math.Pow(1024, 3))
+                return $"{string.Format("{0:F2}", (lengthOfDocument / 1024.0 / 1024.0))} MB";
+            else if (lengthOfDocument > Math.Pow(1024, 3) && lengthOfDocument <= Math.Pow(1024, 4))
+                return $"{string.Format("{0:F2}", (lengthOfDocument / 1024.0 / 1024.0 / 1024.0))} GB";
+            else if (lengthOfDocument > Math.Pow(1024, 4) && lengthOfDocument <= Math.Pow(1024, 5))
+                return $"{string.Format("{0:F2}", (lengthOfDocument / 1024.0 / 1024.0 / 1024.0 / 1024.0))} TB";
+            else
+                return lengthOfDocument.ToString();
+        }
+
         public static string HashToFileName(string hash) => $"{hash[0..2]}/{hash}";
 
         public static List<Task> tasks = new List<Task>();
