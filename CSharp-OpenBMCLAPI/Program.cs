@@ -105,6 +105,11 @@ namespace CSharpOpenBMCLAPI
 
             SharedData.Logger.LogInfo($"成功创建 Cluster 实例");
             Cluster cluster = new(info, token);
+            AppDomain.CurrentDomain.ProcessExit += async (sender, e) =>
+            {
+                await cluster.Disable();
+                cluster.Stop();
+            };
             cluster.Start();
             cluster.WaitForStop();
 

@@ -78,7 +78,3 @@
 
 **SALTWOOD**
 - [TeraIO](https://github.com/SALTWOOD/TeraIO) - 其实也没用到多少（目前是废物一个），以后会抽空把一些 utils 丢进去的
-
-**Fody**
-- [Fody](https://github.com/Fody/Fody) - Costura.Fody 的依赖
-- [Costura.Fody](https://github.com/Fody/Costura) - 用于将 .dll 文件打包，不然太多 dll 不好搞
