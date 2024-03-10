@@ -1,6 +1,7 @@
 ﻿using Avro;
 using Avro.Generic;
 using Avro.IO;
+using CSharpOpenBMCLAPI.Modules.Storage;
 using Downloader;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -31,6 +32,8 @@ namespace CSharpOpenBMCLAPI.Modules
         private SocketIOClient.SocketIO socket;
         public bool IsEnabled { get; private set; }
         private Task? _keepAlive;
+        protected IStorage storage;
+        protected AccessCounter counter;
         //List<Task> tasks = new List<Task>();
 
         public Cluster(ClusterInfo info, TokenManager token) : base()
@@ -46,6 +49,10 @@ namespace CSharpOpenBMCLAPI.Modules
             client.BaseAddress = HttpRequest.client.BaseAddress;
             client.DefaultRequestHeaders.Add("User-Agent", $"openbmclapi-cluster/{SharedData.Config.clusterVersion}");
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token.Token.token}");
+
+            this.storage = new FileStorage(SharedData.Config.clusterFileDirectory);
+
+            this.counter = new();
 
             this.socket = new(HttpRequest.client.BaseAddress?.ToString(), new SocketIOOptions()
             {
@@ -96,7 +103,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 while (true)
                 {
                     Thread.Sleep(25 * 1000);
-                    Disable();
+                    Disable().Wait();
                     KeepAlive().Wait();
                 }
             });
@@ -112,7 +119,7 @@ namespace CSharpOpenBMCLAPI.Modules
             X509Certificate2 cert = LoadAndConvertCert();
             builder.WebHost.UseKestrel(options =>
             {
-                options.ListenAnyIP(4000, listenOptions =>
+                options.ListenAnyIP(SharedData.Config.PORT, listenOptions =>
                 {
                     listenOptions.UseHttps(cert);
                 });
@@ -120,7 +127,11 @@ namespace CSharpOpenBMCLAPI.Modules
             var app = builder.Build();
             var path = $"{SharedData.Config.clusterFileDirectory}cache";
             app.UseStaticFiles();
-            app.MapGet("/download/{hash}", (context) => HttpServerUtils.DownloadHash(context));
+            app.MapGet("/download/{hash}", async (context) =>
+            {
+                FileAccessInfo fai = await HttpServerUtils.DownloadHash(context, this.storage);
+                this.counter.Add(fai);
+            });
             app.MapGet("/measure/{size}", (context) => HttpServerUtils.Measure(context));
             app.MapGet("/shutdown", (HttpContext context) =>
             {
@@ -211,8 +222,8 @@ namespace CSharpOpenBMCLAPI.Modules
                 new
                 {
                     time = time,
-                    hits = 0,
-                    bytes = 0
+                    hits = this.counter.hits,
+                    bytes = this.counter.bytes
                 });
         }
 

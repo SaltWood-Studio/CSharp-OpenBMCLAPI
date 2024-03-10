@@ -11,6 +11,8 @@ namespace CSharpOpenBMCLAPI.Modules
 {
     public static class Utils
     {
+        public static string HashToFileName(string hash) => $"{hash[0..2]}/{hash}";
+
         public static List<Task> tasks = new List<Task>();
 
         public static bool ValidateFile(byte[] buffer, string hash)

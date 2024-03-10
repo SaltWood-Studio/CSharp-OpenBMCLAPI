@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using CSharpOpenBMCLAPI.Modules.Storage;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -35,8 +36,9 @@ namespace CSharpOpenBMCLAPI.Modules
             }
         }
 
-        public static async Task DownloadHash(HttpContext context)
+        public static async Task<FileAccessInfo> DownloadHash(HttpContext context, IStorage storage)
         {
+            FileAccessInfo fai = default;
             if (!SharedData.Config.disableAccessLog)
             {
                 StringValues ua;
@@ -63,20 +65,16 @@ namespace CSharpOpenBMCLAPI.Modules
                         range = range.Replace("bytes=", "");
                         var rangeHeader = range?.Split('-');
                         (long from, long to) = ToRangeByte(rangeHeader);
-                        using var file = File.OpenRead($"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}");
+                        using var file = storage.ReadFileStream(Utils.HashToFileName(hash));
                         if (from == -1)
                             from = 0;
                         if (to == -1)
                             to = file.Length - 1;
-                        file.Position = from;
-                        byte[] buffer = new byte[to - from + 1];
-                        file.Read(buffer, 0, (int)(to - from + 1));
-                        context.Response.StatusCode = 206;
-                        await context.Response.BodyWriter.WriteAsync(buffer);
+                        fai = await storage.Express(Utils.HashToFileName(hash), context);
                     }
                     else
                     {
-                        await context.Response.SendFileAsync($"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}");
+                        fai = await storage.Express(Utils.HashToFileName(hash), context);
                     }
                 }
                 catch
@@ -89,6 +87,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 context.Response.StatusCode = 403;
                 await context.Response.WriteAsync($"Access to \"{context.Request.Path}\" has been blocked due to your request timeout or invalidity.");
             }
+            return fai;
         }
 
         private static (long from, long to) ToRangeByte(string[]? rangeHeader)
