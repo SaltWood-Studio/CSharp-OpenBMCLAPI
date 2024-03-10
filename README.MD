@@ -27,8 +27,6 @@
 
 如果你想加入 OpenBMCLAPI，可以寻找 [bangbang93](https://github.com/bangbang93) 索取 `CLUSTER_ID` 和 `CLUSTER_SECRET`
 
-**注：目前请不要将其投入生产**，因为目前没有找到什么办法手动 Disable() 节点，只能通过 /shutdown 请求关闭节点，而 /shutdown **没有鉴权！这意味着任何一个用户都可以远程把你的节点扬了！**
-
 # 特性
 
 - 能够正常跑起来
@@ -59,7 +57,7 @@
 - 当一次性下载文件太多时，有概率报 **NullReferenceException**
 
 # 碎碎念
-# 关于版本号
+## 关于版本号
 示例：v**1.9.7**-**1**-**1**
 |  | 1.9.7 | 1 | 1 |
 |--|-------|---|---|
