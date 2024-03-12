@@ -15,6 +15,8 @@ namespace CSharpOpenBMCLAPI.Modules
 
         public Token Token { get { lock (_writeLocker) return token; } }
 
+        public string Bearer { get => $"Bearer {Token.token}"; }
+
         public TokenManager(ClusterInfo info)
         {
             this.CLUSTER_ID = info.ClusterID;
