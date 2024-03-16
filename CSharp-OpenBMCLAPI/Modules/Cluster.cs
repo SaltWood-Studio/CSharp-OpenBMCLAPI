@@ -193,8 +193,18 @@ namespace CSharpOpenBMCLAPI.Modules
                     port = SharedData.Config.PORT,
                     version = SharedData.Config.clusterVersion,
                     byoc = SharedData.Config.byoc,
-                    noFastEnable = SharedData.Config.noFastEnable
+                    noFastEnable = SharedData.Config.noFastEnable,
+                    flavor = GetFlavor()
                 });
+        }
+
+        private string GetFlavor()
+        {
+            Type type = this.storage.GetType();
+            if (type == typeof(FileStorage))
+                return "file";
+            else
+                return "file";
         }
 
         public async Task Disable()
