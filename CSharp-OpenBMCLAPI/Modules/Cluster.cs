@@ -48,7 +48,7 @@ namespace CSharpOpenBMCLAPI.Modules
             client = new HttpClient();
             client.BaseAddress = HttpRequest.client.BaseAddress;
             client.DefaultRequestHeaders.Add("User-Agent", $"openbmclapi-cluster/{SharedData.Config.clusterVersion}");
-            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token.Token.token}");
+            client.DefaultRequestHeaders.Add("Authorization", this.token.Bearer);
 
             this.storage = new FileStorage(SharedData.Config.clusterFileDirectory);
 
@@ -260,7 +260,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 {
                     Headers =
                     {
-                        ["Authorization"] = $"Bearer {client.DefaultRequestHeaders.Authorization?.Parameter}",
+                        ["Authorization"] = this.token.Bearer,
                         ["User-Agent"] = client.DefaultRequestHeaders.UserAgent.ToString()
                     }
                 }
