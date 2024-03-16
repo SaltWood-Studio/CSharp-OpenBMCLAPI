@@ -9,6 +9,17 @@ namespace CSharpOpenBMCLAPI
             
         }
 
+        public void LogDebug(params object[] args)
+        {
+            lock (this)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\r");
+                Console.WriteLine(string.Join(" ", args));
+                Console.ForegroundColor = ConsoleColor.White;
+            }
+        }
+
         public void LogInfo(params object[] args)
         {
             lock (this)
@@ -36,6 +47,17 @@ namespace CSharpOpenBMCLAPI
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.Write("\r");
                 Console.WriteLine(string.Join(" ", args));
+                Console.ForegroundColor = ConsoleColor.White;
+            }
+        }
+
+        public void LogDebugNoNewLine(params object[] args)
+        {
+            lock (this)
+            {
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write("\r");
+                Console.Write(string.Join(" ", args));
                 Console.ForegroundColor = ConsoleColor.White;
             }
         }
