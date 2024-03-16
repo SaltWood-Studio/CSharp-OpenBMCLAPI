@@ -194,17 +194,12 @@ namespace CSharpOpenBMCLAPI.Modules
                     version = SharedData.Config.clusterVersion,
                     byoc = SharedData.Config.byoc,
                     noFastEnable = SharedData.Config.noFastEnable,
-                    flavor = GetFlavor()
+                    flavor = new
+                    {
+                        runtime = Utils.GetRuntime(),
+                        storage = Utils.GetStorageType(this.storage)
+                    }
                 });
-        }
-
-        private string GetFlavor()
-        {
-            Type type = this.storage.GetType();
-            if (type == typeof(FileStorage))
-                return "file";
-            else
-                return "file";
         }
 
         public async Task Disable()
@@ -212,6 +207,7 @@ namespace CSharpOpenBMCLAPI.Modules
             await socket.EmitAsync("disable",
                 (SocketIOResponse resp) =>
                 {
+                    SharedData.Logger.LogInfo(resp);
                     SharedData.Logger.LogInfo($"禁用成功");
                 });
         }

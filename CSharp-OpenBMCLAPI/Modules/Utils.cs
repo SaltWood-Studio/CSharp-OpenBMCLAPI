@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using CSharpOpenBMCLAPI.Modules.Storage;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Principal;
@@ -15,6 +16,21 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             await cluster.Disable();
             cluster.Stop();
+        }
+
+        public static string GetRuntime()
+        {
+            var version = Environment.Version;
+            return $"dotnet/{version}";
+        }
+
+        public static string GetStorageType(IStorage storage)
+        {
+            Type type = storage.GetType();
+            if (type == typeof(FileStorage))
+                return "file";
+            else
+                return "file";
         }
 
         public static string GetLength(long lengthOfDocument)

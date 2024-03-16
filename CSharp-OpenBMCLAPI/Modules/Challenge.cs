@@ -2,6 +2,6 @@
 {
     public class Challenge
     {
-        public string challenge;
+        public required string challenge;
     }
 }
