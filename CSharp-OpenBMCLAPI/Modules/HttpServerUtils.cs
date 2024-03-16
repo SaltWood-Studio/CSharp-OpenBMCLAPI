@@ -21,6 +21,9 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 context.Response.StatusCode = 200;
                 byte[] buffer = new byte[1024];
+                StringValues ua;
+                context.Request.Headers.TryGetValue("User-Agent", out ua);
+                SharedData.Logger.LogInfo($"{context.Request.Method} {context.Request.Path} - [{context.Connection.RemoteIpAddress}] {ua.FirstOrDefault()}");
                 for (int i = 0; i < Convert.ToInt32(context.Request.Path.Value?.Split('/').LastOrDefault()); i++)
                 {
                     for (int j = 0; j < 1024; j++)
