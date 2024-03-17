@@ -14,7 +14,6 @@
 
   <ItemGroup>
     <PackageReference Include="Apache.Avro" Version="1.11.3" />
-    <PackageReference Include="Downloader" Version="3.0.6" />
     <PackageReference Include="log4net" Version="2.0.16" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="SaltWood.TeraIO" Version="1.0.4" />

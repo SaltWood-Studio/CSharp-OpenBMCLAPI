@@ -2,7 +2,6 @@
 using Avro.Generic;
 using Avro.IO;
 using CSharpOpenBMCLAPI.Modules.Storage;
-using Downloader;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -45,10 +44,7 @@ namespace CSharpOpenBMCLAPI.Modules
             // Fetch 一下以免出现问题
             this.token.FetchToken().Wait();
 
-            client = new HttpClient();
-            client.BaseAddress = HttpRequest.client.BaseAddress;
-            client.DefaultRequestHeaders.Add("User-Agent", $"openbmclapi-cluster/{SharedData.Config.clusterVersion}");
-            client.DefaultRequestHeaders.Add("Authorization", this.token.Bearer);
+            client = HttpRequest.client;
 
             this.storage = new FileStorage(SharedData.Config.clusterFileDirectory);
 
@@ -258,24 +254,11 @@ namespace CSharpOpenBMCLAPI.Modules
 
             object[] files = new GenericDatumReader<object[]>(schema, schema).Read(null!, decoder);
 
-            DownloadConfiguration option = new DownloadConfiguration()
-            {
-                ChunkCount = 10,
-                ParallelDownload = true,
-                RequestConfiguration =
-                {
-                    Headers =
-                    {
-                        ["Authorization"] = this.token.Bearer,
-                        ["User-Agent"] = client.DefaultRequestHeaders.UserAgent.ToString()
-                    }
-                }
-            };
-
             object countLock = new();
             int count = 0;
 
             Parallel.ForEach(files, (obj) =>
+            //foreach (var obj in files)
             {
                 GenericRecord? record = obj as GenericRecord;
                 if (record != null)
@@ -290,8 +273,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
                     if (long.TryParse(t.ToString().ThrowIfNull(), out size))
                     {
-                        DownloadService service = new DownloadService(option);
-                        DownloadFile(service, path, hash).Wait();
+                        DownloadFile(path, hash).Wait();
                         lock (countLock)
                         {
                             count++;
@@ -303,13 +285,17 @@ namespace CSharpOpenBMCLAPI.Modules
             SharedData.Logger.LogInfo("\n文件校验完毕");
         }
 
-        private async Task DownloadFile(DownloadService service, string path, string hash, bool fullcheck = false)
+        private async Task DownloadFile(string path, string hash, bool fullcheck = true)
         {
-            string filePath = $"{SharedData.Config.clusterFileDirectory}cache/{hash[0..2]}/{hash}";
+            string filePath = Path.Combine(SharedData.Config.cacheDirectory, Utils.HashToFileName(hash));
             if (!File.Exists(filePath))
             {
-                service.DownloadFileCompleted += (sender, e) => Service_DownloadFileCompleted(sender, e, path, hash, service);
-                await service.DownloadFileTaskAsync($"{client.BaseAddress}openbmclapi/download/{hash}", filePath);
+                var resp = await HttpRequest.client.GetAsync($"openbmclapi/download/{hash}");
+                using (var file = File.Create(Path.Combine(SharedData.Config.cacheDirectory, Utils.HashToFileName(hash))))
+                {
+                    file.Write(await resp.Content.ReadAsByteArrayAsync());
+                }
+                SharedData.Logger.LogInfo($"文件 {path} 下载完毕");
             }
             else
             {
@@ -319,18 +305,12 @@ namespace CSharpOpenBMCLAPI.Modules
                     bool valid = Utils.ValidateFile(file, hash, out string realHash);
                     if (!valid)
                     {
-                        SharedData.Logger.LogInfo($"文件 {file} 损坏（期望哈希值为 {hash}，实际为 {realHash}）");
+                        SharedData.Logger.LogInfo($"文件 {path} 损坏（期望哈希值为 {hash}，实际为 {realHash}）");
                         File.Delete(filePath);
-                        await DownloadFile(service, path, hash);
+                        await DownloadFile(path, hash);
                     }
                 }
             }
-        }
-
-        private void Service_DownloadFileCompleted(object? sender, System.ComponentModel.AsyncCompletedEventArgs e, string path, string hash, DownloadService service)
-        {
-            SharedData.Logger.LogInfo($"文件 {path} 下载完毕");
-            // CheckFileAfterDownload(path, hash, service);
         }
 
         public async Task RequestCertification()

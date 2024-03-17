@@ -25,6 +25,8 @@ namespace CSharpOpenBMCLAPI.Modules
 
         public bool disableAccessLog;
 
+        public string cacheDirectory { get => Path.Combine(this.clusterFileDirectory, "cache"); }
+
         public Config()
         {
             this.refreshTokenTime = 1800000;

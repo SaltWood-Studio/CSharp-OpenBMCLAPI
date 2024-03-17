@@ -103,6 +103,8 @@ namespace CSharpOpenBMCLAPI
             SharedData.Logger.LogInfo($"Cluster id: {info.ClusterID}");
             TokenManager token = new TokenManager(info);
 
+            SharedData.Token = token;
+
             SharedData.Logger.LogInfo($"成功创建 Cluster 实例");
             Cluster cluster = new(info, token);
             AppDomain.CurrentDomain.ProcessExit += async (sender, e) => await Utils.ExitCluster(cluster);
