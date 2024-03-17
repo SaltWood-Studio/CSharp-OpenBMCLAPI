@@ -102,6 +102,7 @@ namespace CSharpOpenBMCLAPI
             SharedData.ClusterInfo = info;
             SharedData.Logger.LogInfo($"Cluster id: {info.ClusterID}");
             TokenManager token = new TokenManager(info);
+            await token.FetchToken();
 
             SharedData.Token = token;
 

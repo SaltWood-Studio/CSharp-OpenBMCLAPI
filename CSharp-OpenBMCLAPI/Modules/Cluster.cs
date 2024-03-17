@@ -44,9 +44,6 @@ namespace CSharpOpenBMCLAPI.Modules
             this.token = token;
             this.guid = Guid.NewGuid();
 
-            // Fetch 一下以免出现问题
-            this.token.FetchToken().Wait();
-
             client = HttpRequest.client;
             client.DefaultRequestHeaders.Authorization = new("Bearer", SharedData.Token?.Token.token);
 
