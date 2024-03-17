@@ -57,28 +57,9 @@ namespace CSharpOpenBMCLAPI.Modules
 
             if (valid && hash != null && s != null && e != null)
             {
-                StringValues value;
-                context.Request.Headers.TryGetValue("Range", out value);
-
-                string? range = value.FirstOrDefault();
                 try
                 {
-                    if (range != null)
-                    {
-                        range = range.Replace("bytes=", "");
-                        var rangeHeader = range?.Split('-');
-                        (long from, long to) = ToRangeByte(rangeHeader);
-                        using var file = storage.ReadFileStream(Utils.HashToFileName(hash));
-                        if (from == -1)
-                            from = 0;
-                        if (to == -1)
-                            to = file.Length - 1;
-                        fai = await storage.Express(Utils.HashToFileName(hash), context);
-                    }
-                    else
-                    {
-                        fai = await storage.Express(Utils.HashToFileName(hash), context);
-                    }
+                    fai = await storage.Express(Utils.HashToFileName(hash), context);
                 }
                 catch
                 {
