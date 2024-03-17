@@ -45,6 +45,7 @@ namespace CSharpOpenBMCLAPI.Modules
             this.token.FetchToken().Wait();
 
             client = HttpRequest.client;
+            client.DefaultRequestHeaders.Authorization = new("Bearer", SharedData.Token?.Token.token);
 
             this.storage = new FileStorage(SharedData.Config.clusterFileDirectory);
 
@@ -238,13 +239,9 @@ namespace CSharpOpenBMCLAPI.Modules
             SharedData.Logger.LogInfo("开始检查文件");
             var resp = await client.GetAsync("openbmclapi/files");
             byte[] buffer = await resp.Content.ReadAsByteArrayAsync();
-            var decomporess = new Decompressor();
-            Task.Run(() =>
-            {
-                var data = decomporess.Unwrap(buffer);
-                buffer = new byte[data.Length];
-                data.CopyTo(buffer);
-            }).Wait();
+            var decompressor = new Decompressor();
+            var data = decompressor.Unwrap(buffer).ToArray();
+            buffer = data;
 
             string avroString = @"{""type"": ""array"",""items"": {""type"": ""record"",""name"": ""fileinfo"",""fields"": [{""name"": ""path"", ""type"": ""string""},{""name"": ""hash"", ""type"": ""string""},{""name"": ""size"", ""type"": ""long""}]}}";
 
