@@ -5,6 +5,13 @@ namespace CSharpOpenBMCLAPI.Modules
 {
     public class Config
     {
+        // 集群启动时的文件检查模式
+        // 0: None（不检查，不推荐）
+        // 1: Exists（检查文件是否存在）
+        // 2: SizeOnly（检查文件大小，推荐，默认）
+        // 3: Hash（完整计算哈希，时间长，推荐不常重启或是分片节点使用）
+        public FileVerificationMode startupCheckMode;
+
         // 指示 token 应当在距离其失效前的多少毫秒进行刷新
         public int refreshTokenTime;
         // 指示应该将要服务的文件放在哪里（服务路径）
@@ -29,6 +36,8 @@ namespace CSharpOpenBMCLAPI.Modules
 
         public Config()
         {
+            this.startupCheckMode = FileVerificationMode.SizeOnly;
+
             this.refreshTokenTime = 1800000;
             this.clusterFileDirectory = "./";
             this.clusterVersion = "1.9.8";

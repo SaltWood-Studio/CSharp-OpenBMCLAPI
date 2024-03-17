@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using SocketIOClient;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -29,10 +30,11 @@ namespace CSharpOpenBMCLAPI.Modules
         private HttpClient client;
         public Guid guid;
         private SocketIOClient.SocketIO socket;
-        public bool IsEnabled { get; private set; }
+        public bool IsEnabled { get; set; }
         private Task? _keepAlive;
         protected IStorage storage;
         protected AccessCounter counter;
+        public CancellationTokenSource cancellationSrc = new CancellationTokenSource();
         //List<Task> tasks = new List<Task>();
 
         public Cluster(ClusterInfo info, TokenManager token) : base()
@@ -50,22 +52,28 @@ namespace CSharpOpenBMCLAPI.Modules
             this.storage = new FileStorage(SharedData.Config.clusterFileDirectory);
 
             this.counter = new();
+            InitializeSocket();
 
+            // 用来规避构造函数退出时巴拉巴拉的提示
+            if (this.socket == null)
+            {
+                throw new Exception("Impossible! \"socket\" field is still null.");
+            }
+        }
+
+        protected void InitializeSocket()
+        {
             this.socket = new(HttpRequest.client.BaseAddress?.ToString(), new SocketIOOptions()
             {
                 Transport = SocketIOClient.Transport.TransportProtocol.WebSocket,
                 Auth = new
                 {
-                    token = token.Token.token
+                    token = this.token.Token.token
                 }
             });
-
         }
 
-        private void HandleError(SocketIOResponse resp)
-        {
-            return;
-        }
+        public void HandleError(SocketIOResponse resp) => Utils.PrintResponseMessage(resp);
 
         protected override int Run(string[] args)
         {
@@ -95,15 +103,16 @@ namespace CSharpOpenBMCLAPI.Modules
 
             SharedData.Logger.LogInfo($"工作进程 {guid} 在 <{SharedData.Config.HOST}:{SharedData.Config.PORT}> 提供服务");
 
-            _keepAlive = Task.Run(() =>
+            _keepAlive = Task.Run(async () =>
             {
                 while (true)
                 {
-                    Thread.Sleep(25 * 1000);
+                    cancellationSrc.Token.ThrowIfCancellationRequested();
+                    await Task.Delay(25 * 1000);
                     // Disable().Wait();
-                    KeepAlive().Wait();
+                    await KeepAlive();
                 }
-            });
+            }, cancellationSrc.Token);
 
             _keepAlive.Wait();
 
@@ -161,7 +170,7 @@ namespace CSharpOpenBMCLAPI.Modules
             this.socket.ConnectAsync().Wait();
 
             this.socket.On("error", error => HandleError(error));
-            this.socket.On("message", msg => PrintServerMessage(msg));
+            this.socket.On("message", msg => Utils.PrintResponseMessage(msg));
             this.socket.On("connect", (_) => SharedData.Logger.LogInfo("与主控连接成功"));
             this.socket.On("disconnect", (r) =>
             {
@@ -170,19 +179,16 @@ namespace CSharpOpenBMCLAPI.Modules
             });
         }
 
-        private static void PrintServerMessage(SocketIOResponse msg)
-        {
-            SharedData.Logger.LogInfo(msg);
-        }
-
         public async Task Enable()
         {
-            await socket.EmitAsync("enable",
+            if (!this.socket.Connected || !this.IsEnabled)
+                await socket.EmitAsync("enable",
                 (SocketIOResponse resp) =>
                 {
-                    SharedData.Logger.LogInfo(resp);
+                    Utils.PrintResponseMessage(resp);
                     // Debugger.Break();
                     SharedData.Logger.LogInfo($"启用成功");
+                    this.IsEnabled = true;
                 },
                 new
                 {
@@ -201,22 +207,25 @@ namespace CSharpOpenBMCLAPI.Modules
 
         public async Task Disable()
         {
-            await socket.EmitAsync("disable",
+            if (this.IsEnabled)
+                await socket.EmitAsync("disable",
                 (SocketIOResponse resp) =>
                 {
-                    SharedData.Logger.LogInfo(resp);
+                    Utils.PrintResponseMessage(resp);
                     SharedData.Logger.LogInfo($"禁用成功");
+                    this.IsEnabled = false;
                 });
         }
 
         public async Task KeepAlive()
         {
+            if (!this.IsEnabled) return;
             string time = DateTime.Now.ToStandardTimeString();
             // socket.Connected.Dump();
             await socket.EmitAsync("keep-alive",
                 (SocketIOResponse resp) =>
                 {
-                    SharedData.Logger.LogInfo(resp);
+                    Utils.PrintResponseMessage(resp);
                     SharedData.Logger.LogInfo($"保活成功 at {time}，served {Utils.GetLength(this.counter.bytes)}({this.counter.bytes} bytes)/{this.counter.hits} hits");
                     this.counter.Reset();
                 },
@@ -234,27 +243,27 @@ namespace CSharpOpenBMCLAPI.Modules
             var content = await resp.Content.ReadAsStringAsync();
         }
 
+
         protected async Task CheckFiles()
         {
-            SharedData.Logger.LogInfo("开始检查文件");
-            var resp = await client.GetAsync("openbmclapi/files");
-            byte[] buffer = await resp.Content.ReadAsByteArrayAsync();
-            var decompressor = new Decompressor();
-            var data = decompressor.Unwrap(buffer).ToArray();
-            buffer = data;
+            const string avroString = @"{""type"": ""array"",""items"": {""type"": ""record"",""name"": ""fileinfo"",""fields"": [{""name"": ""path"", ""type"": ""string""},{""name"": ""hash"", ""type"": ""string""},{""name"": ""size"", ""type"": ""long""}]}}";
 
-            string avroString = @"{""type"": ""array"",""items"": {""type"": ""record"",""name"": ""fileinfo"",""fields"": [{""name"": ""path"", ""type"": ""string""},{""name"": ""hash"", ""type"": ""string""},{""name"": ""size"", ""type"": ""long""}]}}";
+            var resp = await this.client.GetAsync("openbmclapi/files");
+            byte[] bytes = await resp.Content.ReadAsByteArrayAsync();
+            var decompressor = new Decompressor();
+            bytes = decompressor.Unwrap(bytes).ToArray();
 
             Schema schema = Schema.Parse(avroString);
-
-            Avro.IO.Decoder decoder = new BinaryDecoder(new MemoryStream(buffer));
+            var decoder = new BinaryDecoder(new MemoryStream(bytes));
 
             object[] files = new GenericDatumReader<object[]>(schema, schema).Read(null!, decoder);
 
             object countLock = new();
             int count = 0;
 
-            Parallel.ForEach(files, (obj) =>
+            SharedData.Logger.LogDebug($"文件检查策略：{SharedData.Config.startupCheckMode}");
+
+            Parallel.ForEach(files, async (obj) =>
             //foreach (var obj in files)
             {
                 GenericRecord? record = obj as GenericRecord;
@@ -270,44 +279,56 @@ namespace CSharpOpenBMCLAPI.Modules
 
                     if (long.TryParse(t.ToString().ThrowIfNull(), out size))
                     {
-                        DownloadFile(path, hash).Wait();
+                        await DownloadFile(hash, path);
                         lock (countLock)
                         {
                             count++;
                         }
+                        VerifyFile(hash, size, SharedData.Config.startupCheckMode);
                         SharedData.Logger.LogInfoNoNewLine($"\r{count}/{files.Length}");
                     }
                 }
             });
-            SharedData.Logger.LogInfo("\n文件校验完毕");
         }
 
-        private async Task DownloadFile(string path, string hash, bool fullcheck = true)
+        protected bool VerifyFile(string hash, long size, FileVerificationMode mode)
+        {
+            string path = Path.Combine(SharedData.Config.cacheDirectory, Utils.HashToFileName(hash));
+
+            switch (mode)
+            {
+                case FileVerificationMode.None:
+                    return true;
+                case FileVerificationMode.Exists:
+                    return File.Exists(path);
+                case FileVerificationMode.SizeOnly:
+                    if (!VerifyFile(hash, size, FileVerificationMode.Exists)) return false;
+                    FileInfo fileInfo = new FileInfo(path);
+                    return fileInfo.Length == size;
+                case FileVerificationMode.Hash:
+                    if (!VerifyFile(hash, size, FileVerificationMode.SizeOnly)) return false;
+                    var file = File.ReadAllBytes(path);
+                    return Utils.ValidateFile(file, hash);
+                default:
+                    return true;
+            }
+        }
+
+        private async Task DownloadFile(string hash, string path)
         {
             string filePath = Path.Combine(SharedData.Config.cacheDirectory, Utils.HashToFileName(hash));
-            if (!File.Exists(filePath))
+            if (File.Exists(filePath))
             {
-                var resp = await HttpRequest.client.GetAsync($"openbmclapi/download/{hash}");
-                using (var file = File.Create(Path.Combine(SharedData.Config.cacheDirectory, Utils.HashToFileName(hash))))
-                {
-                    file.Write(await resp.Content.ReadAsByteArrayAsync());
-                }
-                SharedData.Logger.LogInfo($"文件 {path} 下载完毕");
+                return;
             }
-            else
+
+            var resp = await this.client.GetAsync($"openbmclapi/download/{hash}");
+
+            using (var file = File.Create(filePath))
             {
-                if (fullcheck)
-                {
-                    var file = File.ReadAllBytes(filePath);
-                    bool valid = Utils.ValidateFile(file, hash, out string realHash);
-                    if (!valid)
-                    {
-                        SharedData.Logger.LogInfo($"文件 {path} 损坏（期望哈希值为 {hash}，实际为 {realHash}）");
-                        File.Delete(filePath);
-                        await DownloadFile(path, hash);
-                    }
-                }
+                file.Write(await resp.Content.ReadAsByteArrayAsync());
             }
+            SharedData.Logger.LogInfo($"文件 {path} 下载成功");
         }
 
         public async Task RequestCertification()

@@ -1,9 +1,11 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Storage;
+using SocketIOClient;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
+using System.Text.Json;
 using TeraIO.Runnable;
 using WindowsFirewallHelper;
 using static System.Net.Mime.MediaTypeNames;
@@ -12,8 +14,40 @@ namespace CSharpOpenBMCLAPI.Modules
 {
     public static class Utils
     {
+        public static void PrintResponseMessage(SocketIOResponse resp)
+        {
+            JsonElement element = resp.GetValue<JsonElement>();
+            PrintJsonElement(element);
+        }
+
+        public static void PrintJsonElement(JsonElement element)
+        {
+            if (element.ValueKind == JsonValueKind.Null) return;
+            switch (element.ValueKind)
+            {
+                case JsonValueKind.String:
+                case JsonValueKind.Number:
+                case JsonValueKind.Object:
+                    SharedData.Logger.LogInfo(element);
+                    break;
+                case JsonValueKind.Array:
+                    foreach (var i in element.EnumerateArray())
+                    {
+                        PrintJsonElement(i);
+                    }
+                    break;
+                default:
+                    break;
+
+            }
+        }
+
         public static async Task ExitCluster(Cluster cluster)
         {
+            cluster.cancellationSrc.Cancel();
+            cluster.IsEnabled = true;
+            await cluster.KeepAlive();
+            Thread.Sleep(1000);
             await cluster.Disable();
             cluster.Stop();
         }
