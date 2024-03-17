@@ -56,7 +56,7 @@ namespace CSharpOpenBMCLAPI.Modules
         public static string GetRuntime()
         {
             var version = Environment.Version;
-            return $"csharp/{version}";
+            return $"CSharp/v{version}";
         }
 
         public static string GetStorageType(IStorage storage)
