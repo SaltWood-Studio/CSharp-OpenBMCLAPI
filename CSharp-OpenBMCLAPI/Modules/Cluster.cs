@@ -181,45 +181,54 @@ namespace CSharpOpenBMCLAPI.Modules
 
         public async Task Enable()
         {
-            if (!this.socket.Connected || !this.IsEnabled)
-                await socket.EmitAsync("enable",
-                (SocketIOResponse resp) =>
+            if (socket.Connected && IsEnabled)
+            {
+                SharedData.Logger.LogWarn($"试图在节点禁用且连接未断开时调用 Enable");
+                return;
+            }
+            await socket.EmitAsync("enable", (SocketIOResponse resp) =>
+            {
+                Utils.PrintResponseMessage(resp);
+                // Debugger.Break();
+                SharedData.Logger.LogInfo($"启用成功");
+                this.IsEnabled = true;
+            }, new
+            {
+                host = SharedData.Config.HOST,
+                port = SharedData.Config.PORT,
+                version = SharedData.Config.clusterVersion,
+                byoc = SharedData.Config.byoc,
+                noFastEnable = SharedData.Config.noFastEnable,
+                flavor = new
                 {
-                    Utils.PrintResponseMessage(resp);
-                    // Debugger.Break();
-                    SharedData.Logger.LogInfo($"启用成功");
-                    this.IsEnabled = true;
-                },
-                new
-                {
-                    host = SharedData.Config.HOST,
-                    port = SharedData.Config.PORT,
-                    version = SharedData.Config.clusterVersion,
-                    byoc = SharedData.Config.byoc,
-                    noFastEnable = SharedData.Config.noFastEnable,
-                    flavor = new
-                    {
-                        runtime = Utils.GetRuntime(),
-                        storage = Utils.GetStorageType(this.storage)
-                    }
-                });
+                    runtime = Utils.GetRuntime(),
+                    storage = Utils.GetStorageType(this.storage)
+                }
+            });
         }
 
         public async Task Disable()
         {
-            if (this.IsEnabled)
-                await socket.EmitAsync("disable",
-                (SocketIOResponse resp) =>
-                {
-                    Utils.PrintResponseMessage(resp);
-                    SharedData.Logger.LogInfo($"禁用成功");
-                    this.IsEnabled = false;
-                });
+            if (!this.IsEnabled)
+            {
+                SharedData.Logger.LogWarn($"试图在节点禁用时调用 {Disable}");
+                return;
+            }
+            await socket.EmitAsync("disable", (SocketIOResponse resp) =>
+            {
+                Utils.PrintResponseMessage(resp);
+                SharedData.Logger.LogInfo($"禁用成功");
+                this.IsEnabled = false;
+            });
         }
 
         public async Task KeepAlive()
         {
-            if (!this.IsEnabled) return;
+            if (!this.IsEnabled)
+            {
+                SharedData.Logger.LogWarn($"试图在节点禁用时调用 {KeepAlive}");
+                return;
+            }
             string time = DateTime.Now.ToStandardTimeString();
             // socket.Connected.Dump();
             await socket.EmitAsync("keep-alive",
@@ -284,7 +293,12 @@ namespace CSharpOpenBMCLAPI.Modules
                         {
                             count++;
                         }
-                        VerifyFile(hash, size, SharedData.Config.startupCheckMode);
+                        bool valid = VerifyFile(hash, size, SharedData.Config.startupCheckMode);
+                        if (!valid)
+                        {
+                            SharedData.Logger.LogWarn($"文件 {path} 损坏！期望哈希值为 {hash}");
+                            await DownloadFile(hash, path, true);
+                        }
                         SharedData.Logger.LogInfoNoNewLine($"\r{count}/{files.Length}");
                     }
                 }
@@ -314,10 +328,10 @@ namespace CSharpOpenBMCLAPI.Modules
             }
         }
 
-        private async Task DownloadFile(string hash, string path)
+        private async Task DownloadFile(string hash, string path, bool force = false)
         {
             string filePath = Path.Combine(SharedData.Config.cacheDirectory, Utils.HashToFileName(hash));
-            if (File.Exists(filePath))
+            if (File.Exists(filePath) && !force)
             {
                 return;
             }

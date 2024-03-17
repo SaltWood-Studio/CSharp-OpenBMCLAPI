@@ -13,10 +13,10 @@ namespace CSharpOpenBMCLAPI
         {
             lock (this)
             {
-                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.ForegroundColor = ConsoleColor.White;
                 Console.Write("\r");
                 Console.WriteLine(string.Join(" ", args));
-                Console.ForegroundColor = ConsoleColor.White;
+                Console.ForegroundColor = ConsoleColor.Gray;
             }
         }
 
@@ -36,7 +36,7 @@ namespace CSharpOpenBMCLAPI
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.Write("\r");
                 Console.WriteLine(string.Join(" ", args));
-                Console.ForegroundColor = ConsoleColor.White;
+                Console.ForegroundColor = ConsoleColor.Gray;
             }
         }
 
@@ -47,7 +47,7 @@ namespace CSharpOpenBMCLAPI
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.Write("\r");
                 Console.WriteLine(string.Join(" ", args));
-                Console.ForegroundColor = ConsoleColor.White;
+                Console.ForegroundColor = ConsoleColor.Gray;
             }
         }
 
@@ -55,10 +55,10 @@ namespace CSharpOpenBMCLAPI
         {
             lock (this)
             {
-                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.ForegroundColor = ConsoleColor.White;
                 Console.Write("\r");
                 Console.Write(string.Join(" ", args));
-                Console.ForegroundColor = ConsoleColor.White;
+                Console.ForegroundColor = ConsoleColor.Gray;
             }
         }
 
@@ -78,7 +78,7 @@ namespace CSharpOpenBMCLAPI
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.Write("\r");
                 Console.Write(string.Join(" ", args));
-                Console.ForegroundColor = ConsoleColor.White;
+                Console.ForegroundColor = ConsoleColor.Gray;
             }
         }
 
@@ -89,7 +89,7 @@ namespace CSharpOpenBMCLAPI
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.Write("\r");
                 Console.Write(string.Join(" ", args));
-                Console.ForegroundColor = ConsoleColor.White;
+                Console.ForegroundColor = ConsoleColor.Gray;
             }
         }
     }
