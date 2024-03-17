@@ -29,7 +29,5 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
         public void GarbageCollect(IEnumerable<ApiFileInfo> files);
 
         public Task<FileAccessInfo> Express(string hashPath, HttpContext context);
-
-        public Task<FileAccessInfo> Express(string hashPath, HttpContext context, (int from, int to) range);
     }
 }
