@@ -91,9 +91,10 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
 
         public async Task<FileAccessInfo> Express(string hashPath, HttpContext context)
         {
-            await context.Response.SendFileAsync(hashPath);
+            string filePath = Path.Combine(SharedData.Config.cacheDirectory, hashPath);
+            await context.Response.SendFileAsync(filePath);
 
-            FileInfo fileInfo = new FileInfo(hashPath);
+            FileInfo fileInfo = new FileInfo(filePath);
 
             return new FileAccessInfo()
             {
