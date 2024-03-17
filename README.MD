@@ -27,6 +27,8 @@
 
 如果你想加入 OpenBMCLAPI，可以寻找 [bangbang93](https://github.com/bangbang93) 索取 `CLUSTER_ID` 和 `CLUSTER_SECRET`
 
+**注：目前请不要将此程序用作生产环境！此程序未对内存占用进行优化，在高负载的情况下能够跑到 8GB 甚至将内存吃光！**
+
 # 特性
 
 - 能够正常跑起来
