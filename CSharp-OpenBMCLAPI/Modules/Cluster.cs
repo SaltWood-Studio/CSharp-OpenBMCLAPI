@@ -35,6 +35,7 @@ namespace CSharpOpenBMCLAPI.Modules
         protected IStorage storage;
         protected AccessCounter counter;
         public CancellationTokenSource cancellationSrc = new CancellationTokenSource();
+        public WebApplication? application = null;
         //List<Task> tasks = new List<Task>();
 
         public Cluster(ClusterInfo info, TokenManager token) : base()
@@ -91,11 +92,10 @@ namespace CSharpOpenBMCLAPI.Modules
             await GetConfiguration();
             // 检查文件
             await CheckFiles();
-
+            SharedData.Logger.LogInfo();
             Connect();
 
             await RequestCertification();
-            //t.Start();
 
             InitializeService();
 
@@ -130,16 +130,16 @@ namespace CSharpOpenBMCLAPI.Modules
                     listenOptions.UseHttps(cert);
                 });
             });
-            var app = builder.Build();
+            application = builder.Build();
             var path = $"{SharedData.Config.clusterFileDirectory}cache";
-            app.UseStaticFiles();
-            app.MapGet("/download/{hash}", async (context) =>
+            application.UseStaticFiles();
+            application.MapGet("/download/{hash}", async (context) =>
             {
                 FileAccessInfo fai = await HttpServerUtils.DownloadHash(context, this.storage);
                 this.counter.Add(fai);
             });
-            app.MapGet("/measure/{size}", (context) => HttpServerUtils.Measure(context));
-            Task task = app.RunAsync();
+            application.MapGet("/measure/{size}", (context) => HttpServerUtils.Measure(context));
+            Task task = application.RunAsync();
             Utils.tasks.Add(Task.Run(async () =>
             {
                 Thread.Sleep(1000);

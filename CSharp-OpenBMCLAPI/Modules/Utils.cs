@@ -49,6 +49,7 @@ namespace CSharpOpenBMCLAPI.Modules
             await cluster.KeepAlive();
             Thread.Sleep(1000);
             await cluster.Disable();
+            await cluster.application.ThrowIfNull().StopAsync();
             cluster.Stop();
         }
 
