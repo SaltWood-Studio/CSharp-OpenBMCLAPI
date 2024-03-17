@@ -258,6 +258,7 @@ namespace CSharpOpenBMCLAPI.Modules
             byte[] bytes = await resp.Content.ReadAsByteArrayAsync();
             var decompressor = new Decompressor();
             bytes = decompressor.Unwrap(bytes).ToArray();
+            decompressor.Dispose();
 
             Schema schema = Schema.Parse(avroString);
             var decoder = new BinaryDecoder(new MemoryStream(bytes));

@@ -22,17 +22,6 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
             return File.Exists(Path.Combine(CacheDirectory, path));
         }
 
-        public async Task<FileAccessInfo> Express(string hashPath, HttpContext context)
-        {
-            byte[] buffer = ReadFile(hashPath);
-            await context.Response.BodyWriter.WriteAsync(buffer);
-            return new FileAccessInfo()
-            {
-                hits = 1,
-                bytes = buffer.LongLength
-            };
-        }
-
         public void GarbageCollect(IEnumerable<ApiFileInfo> files)
         {
             Queue<DirectoryInfo> queue = new Queue<DirectoryInfo>();
@@ -100,20 +89,16 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
             return file;
         }
 
-        public async Task<FileAccessInfo> Express(string hashPath, HttpContext context, (int from, int to) range)
+        public async Task<FileAccessInfo> Express(string hashPath, HttpContext context)
         {
-            using Stream stream = ReadFileStream(hashPath);
-            stream.Position = range.from;
+            await context.Response.SendFileAsync(hashPath);
 
-            byte[] buffer = new byte[range.to - range.from + 1];
-            stream.Read(buffer);
+            FileInfo fileInfo = new FileInfo(hashPath);
 
-            await context.Response.BodyWriter.WriteAsync(buffer);
-            context.Response.BodyWriter.Complete();
             return new FileAccessInfo()
             {
                 hits = 1,
-                bytes = buffer.LongLength
+                bytes = fileInfo.Length
             };
         }
     }
