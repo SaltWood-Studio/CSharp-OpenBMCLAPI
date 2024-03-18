@@ -208,7 +208,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             if (!this.IsEnabled)
             {
-                SharedData.Logger.LogWarn($"试图在节点禁用时调用 {Disable}");
+                SharedData.Logger.LogWarn($"试图在节点禁用时调用 Disable");
                 return;
             }
             await socket.EmitAsync("disable", (SocketIOResponse resp) =>
@@ -223,7 +223,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             if (!this.IsEnabled)
             {
-                SharedData.Logger.LogWarn($"试图在节点禁用时调用 {KeepAlive}");
+                SharedData.Logger.LogWarn($"试图在节点禁用时调用 KeepAlive");
                 return;
             }
             string time = DateTime.Now.ToStandardTimeString();
@@ -276,6 +276,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 GenericRecord? record = obj as GenericRecord;
                 if (record != null)
                 {
+                    // TODO: 把 path hash size 全都包装到一个列表，不用了直接设为 null 销毁
                     object t;
                     record.TryGetValue("path", out t);
                     string path = t.ToString().ThrowIfNull();
