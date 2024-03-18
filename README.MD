@@ -27,11 +27,10 @@
 
 如果你想加入 OpenBMCLAPI，可以寻找 [bangbang93](https://github.com/bangbang93) 索取 `CLUSTER_ID` 和 `CLUSTER_SECRET`
 
-**注：目前请不要将此程序用作生产环境！此程序未对内存占用进行优化，在高负载的情况下能够跑到 8GB 甚至将内存吃光！**
-
 # 特性
 
 - 能够正常跑起来
+- 低内存占用（约 150MB）
 - 支持多实例运行，适合带宽大于限制的富哥（
 
 # 使用
@@ -71,6 +70,10 @@
 |--|-------|---|
 | 名称 | **兼容版本号** | **fix 版本号** | **本体版本号** |
 | 说明 | 表示该版本等效于 [OpenBMCLAPI](https://github.com/bangbang93/openbmclapi) 的哪个版本 | 表示在这个兼容版本号下第几个 Release，通常发生在 OpenBMCLAPI 没有更新但本仓库发现有 bug 并发布 Release 的情况下 |
+
+## 你知道吗
+
+- 本仓库只经历了 3 个 commit，就实现了内存占用从 2GB 到 150MB 的突破，瞬间从劣势变成优势！
 
 # 鸣谢
 
