@@ -25,7 +25,7 @@ namespace CSharpOpenBMCLAPI.Modules
 {
 
     /// <summary>
-    /// Cluster 示例，进行最基本的节点服务
+    /// Cluster 实例，进行最基本的节点服务
     /// </summary>
     public class Cluster : RunnableBase
     {
@@ -42,6 +42,12 @@ namespace CSharpOpenBMCLAPI.Modules
         public WebApplication? application = null;
         //List<Task> tasks = new List<Task>();
 
+        /// <summary>
+        /// 构造函数，实际上 <seealso cref="Exception"/> 根本不可能被抛出
+        /// </summary>
+        /// <param name="info"></param>
+        /// <param name="token"></param>
+        /// <exception cref="Exception"></exception>
         public Cluster(ClusterInfo info, TokenManager token) : base()
         {
             this.clusterInfo = info;
@@ -63,6 +69,9 @@ namespace CSharpOpenBMCLAPI.Modules
             }
         }
 
+        /// <summary>
+        /// 初始化连接到主控用的 Socket
+        /// </summary>
         protected void InitializeSocket()
         {
             this.socket = new(HttpRequest.client.BaseAddress?.ToString(), new SocketIOOptions()
@@ -75,8 +84,17 @@ namespace CSharpOpenBMCLAPI.Modules
             });
         }
 
+        /// <summary>
+        /// 用于处理报错信息（其实就是打印出来罢了）
+        /// </summary>
+        /// <param name="resp"></param>
         public void HandleError(SocketIOResponse resp) => Utils.PrintResponseMessage(resp);
 
+        /// <summary>
+        /// 重写 <seealso cref="RunnableBase.Run(string[])"/>，Cluster 实例启动（调用 <seealso cref="RunnableBase.Start()"/> 方法时调用）
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns></returns>
         protected override int Run(string[] args)
         {
             // 工作进程启动
@@ -86,6 +104,11 @@ namespace CSharpOpenBMCLAPI.Modules
             return task.Result;
         }
 
+        /// <summary>
+        /// 套了一层，真正运行 Cluster 时的代码部分在这里
+        /// 就是加了 <seealso cref="async"/> 而已，方便运行方法
+        /// </summary>
+        /// <returns></returns>
         protected async Task<int> AsyncRun()
         {
             int returns = 0;
@@ -120,6 +143,9 @@ namespace CSharpOpenBMCLAPI.Modules
             return returns;
         }
 
+        /// <summary>
+        /// 加载证书、注册路由、启动 HTTPS 服务的部分
+        /// </summary>
         private void InitializeService()
         {
             var builder = WebApplication.CreateBuilder();
@@ -151,6 +177,12 @@ namespace CSharpOpenBMCLAPI.Modules
             }));
         }
 
+        /// <summary>
+        /// 顾名思义，把 PEM 证书转换成 PFX 证书，不然 Kestrel 加载不报错但关闭连接不能用
+        /// </summary>
+        /// <returns>
+        /// 转换完成的 PFX 证书
+        /// </returns>
         protected X509Certificate2 LoadAndConvertCert()
         {
             X509Certificate2 cert = X509Certificate2.CreateFromPemFile($"{SharedData.Config.clusterFileDirectory}certifications/cert.pem",
@@ -166,6 +198,9 @@ namespace CSharpOpenBMCLAPI.Modules
             return cert;
         }
 
+        /// <summary>
+        /// 连接 Socket、注册指令处理部分
+        /// </summary>
         public void Connect()
         {
             this.socket.ConnectAsync().Wait();
@@ -180,6 +215,10 @@ namespace CSharpOpenBMCLAPI.Modules
             });
         }
 
+        /// <summary>
+        /// 启用节点，向主控发送 enable 包
+        /// </summary>
+        /// <returns></returns>
         public async Task Enable()
         {
             if (socket.Connected && IsEnabled)
@@ -208,6 +247,11 @@ namespace CSharpOpenBMCLAPI.Modules
             });
         }
 
+
+        /// <summary>
+        /// 禁用节点，向主控发送 disable 包
+        /// </summary>
+        /// <returns></returns>
         public async Task Disable()
         {
             if (!this.IsEnabled)
@@ -223,6 +267,10 @@ namespace CSharpOpenBMCLAPI.Modules
             });
         }
 
+        /// <summary>
+        /// 保活，让主控知道节点没死。一般 25 秒调用一次
+        /// </summary>
+        /// <returns></returns>
         public async Task KeepAlive()
         {
             if (!this.IsEnabled)
@@ -247,13 +295,20 @@ namespace CSharpOpenBMCLAPI.Modules
                 });
         }
 
+        /// <summary>
+        /// 获取 Configuration，对于 C# 版本的节点端没啥用
+        /// </summary>
+        /// <returns></returns>
         public async Task GetConfiguration()
         {
             var resp = await this.client.GetAsync("openbmclapi/configuration");
             var content = await resp.Content.ReadAsStringAsync();
         }
 
-
+        /// <summary>
+        /// 获取文件列表、检查文件、下载文件部分
+        /// </summary>
+        /// <returns></returns>
         protected async Task CheckFiles()
         {
             const string avroString = @"{""type"": ""array"",""items"": {""type"": ""record"",""name"": ""fileinfo"",""fields"": [{""name"": ""path"", ""type"": ""string""},{""name"": ""hash"", ""type"": ""string""},{""name"": ""size"", ""type"": ""long""}]}}";
@@ -313,6 +368,13 @@ namespace CSharpOpenBMCLAPI.Modules
             });
         }
 
+        /// <summary>
+        /// 验证文件，有多种验证方式，取决于枚举值 <seealso cref="FileVerificationMode"/>
+        /// </summary>
+        /// <param name="hash"></param>
+        /// <param name="size"></param>
+        /// <param name="mode"></param>
+        /// <returns></returns>
         protected bool VerifyFile(string hash, long size, FileVerificationMode mode)
         {
             string path = Path.Combine(SharedData.Config.cacheDirectory, Utils.HashToFileName(hash));
@@ -336,6 +398,13 @@ namespace CSharpOpenBMCLAPI.Modules
             }
         }
 
+        /// <summary>
+        /// 根据哈希值下载文件
+        /// </summary>
+        /// <param name="hash"></param>
+        /// <param name="path"></param>
+        /// <param name="force"></param>
+        /// <returns></returns>
         private async Task DownloadFile(string hash, string path, bool force = false)
         {
             string filePath = Path.Combine(SharedData.Config.cacheDirectory, Utils.HashToFileName(hash));
@@ -353,6 +422,10 @@ namespace CSharpOpenBMCLAPI.Modules
             SharedData.Logger.LogInfo($"文件 {path} 下载成功");
         }
 
+        /// <summary>
+        /// 请求证书
+        /// </summary>
+        /// <returns></returns>
         public async Task RequestCertification()
         {
             await socket.EmitAsync("request-cert", (SocketIOResponse resp) =>
