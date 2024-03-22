@@ -23,6 +23,10 @@ using ZstdSharp;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
+
+    /// <summary>
+    /// Cluster 示例，进行最基本的节点服务
+    /// </summary>
     public class Cluster : RunnableBase
     {
         private ClusterInfo clusterInfo;
@@ -276,7 +280,6 @@ namespace CSharpOpenBMCLAPI.Modules
                 GenericRecord? record = obj as GenericRecord;
                 if (record != null)
                 {
-                    // TODO: 把 path hash size 全都包装到一个列表，不用了直接设为 null 销毁
                     object t;
                     record.TryGetValue("path", out t);
                     string path = t.ToString().ThrowIfNull();
@@ -300,6 +303,12 @@ namespace CSharpOpenBMCLAPI.Modules
                         }
                         SharedData.Logger.LogInfoNoNewLine($"\r{count}/{files.Length}");
                     }
+
+                    // 销毁值
+                    t = null!;
+                    path = null!;
+                    hash = null!;
+                    size = default;
                 }
             });
         }
