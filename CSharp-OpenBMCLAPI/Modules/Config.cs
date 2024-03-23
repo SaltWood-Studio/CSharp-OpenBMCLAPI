@@ -15,6 +15,11 @@ namespace CSharpOpenBMCLAPI.Modules
         // 3: Hash（完整计算哈希，时间长，推荐不常重启或是分片节点使用）
         public FileVerificationMode startupCheckMode;
 
+        // 跳过启动前检查
+        // 这会导致无法发现文件错误，但是能够将内存占用压缩到约正常情况下的 30%！
+        // 当此项启用时，"startupCheckMode"无效
+        public bool skipStartupCheck;
+
         // 指示 token 应当在距离其失效前的多少毫秒进行刷新
         public int refreshTokenTime;
         // 指示应该将要服务的文件放在哪里（服务路径）
@@ -40,6 +45,7 @@ namespace CSharpOpenBMCLAPI.Modules
         public Config()
         {
             this.startupCheckMode = FileVerificationMode.SizeOnly;
+            this.skipStartupCheck = false;
 
             this.refreshTokenTime = 1800000;
             this.clusterFileDirectory = "./";
