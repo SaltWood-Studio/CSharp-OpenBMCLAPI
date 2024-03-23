@@ -1,4 +1,6 @@
 ﻿using log4net.Plugin;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -75,5 +77,22 @@ namespace CSharpOpenBMCLAPI.Modules.Plugin
                     break;
             }
         }
+
+        /*
+        public void TriggerClientEvent(HttpContext sender, ClientEventType eventType)
+        {
+            switch (eventType)
+            {
+                case ClientEventType.ClientDownload:
+                    events.ForEach(p => p.);
+                    break;
+                case ClientEventType.ClientMeasure:
+                    events.ForEach(p => p.OnProgramStopped());
+                    break;
+                case ClientEventType.ClientOtherRequest:
+                    events.ForEach(p => p.OnClusterStarted(senderCluster));
+                    break;
+            }
+        }*/
     }
 }

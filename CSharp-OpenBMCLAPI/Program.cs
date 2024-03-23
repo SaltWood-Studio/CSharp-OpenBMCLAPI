@@ -51,7 +51,11 @@ namespace CSharpOpenBMCLAPI
                         {
                             if (parent == typeof(PluginBase))
                             {
-                                SharedData.PluginManager.RegisterPlugin(type);
+                                PluginAttribute? attr = type.GetCustomAttribute<PluginAttribute>();
+                                if (attr == null || !attr.Hidden)
+                                {
+                                    SharedData.PluginManager.RegisterPlugin(type);
+                                }
                                 break;
                             }
                             parent = parent.BaseType;
