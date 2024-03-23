@@ -9,7 +9,8 @@ namespace CSharpOpenBMCLAPI.Modules
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="item"></param>
-        /// <returns></returns>
+        /// <returns>当输入值不为 <seealso cref="null"/> 时，返回输入值；当输入值为 <seealso cref="null"/> 时触发 <seealso cref="ArgumentNullException"/></returns>
+        /// <exception cref="ArgumentException"></exception>
         public static T ThrowIfNull<T>(this T? item)
         {
             ArgumentNullException.ThrowIfNull(item, nameof(item));

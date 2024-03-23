@@ -1,6 +1,7 @@
 ﻿using Avro;
 using Avro.Generic;
 using Avro.IO;
+using CSharpOpenBMCLAPI.Modules.Plugin;
 using CSharpOpenBMCLAPI.Modules.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using SocketIOClient;
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -97,10 +99,12 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         protected override int Run(string[] args)
         {
+            SharedData.PluginManager.TriggerEvent(this, ProgramEventType.ClusterStarted);
             // 工作进程启动
             SharedData.Logger.LogInfo($"工作进程 {guid} 已启动");
             Task<int> task = AsyncRun();
             task.Wait();
+            SharedData.PluginManager.TriggerEvent(this, ProgramEventType.ClusterStopped);
             return task.Result;
         }
 

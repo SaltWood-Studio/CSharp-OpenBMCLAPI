@@ -1,4 +1,5 @@
 ﻿using CSharpOpenBMCLAPI.Modules;
+using CSharpOpenBMCLAPI.Modules.Plugin;
 using Newtonsoft.Json;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -13,6 +14,8 @@ namespace CSharpOpenBMCLAPI
         static void Main(string[] args)
         {
             SharedData.Logger.LogInfo($"Starting CSharp-OpenBMCLAPI v{SharedData.Config.clusterVersion}");
+            SharedData.Logger.LogInfo("高性能、低メモリ占有！");
+            SharedData.Logger.LogInfo($"运行时环境：{Utils.GetRuntime()}");
             Program program = new Program();
             program.Start();
             program.WaitForStop();
@@ -21,9 +24,45 @@ namespace CSharpOpenBMCLAPI
         protected override int Run(string[] args)
         {
             SharedData.Config = GetConfig();
+            LoadPlugins();
+            SharedData.PluginManager.TriggerEvent(this, ProgramEventType.ProgramStarted);
             Task<int> task = AsyncRun(args);
             task.Wait();
+            SharedData.PluginManager.TriggerEvent(this, ProgramEventType.ProgramStopped);
             return task.Result;
+        }
+
+        protected void LoadPlugins()
+        {
+            string path = Path.Combine(SharedData.Config.clusterFileDirectory, "plugins");
+
+            Directory.CreateDirectory(path);
+
+            foreach (var file in Directory.GetFiles(path))
+            {
+                if (!file.EndsWith(".dll")) continue;
+                try
+                {
+                    Assembly assembly = Assembly.LoadFrom(file);
+                    foreach (var type in assembly.GetTypes())
+                    {
+                        Type? parent = type;
+                        while (parent != null)
+                        {
+                            if (parent == typeof(PluginBase))
+                            {
+                                SharedData.PluginManager.RegisterPlugin(type);
+                                break;
+                            }
+                            parent = parent.BaseType;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SharedData.Logger.LogError($"跳过加载插件 {Path.Combine(file)}。加载插件时出现未知错误。\n", Utils.ExceptionToDetail(ex));
+                }
+            }
         }
 
         protected Config GetConfig()
@@ -106,8 +145,8 @@ namespace CSharpOpenBMCLAPI
 
             SharedData.Token = token;
 
-            SharedData.Logger.LogInfo($"成功创建 Cluster 实例");
             Cluster cluster = new(info, token);
+            SharedData.Logger.LogInfo($"成功创建 Cluster 实例");
             AppDomain.CurrentDomain.ProcessExit += async (sender, e) => await Utils.ExitCluster(cluster);
             cluster.Start();
             cluster.WaitForStop();
