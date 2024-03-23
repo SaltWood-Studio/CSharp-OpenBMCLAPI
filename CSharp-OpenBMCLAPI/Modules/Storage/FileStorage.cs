@@ -20,9 +20,9 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
             this.workingDirectory = workingDirectory;
         }
 
-        public bool Exists(string path)
+        public bool Exists(string hashPath)
         {
-            return File.Exists(Path.Combine(CacheDirectory, path));
+            return File.Exists(GetAbsolutePath(hashPath));
         }
 
         public void GarbageCollect(IEnumerable<ApiFileInfo> files)
@@ -35,7 +35,7 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
             {
                 DirectoryInfo directoryInfo = queue.Dequeue();
 
-                foreach (DirectoryInfo info in  directoryInfo.EnumerateDirectories())
+                foreach (DirectoryInfo info in directoryInfo.EnumerateDirectories())
                 {
                     queue.Enqueue(info);
                 }
@@ -61,7 +61,7 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
             List<ApiFileInfo> result = new List<ApiFileInfo>();
             foreach (ApiFileInfo file in files)
             {
-                if (!File.Exists(Path.Combine(this.CacheDirectory, file.path)))
+                if (!File.Exists(GetAbsolutePath(Utils.HashToFileName(file.hash))))
                 {
                     result.Add(file);
                 }
@@ -74,27 +74,28 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
             SharedData.Logger.LogInfo($"存储池类型 <{typeof(FileStorage).FullName}> 初始化完毕！");
         }
 
-        public void WriteFile(string path, byte[] buffer)
+        public void WriteFile(string hashPath, byte[] buffer)
         {
-            using var file = File.Create(Path.Combine(this.CacheDirectory, path));
+            Directory.CreateDirectory(GetAbsolutePath(Path.GetDirectoryName(hashPath).ThrowIfNull()));
+            using var file = File.Create(GetAbsolutePath(hashPath));
             file.Write(buffer);
         }
 
-        public byte[] ReadFile(string path)
+        public byte[] ReadFile(string hashPath)
         {
-            var file = File.ReadAllBytes(GetAbsolutePath(path));
+            var file = File.ReadAllBytes(GetAbsolutePath(hashPath));
             return file;
         }
 
-        public Stream ReadFileStream(string path)
+        public Stream ReadFileStream(string hashPath)
         {
-            var file = File.OpenRead(GetAbsolutePath(path));
+            var file = File.OpenRead(GetAbsolutePath(hashPath));
             return file;
         }
 
         public async Task<FileAccessInfo> Express(string hashPath, HttpContext context)
         {
-            string filePath = Path.Combine(SharedData.Config.cacheDirectory, hashPath);
+            string filePath = GetAbsolutePath(hashPath);
             await context.Response.SendFileAsync(filePath);
 
             FileInfo fileInfo = new FileInfo(filePath);
@@ -104,6 +105,12 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
                 hits = 1,
                 bytes = fileInfo.Length
             };
+        }
+
+        public long GetFileSize(string hashPath)
+        {
+            FileInfo info = new FileInfo(GetAbsolutePath(hashPath));
+            return info.Length;
         }
     }
 }

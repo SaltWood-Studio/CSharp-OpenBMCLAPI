@@ -381,21 +381,20 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         protected bool VerifyFile(string hash, long size, FileVerificationMode mode)
         {
-            string path = Path.Combine(SharedData.Config.cacheDirectory, Utils.HashToFileName(hash));
+            string path = Utils.HashToFileName(hash);
 
             switch (mode)
             {
                 case FileVerificationMode.None:
                     return true;
                 case FileVerificationMode.Exists:
-                    return File.Exists(path);
+                    return this.storage.Exists(path);
                 case FileVerificationMode.SizeOnly:
                     if (!VerifyFile(hash, size, FileVerificationMode.Exists)) return false;
-                    FileInfo fileInfo = new FileInfo(path);
-                    return fileInfo.Length == size;
+                    return size == this.storage.GetFileSize(path);
                 case FileVerificationMode.Hash:
                     if (!VerifyFile(hash, size, FileVerificationMode.SizeOnly)) return false;
-                    var file = File.ReadAllBytes(path);
+                    var file = this.storage.ReadFile(path);
                     return Utils.ValidateFile(file, hash);
                 default:
                     return true;
@@ -411,18 +410,15 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         private async Task DownloadFile(string hash, string path, bool force = false)
         {
-            string filePath = Path.Combine(SharedData.Config.cacheDirectory, Utils.HashToFileName(hash));
-            if (File.Exists(filePath) && !force)
+            string filePath = Utils.HashToFileName(hash);
+            if (this.storage.Exists(filePath) && !force)
             {
                 return;
             }
 
             var resp = await this.client.GetAsync($"openbmclapi/download/{hash}");
 
-            using (var file = File.Create(filePath))
-            {
-                file.Write(await resp.Content.ReadAsByteArrayAsync());
-            }
+            this.storage.WriteFile(Utils.HashToFileName(hash), await resp.Content.ReadAsByteArrayAsync());
             SharedData.Logger.LogInfo($"文件 {path} 下载成功");
         }
 

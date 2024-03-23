@@ -23,30 +23,30 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
         /// <summary>
         /// 写文件，将文件写入到存储
         /// </summary>
-        /// <param name="path"></param>
+        /// <param name="hashPath"></param>
         /// <param name="buffer"></param>
-        public void WriteFile(string path, byte[] buffer);
+        public void WriteFile(string hashPath, byte[] buffer);
 
         /// <summary>
         /// 读文件，将文件从存储读取并返回
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public byte[] ReadFile(string path);
+        public byte[] ReadFile(string hashPath);
 
         /// <summary>
         /// 读文件，但是返回一个 Stream
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public Stream ReadFileStream(string path);
+        public Stream ReadFileStream(string hashPath);
 
         /// <summary>
         /// 检查文件是否存在
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public bool Exists(string path);
+        public bool Exists(string hashPath);
 
         /// <summary>
         /// 获取绝对路径
@@ -75,5 +75,7 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
         /// <param name="context"></param>
         /// <returns></returns>
         public Task<FileAccessInfo> Express(string hashPath, HttpContext context);
+
+        public long GetFileSize(string hashPath);
     }
 }
