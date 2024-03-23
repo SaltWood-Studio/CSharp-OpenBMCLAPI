@@ -3,6 +3,9 @@ using System.ComponentModel;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
+    /// <summary>
+    /// 配置文件类
+    /// </summary>
     public class Config
     {
         // 集群启动时的文件检查模式

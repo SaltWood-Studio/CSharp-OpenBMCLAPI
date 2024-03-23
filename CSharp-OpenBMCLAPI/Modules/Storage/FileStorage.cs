@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace CSharpOpenBMCLAPI.Modules.Storage
 {
+    /// <summary>
+    /// 文件存储类，实现 <seealso cref="IStorage"/>
+    /// </summary>
     public class FileStorage : IStorage
     {
         protected string workingDirectory;

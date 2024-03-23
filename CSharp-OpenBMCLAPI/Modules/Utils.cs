@@ -14,12 +14,20 @@ namespace CSharpOpenBMCLAPI.Modules
 {
     public static class Utils
     {
+        /// <summary>
+        /// 打印 <seealso cref="SocketIOClient.SocketIOResponse"/> 包含的数据
+        /// </summary>
+        /// <param name="resp"></param>
         public static void PrintResponseMessage(SocketIOResponse resp)
         {
             JsonElement element = resp.GetValue<JsonElement>();
             PrintJsonElement(element);
         }
 
+        /// <summary>
+        /// 打印 <seealso cref="JsonElement"/> 中的内容，用于 <seealso cref="PrintResponseMessage(SocketIOResponse)"/> 遍历打印数据
+        /// </summary>
+        /// <param name="element"></param>
         public static void PrintJsonElement(JsonElement element)
         {
             if (element.ValueKind == JsonValueKind.Null) return;
@@ -42,6 +50,11 @@ namespace CSharpOpenBMCLAPI.Modules
             }
         }
 
+        /// <summary>
+        /// 关闭节点
+        /// </summary>
+        /// <param name="cluster"></param>
+        /// <returns></returns>
         public static async Task ExitCluster(Cluster cluster)
         {
             cluster.cancellationSrc.Cancel();
@@ -53,12 +66,21 @@ namespace CSharpOpenBMCLAPI.Modules
             cluster.Stop();
         }
 
+        /// <summary>
+        /// 获取运行时版本
+        /// </summary>
+        /// <returns></returns>
         public static string GetRuntime()
         {
             var version = Environment.Version;
             return $"CSharp/v{version}";
         }
 
+        /// <summary>
+        /// 获取文件存储类型
+        /// </summary>
+        /// <param name="storage"></param>
+        /// <returns></returns>
         public static string GetStorageType(IStorage storage)
         {
             Type type = storage.GetType();
@@ -68,27 +90,41 @@ namespace CSharpOpenBMCLAPI.Modules
                 return "file";
         }
 
-        public static string GetLength(long lengthOfDocument)
+        /// <summary>
+        /// 将以 <seealso cref="long"/> 值存储的 bytes 数据输出为可读的字符串
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        public static string GetLength(long bytes)
         {
 
-            if (lengthOfDocument < 1024)
-                return $"{string.Format("{0:F2}", (lengthOfDocument))} B";
-            else if (lengthOfDocument > 1024 && lengthOfDocument <= Math.Pow(1024, 2))
-                return $"{string.Format("{0:F2}", (lengthOfDocument / 1024.0))} KB";
-            else if (lengthOfDocument > Math.Pow(1024, 2) && lengthOfDocument <= Math.Pow(1024, 3))
-                return $"{string.Format("{0:F2}", (lengthOfDocument / 1024.0 / 1024.0))} MB";
-            else if (lengthOfDocument > Math.Pow(1024, 3) && lengthOfDocument <= Math.Pow(1024, 4))
-                return $"{string.Format("{0:F2}", (lengthOfDocument / 1024.0 / 1024.0 / 1024.0))} GB";
-            else if (lengthOfDocument > Math.Pow(1024, 4) && lengthOfDocument <= Math.Pow(1024, 5))
-                return $"{string.Format("{0:F2}", (lengthOfDocument / 1024.0 / 1024.0 / 1024.0 / 1024.0))} TB";
+            if (bytes < 1024)
+                return $"{string.Format("{0:F2}", (bytes))} B";
+            else if (bytes > 1024 && bytes <= Math.Pow(1024, 2))
+                return $"{string.Format("{0:F2}", (bytes / 1024.0))} KB";
+            else if (bytes > Math.Pow(1024, 2) && bytes <= Math.Pow(1024, 3))
+                return $"{string.Format("{0:F2}", (bytes / 1024.0 / 1024.0))} MB";
+            else if (bytes > Math.Pow(1024, 3) && bytes <= Math.Pow(1024, 4))
+                return $"{string.Format("{0:F2}", (bytes / 1024.0 / 1024.0 / 1024.0))} GB";
+            else if (bytes > Math.Pow(1024, 4) && bytes <= Math.Pow(1024, 5))
+                return $"{string.Format("{0:F2}", (bytes / 1024.0 / 1024.0 / 1024.0 / 1024.0))} TB";
             else
-                return lengthOfDocument.ToString();
+                return bytes.ToString();
         }
 
+        /// <summary>
+        /// 从哈希值获取文件名
+        /// </summary>
+        /// <param name="hash"></param>
+        /// <returns></returns>
         public static string HashToFileName(string hash) => $"{hash[0..2]}/{hash}";
 
-        public static List<Task> tasks = new List<Task>();
-
+        /// <summary>
+        /// 检验文件
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="hash"></param>
+        /// <returns></returns>
         public static bool ValidateFile(byte[] buffer, string hash)
         {
             string checkSum;
@@ -104,6 +140,13 @@ namespace CSharpOpenBMCLAPI.Modules
             return checkSum == hash;
         }
 
+        /// <summary>
+        /// 检验文件并输出哈希值
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="hash"></param>
+        /// <param name="realHash"></param>
+        /// <returns></returns>
         public static bool ValidateFile(byte[] buffer, string hash, out string realHash)
         {
             string checkSum;
@@ -120,6 +163,11 @@ namespace CSharpOpenBMCLAPI.Modules
             return checkSum == hash;
         }
 
+        /// <summary>
+        /// 将 36 进制的数据转换成 10 进制的数据
+        /// </summary>
+        /// <param name="hex"></param>
+        /// <returns></returns>
         static long ToDecimal(string hex)
         {
             Dictionary<char, int> pairs = new();

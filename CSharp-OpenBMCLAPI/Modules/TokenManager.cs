@@ -5,6 +5,9 @@ using System.Text;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
+    /// <summary>
+    /// Token 的载体，负责刷新 Token 等操作
+    /// </summary>
     public class TokenManager
     {
         private readonly string CLUSTER_ID, CLUSTER_SECRET;
@@ -23,6 +26,10 @@ namespace CSharpOpenBMCLAPI.Modules
             this.CLUSTER_SECRET = info.ClusterSecret;
         }
 
+        /// <summary>
+        /// 拉取 Token
+        /// </summary>
+        /// <returns></returns>
         public async Task<Token> FetchToken()
         {
             // 获取公用 client
@@ -65,9 +72,7 @@ namespace CSharpOpenBMCLAPI.Modules
             return token;
         }
 
-        public void RefreshToken()
-        {
-            FetchToken().Wait();
-        }
+
+        public void RefreshToken() => FetchToken().Wait();
     }
 }

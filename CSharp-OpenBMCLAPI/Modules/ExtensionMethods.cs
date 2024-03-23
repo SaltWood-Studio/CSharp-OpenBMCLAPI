@@ -4,6 +4,12 @@ namespace CSharpOpenBMCLAPI.Modules
 {
     public static class ExtensionMethods
     {
+        /// <summary>
+        /// 最便捷的方式，保证 null 值不会被使用
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="item"></param>
+        /// <returns></returns>
         public static T ThrowIfNull<T>(this T? item)
         {
             ArgumentNullException.ThrowIfNull(item, nameof(item));

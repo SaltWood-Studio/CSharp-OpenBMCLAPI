@@ -167,14 +167,14 @@ namespace CSharpOpenBMCLAPI.Modules
             });
             application.MapGet("/measure/{size}", (context) => HttpServerUtils.Measure(context));
             Task task = application.RunAsync();
-            Utils.tasks.Add(Task.Run(async () =>
+            Task.Run(async () =>
             {
                 Thread.Sleep(1000);
                 if (task.IsCompleted || task.IsFaulted || task.IsCanceled)
                 {
                     await this.Disable();
                 }
-            }));
+            });
         }
 
         /// <summary>

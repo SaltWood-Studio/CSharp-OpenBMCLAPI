@@ -9,6 +9,11 @@ namespace CSharpOpenBMCLAPI.Modules
 {
     public class HttpServerUtils
     {
+        /// <summary>
+        /// 测速路由
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public static async Task Measure(HttpContext context)
         {
             var pairs = Utils.GetQueryStrings(context.Request.QueryString.Value);
@@ -39,6 +44,12 @@ namespace CSharpOpenBMCLAPI.Modules
             }
         }
 
+        /// <summary>
+        /// 文件下载路由
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="storage"></param>
+        /// <returns></returns>
         public static async Task<FileAccessInfo> DownloadHash(HttpContext context, IStorage storage)
         {
             FileAccessInfo fai = default;

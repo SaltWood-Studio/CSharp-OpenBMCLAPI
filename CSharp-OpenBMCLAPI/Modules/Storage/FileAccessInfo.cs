@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace CSharpOpenBMCLAPI.Modules.Storage
 {
+    /// <summary>
+    /// 文件访问信息，用于临时承载数据，最终在被 <seealso cref="AccessCounter"/> 使用之后被销毁
+    /// </summary>
     public struct FileAccessInfo
     {
         public long hits;
