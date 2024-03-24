@@ -1,13 +1,10 @@
-﻿<center>
+﻿<div align="center">
 
 ![CSharp-OpenBMCLAPI](https://github.com/SALTWOOD/CSharp-OpenBMCLAPI/assets/105980161/20b4b593-4ab9-445b-8a4b-6e329aa041c2)
 
 # CSharp-OpenBMCLAPI
 🎉 [OpenBMCLAPI](https://github.com/bangbang93/openbmclapi) 的 C# 版本实现 🎉
 
-</center>
-
-<p align="center">
   <a href="https://raw.githubusercontent.com/Mrs4s/go-cqhttp/master/LICENSE">
     <img src="https://img.shields.io/github/license/SALTWOOD/CSharp-OpenBMCLAPI" alt="license">
   </a>
@@ -17,7 +14,7 @@
   <a href="https://github.com/SALTWOOD/CSharp-OpenBMCLAPI/actions">
     <img src="https://github.com/SALTWOOD/CSharp-OpenBMCLAPI/workflows/.NET/badge.svg" alt="action">
   </a>
-</p>
+</div>
 
 > 注：本仓库的代码参照 [OpenBMCLAPI](https://github.com/bangbang93/openbmclapi) 的思路编写，部分特性、Bug 可能部分、甚至完全与 [OpenBMCLAPI](https://github.com/bangbang93/openbmclapi) 撞车。
 
