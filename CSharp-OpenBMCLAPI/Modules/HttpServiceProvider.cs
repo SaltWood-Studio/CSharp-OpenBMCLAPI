@@ -6,11 +6,30 @@ using System.Diagnostics;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using TeraIO.Network.Http;
+using TeraIO.Runnable;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
     public class HttpServiceProvider
     {
+        /// <summary>
+        /// 记录访问日志并且调用指定的 action
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="action"></param>
+        /// <returns></returns>
+        public static Task LogAndRun(HttpContext context, Action action)
+        {
+            action.Invoke();
+            if (!SharedData.Config.disableAccessLog)
+            {
+                StringValues ua;
+                context.Request.Headers.TryGetValue("User-Agent", out ua);
+                SharedData.Logger.LogInfo($"{context.Request.Method} {context.Request.Path} <{context.Response.StatusCode}> - [{context.Connection.RemoteIpAddress}] {ua.FirstOrDefault()}");
+            }
+            return Task.CompletedTask;
+        }
+
         /// <summary>
         /// 测速路由
         /// </summary>
@@ -28,9 +47,6 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 context.Response.StatusCode = 200;
                 byte[] buffer = new byte[1024];
-                StringValues ua;
-                context.Request.Headers.TryGetValue("User-Agent", out ua);
-                SharedData.Logger.LogInfo($"{context.Request.Method} {context.Request.Path} <{context.Response.StatusCode}> - [{context.Connection.RemoteIpAddress}] {ua.FirstOrDefault()}");
                 for (int i = 0; i < Convert.ToInt32(context.Request.Path.Value?.Split('/').LastOrDefault()); i++)
                 {
                     for (int j = 0; j < 1024; j++)
@@ -77,12 +93,6 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 context.Response.StatusCode = 403;
                 await context.Response.WriteAsync($"Access to \"{context.Request.Path}\" has been blocked due to your request timeout or invalidity.");
-            }
-            if (!SharedData.Config.disableAccessLog)
-            {
-                StringValues ua;
-                context.Request.Headers.TryGetValue("User-Agent", out ua);
-                SharedData.Logger.LogInfo($"{context.Request.Method} {context.Request.Path} <{context.Response.StatusCode}> - [{context.Connection.RemoteIpAddress}] {ua.FirstOrDefault()}");
             }
             return fai;
         }

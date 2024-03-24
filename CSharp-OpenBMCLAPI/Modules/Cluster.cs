@@ -127,7 +127,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
             InitializeService();
 
-            //await Enable();
+            await Enable();
 
             SharedData.Logger.LogInfo($"工作进程 {guid} 在 <{SharedData.Config.HOST}:{SharedData.Config.PORT}> 提供服务");
 
@@ -167,13 +167,17 @@ namespace CSharpOpenBMCLAPI.Modules
             application = builder.Build();
             var path = $"{SharedData.Config.clusterFileDirectory}cache";
             // application.UseStaticFiles();
-            application.MapGet("/download/{hash}", async (context) =>
+            application.MapGet("/download/{hash}", (context) => HttpServiceProvider.LogAndRun(context, () =>
             {
-                FileAccessInfo fai = await HttpServiceProvider.DownloadHash(context, this.storage);
+                FileAccessInfo fai = HttpServiceProvider.DownloadHash(context, this.storage).Result;
                 this.counter.Add(fai);
-            });
-            application.MapGet("/measure/{size}", (context) => HttpServiceProvider.Measure(context));
-            application.MapPost("/api/{name}", (HttpContext context, string name) => HttpServiceProvider.Api(context, name, this));
+            }));
+            application.MapGet("/measure/{size}", (context) => HttpServiceProvider.LogAndRun(context,
+                () => HttpServiceProvider.Measure(context).Wait()
+            ));
+            application.MapPost("/api/{name}", (HttpContext context, string name) => HttpServiceProvider.LogAndRun(context,
+                () => HttpServiceProvider.Api(context, name, this).Wait()
+            ));
             Task task = application.RunAsync();
             Task.Run(async () =>
             {
