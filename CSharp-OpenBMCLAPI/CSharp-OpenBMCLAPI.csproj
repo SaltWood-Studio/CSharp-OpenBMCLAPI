@@ -18,6 +18,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="SaltWood.TeraIO" Version="1.0.4" />
     <PackageReference Include="SocketIOClient" Version="3.1.1" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
     <PackageReference Include="WindowsFirewallHelper" Version="2.2.0.86" />
     <PackageReference Include="ZstdSharp.Port" Version="0.7.5" />
   </ItemGroup>

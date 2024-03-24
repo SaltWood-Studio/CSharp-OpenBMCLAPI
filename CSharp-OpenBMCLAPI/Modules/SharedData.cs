@@ -1,4 +1,5 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Plugin;
+using CSharpOpenBMCLAPI.Modules.Statistician;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
@@ -9,5 +10,6 @@ namespace CSharpOpenBMCLAPI.Modules
         public static ClusterInfo ClusterInfo { get; set; }
         public static TokenManager? Token { get; set; }
         public static PluginManager PluginManager { get; set; } = new PluginManager();
+        public static DataStatistician DataStatistician { get; set; } = new DataStatistician();
     }
 }

@@ -127,7 +127,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
             InitializeService();
 
-            await Enable();
+            //await Enable();
 
             SharedData.Logger.LogInfo($"工作进程 {guid} 在 <{SharedData.Config.HOST}:{SharedData.Config.PORT}> 提供服务");
 
@@ -166,7 +166,7 @@ namespace CSharpOpenBMCLAPI.Modules
             });
             application = builder.Build();
             var path = $"{SharedData.Config.clusterFileDirectory}cache";
-            application.UseStaticFiles();
+            // application.UseStaticFiles();
             application.MapGet("/download/{hash}", async (context) =>
             {
                 FileAccessInfo fai = await HttpServiceProvider.DownloadHash(context, this.storage);

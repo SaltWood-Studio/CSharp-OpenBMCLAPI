@@ -1,6 +1,7 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
+using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -105,50 +106,27 @@ namespace CSharpOpenBMCLAPI.Modules
             context.Response.ContentType = "application/json";
             switch (query)
             {
-                case "today_hits":
-                    await context.Response.WriteAsync("0");
+                case "qps":
+                    await context.Response.WriteAsync(JsonConvert.SerializeObject(SharedData.DataStatistician.Qps));
                     break;
-                case "today_bytes":
-                    await context.Response.WriteAsync("0");
+                case "dashboard":
+                    await context.Response.WriteAsync(JsonConvert.SerializeObject(SharedData.DataStatistician.Dashboard));
                     break;
-                case "30d_hits":
-                    await context.Response.WriteAsync("0");
-                    break;
-                case "30d_bytes":
-                    await context.Response.WriteAsync("0");
+                case "system":
+                    await context.Response.WriteAsync(JsonConvert.SerializeObject(new
+                    {
+                        memory = SharedData.DataStatistician.Memory,
+                        connections = SharedData.DataStatistician.Connections,
+                        cpu = SharedData.DataStatistician.Cpu,
+                        cache = new FileAccessInfo()
+                    }));
                     break;
                 case "status":
-                    await context.Response.WriteAsync("正常");
-                    break;
-                case "uptime":
-                    await context.Response.WriteAsync("0.0");
-                    break;
-                case "qps":
-                    await context.Response.WriteAsync("""
-                        [
-                            {
-                                "time": "14:58:00",
-                                "average": 6,
-                                "total": 30
-                            }
-                        ]
-                        """);
-                    break;
-                case "1h_hits":
-                    await context.Response.WriteAsync("""
-                        [
-                            {
-                                "time": "0",
-                                "io": 516,
-                                "cache": 0
-                            }
-                        ]
-                        """);
-                    break;
-                case "1h_bytes":
-                case "1d_hits":
-                case "1d_bytes":
-                    // 同上
+                    await context.Response.WriteAsync(JsonConvert.SerializeObject(new
+                    {
+                        uptime = SharedData.DataStatistician.Uptime,
+                        status = "正常"
+                    }));
                     break;
             }
         }
