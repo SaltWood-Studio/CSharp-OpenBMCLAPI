@@ -1,6 +1,7 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
+using System.Diagnostics;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using TeraIO.Network.Http;
@@ -28,7 +29,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 byte[] buffer = new byte[1024];
                 StringValues ua;
                 context.Request.Headers.TryGetValue("User-Agent", out ua);
-                SharedData.Logger.LogInfo($"{context.Request.Method} {context.Request.Path} - [{context.Connection.RemoteIpAddress}] {ua.FirstOrDefault()}");
+                SharedData.Logger.LogInfo($"{context.Request.Method} {context.Request.Path} <{context.Response.StatusCode}> - [{context.Connection.RemoteIpAddress}] {ua.FirstOrDefault()}");
                 for (int i = 0; i < Convert.ToInt32(context.Request.Path.Value?.Split('/').LastOrDefault()); i++)
                 {
                     for (int j = 0; j < 1024; j++)
@@ -53,12 +54,6 @@ namespace CSharpOpenBMCLAPI.Modules
         public static async Task<FileAccessInfo> DownloadHash(HttpContext context, IStorage storage)
         {
             FileAccessInfo fai = default;
-            if (!SharedData.Config.disableAccessLog)
-            {
-                StringValues ua;
-                context.Request.Headers.TryGetValue("User-Agent", out ua);
-                SharedData.Logger.LogInfo($"{context.Request.Method} {context.Request.Path} - [{context.Connection.RemoteIpAddress}] {ua.FirstOrDefault()}");
-            }
             var pairs = Utils.GetQueryStrings(context.Request.QueryString.Value);
             string? hash = context.Request.Path.Value?.Split('/').LastOrDefault();
             string? s = pairs.GetValueOrDefault("s");
@@ -82,6 +77,12 @@ namespace CSharpOpenBMCLAPI.Modules
                 context.Response.StatusCode = 403;
                 await context.Response.WriteAsync($"Access to \"{context.Request.Path}\" has been blocked due to your request timeout or invalidity.");
             }
+            if (!SharedData.Config.disableAccessLog)
+            {
+                StringValues ua;
+                context.Request.Headers.TryGetValue("User-Agent", out ua);
+                SharedData.Logger.LogInfo($"{context.Request.Method} {context.Request.Path} <{context.Response.StatusCode}> - [{context.Connection.RemoteIpAddress}] {ua.FirstOrDefault()}");
+            }
             return fai;
         }
 
@@ -101,6 +102,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
         public static async Task Api(HttpContext context, string query, Cluster cluster)
         {
+            context.Response.ContentType = "application/json";
             switch (query)
             {
                 case "today_hits":
@@ -119,7 +121,7 @@ namespace CSharpOpenBMCLAPI.Modules
                     await context.Response.WriteAsync("正常");
                     break;
                 case "uptime":
-                    await context.Response.WriteAsync("0");
+                    await context.Response.WriteAsync("0.0");
                     break;
                 case "qps":
                     await context.Response.WriteAsync("""

@@ -173,7 +173,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 this.counter.Add(fai);
             });
             application.MapGet("/measure/{size}", (context) => HttpServiceProvider.Measure(context));
-            application.MapGet("/api/{name}", (HttpContext context, string name) => HttpServiceProvider.Api(context, name));
+            application.MapPost("/api/{name}", (HttpContext context, string name) => HttpServiceProvider.Api(context, name, this));
             Task task = application.RunAsync();
             Task.Run(async () =>
             {
