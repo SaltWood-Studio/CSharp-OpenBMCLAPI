@@ -117,7 +117,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             int returns = 0;
 
-            await GetConfiguration();
+            // await GetConfiguration();
             // 检查文件
             await CheckFiles();
             SharedData.Logger.LogInfo();
@@ -131,20 +131,23 @@ namespace CSharpOpenBMCLAPI.Modules
 
             SharedData.Logger.LogInfo($"工作进程 {guid} 在 <{SharedData.Config.HOST}:{SharedData.Config.PORT}> 提供服务");
 
-            _keepAlive = Task.Run(async () =>
-            {
-                while (true)
-                {
-                    cancellationSrc.Token.ThrowIfCancellationRequested();
-                    await Task.Delay(25 * 1000);
-                    // Disable().Wait();
-                    await KeepAlive();
-                }
-            }, cancellationSrc.Token);
+            _keepAlive = Task.Run(_KeepAlive, cancellationSrc.Token);
 
             _keepAlive.Wait();
 
             return returns;
+        }
+
+        private async Task _KeepAlive()
+        {
+            while (true)
+            {
+                cancellationSrc.Token.ThrowIfCancellationRequested();
+                await Task.Delay(25 * 1000);
+                // Disable().Wait();
+                await KeepAlive();
+                GC.Collect();
+            }
         }
 
         /// <summary>
@@ -166,10 +169,11 @@ namespace CSharpOpenBMCLAPI.Modules
             application.UseStaticFiles();
             application.MapGet("/download/{hash}", async (context) =>
             {
-                FileAccessInfo fai = await HttpServerUtils.DownloadHash(context, this.storage);
+                FileAccessInfo fai = await HttpServiceProvider.DownloadHash(context, this.storage);
                 this.counter.Add(fai);
             });
-            application.MapGet("/measure/{size}", (context) => HttpServerUtils.Measure(context));
+            application.MapGet("/measure/{size}", (context) => HttpServiceProvider.Measure(context));
+            application.MapGet("/api/{name}", (HttpContext context, string name) => HttpServiceProvider.Api(context, name));
             Task task = application.RunAsync();
             Task.Run(async () =>
             {

@@ -7,7 +7,7 @@ using TeraIO.Network.Http;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
-    public class HttpServerUtils
+    public class HttpServiceProvider
     {
         /// <summary>
         /// 测速路由
@@ -97,6 +97,58 @@ namespace CSharpOpenBMCLAPI.Modules
             else
                 to = Convert.ToInt32(rangeHeader?.LastOrDefault());
             return (from, to);
+        }
+
+        public static async Task Api(HttpContext context, string query, Cluster cluster)
+        {
+            switch (query)
+            {
+                case "today_hits":
+                    await context.Response.WriteAsync("0");
+                    break;
+                case "today_bytes":
+                    await context.Response.WriteAsync("0");
+                    break;
+                case "30d_hits":
+                    await context.Response.WriteAsync("0");
+                    break;
+                case "30d_bytes":
+                    await context.Response.WriteAsync("0");
+                    break;
+                case "status":
+                    await context.Response.WriteAsync("正常");
+                    break;
+                case "uptime":
+                    await context.Response.WriteAsync("0");
+                    break;
+                case "qps":
+                    await context.Response.WriteAsync("""
+                        [
+                            {
+                                "time": "14:58:00",
+                                "average": 6,
+                                "total": 30
+                            }
+                        ]
+                        """);
+                    break;
+                case "1h_hits":
+                    await context.Response.WriteAsync("""
+                        [
+                            {
+                                "time": "0",
+                                "io": 516,
+                                "cache": 0
+                            }
+                        ]
+                        """);
+                    break;
+                case "1h_bytes":
+                case "1d_hits":
+                case "1d_bytes":
+                    // 同上
+                    break;
+            }
         }
     }
 }
