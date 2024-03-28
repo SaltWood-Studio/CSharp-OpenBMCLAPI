@@ -205,7 +205,7 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 file.Write(pfxCert);
             }
-            cert = new X509Certificate2($"{SharedData.Config.clusterFileDirectory}certifications/cert.pfx");
+            cert = new X509Certificate2(pfxCert);
             // SharedData.Logger.LogInfo($"证书信息：\n{cert.ToString()}");
             return cert;
         }
