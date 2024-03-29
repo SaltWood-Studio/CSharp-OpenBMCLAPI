@@ -119,7 +119,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
             // await GetConfiguration();
             // 检查文件
-            await CheckFiles();
+            //await CheckFiles();
             SharedData.Logger.LogInfo();
             Connect();
 
@@ -165,6 +165,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 });
             });
             application = builder.Build();
+            application.UseHttpsRedirection();
             var path = $"{SharedData.Config.clusterFileDirectory}cache";
             // application.UseStaticFiles();
             application.MapGet("/download/{hash}", (context) => HttpServiceProvider.LogAndRun(context, () =>
@@ -185,6 +186,7 @@ namespace CSharpOpenBMCLAPI.Modules
             }));
             application.MapGet("/dashboard", (HttpContext context) => HttpServiceProvider.LogAndRun(context, () => HttpServiceProvider.Dashboard(context)));
             application.MapGet("/static/js/{file}", (HttpContext context, string file) => HttpServiceProvider.LogAndRun(context, () => HttpServiceProvider.Dashboard(context, $"/static/js/{file}")));
+            //application.
             Task task = application.RunAsync();
             Task.Run(async () =>
             {

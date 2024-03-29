@@ -1,7 +1,9 @@
-﻿using System;
+﻿using CSharpOpenBMCLAPI.Modules.Storage;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,6 +12,33 @@ namespace CSharpOpenBMCLAPI.Modules.Statistician
 {
     public class DataStatistician
     {
+        private Task _updateTask;
+
+        public DataStatistician()
+        {
+            for (int i = 0; i < this.Dashboard.Hours.Length; i++)
+            {
+                this.Dashboard.Hours[i]._hour = i;
+            }
+            for (int i = 0; i < this.Dashboard.Days.Length; i++)
+            {
+                this.Dashboard.Days[i]._day = i;
+            }
+            this._updateTask = Task.Run(() =>
+            {
+                FileAccessInfo fai = new()
+                {
+                    bytes = 0,
+                    hits = 0
+                };
+                while (true)
+                {
+                    this.DownloadCount(fai);
+                    Thread.Sleep(1000);
+                }
+            });
+        }
+
         private Pair<long, int>[] qps = new Pair<long, int>[60];
 
         public Dictionary<long, int> Qps
@@ -28,7 +57,7 @@ namespace CSharpOpenBMCLAPI.Modules.Statistician
             }
         }
 
-        public void DownloadCount()
+        public void DownloadCount(FileAccessInfo fileAccessInfo)
         {
             lock (qps)
             {
@@ -43,8 +72,19 @@ namespace CSharpOpenBMCLAPI.Modules.Statistician
                     last.Value = 0;
                     last.Key = DateTimeOffset.Now.ToUnixTimeSeconds() / 5;
                 }
-                last.Value += 1;
+                last.Value += (int)fileAccessInfo.hits;
                 qps[0] = last;
+            }
+            lock (Dashboard)
+            {
+                Dashboard.Hours[DateTime.Now.Hour].bytes += fileAccessInfo.bytes;
+                Dashboard.Hours[DateTime.Now.Hour].hits += fileAccessInfo.hits;
+                Dashboard.Hours[DateTime.Now.Hour].last_bytes += fileAccessInfo.bytes;
+                Dashboard.Hours[DateTime.Now.Hour].last_hits += fileAccessInfo.hits;
+                Dashboard.Days[DateTime.Now.Day - 1].bytes += fileAccessInfo.bytes;
+                Dashboard.Days[DateTime.Now.Day - 1].hits += fileAccessInfo.hits;
+                Dashboard.Days[DateTime.Now.Day - 1].last_bytes += fileAccessInfo.bytes;
+                Dashboard.Days[DateTime.Now.Day - 1].last_hits += fileAccessInfo.hits;
             }
         }
 
@@ -66,48 +106,28 @@ namespace CSharpOpenBMCLAPI.Modules.Statistician
         {
             get
             {
-                try
-                {
-                    CPUHelper helper = new CPUHelper();
-                    return helper.GetCPUUsage().Average();
-                }
-                catch
-                {
-                    return 0;
-                }
+                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return 0;
+                var cpuCounter = new PerformanceCounter("Processor Information", "% Processor Utility", "_Total");
+                cpuCounter.NextValue();
+                Thread.Sleep(40);
+                return cpuCounter.NextValue();
             }
         }
 
         public DashboardInformation Dashboard { get; set; } = new();
 
-        public int Connections { get; set; } = 0; // TODO: Connections
-    }
-
-    public class CPUHelper
-    {
-        // 用于获得CPU信息
-        PerformanceCounter[] counters;
-
-        public CPUHelper()
+        public int Connections
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) throw new NotSupportedException();
-            counters = new PerformanceCounter[Environment.ProcessorCount];
-            for (int i = 0; i < counters.Length; i++)
+            get
             {
-                counters[i] = new PerformanceCounter("Processor", "% Processor Time", i.ToString());
-                counters[i].NextValue();
+                IPGlobalProperties properti = IPGlobalProperties.GetIPGlobalProperties();
+                var tcps = properti.GetActiveTcpConnections().ToList();
+
+                var list = tcps.Where(f => f.LocalEndPoint.Port == SharedData.Config.PORT);
+
+                var iplist = list.GroupBy(f => f.RemoteEndPoint.Address);
+                return iplist.Count();
             }
         }
-
-        public double[] GetCPUUsage()
-        {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) throw new NotSupportedException();
-            double[] info = new double[counters.Length];
-            for (int i = 0; i < counters.Length; i++)
-                info[i] = counters[i].NextValue();
-
-            return info;
-        }
     }
-
 }

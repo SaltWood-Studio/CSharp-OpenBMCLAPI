@@ -1,4 +1,5 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Storage;
+using Newtonsoft.Json;
 using SocketIOClient;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -41,6 +42,12 @@ namespace CSharpOpenBMCLAPI.Modules
                 case JsonValueKind.Array:
                     foreach (var i in element.EnumerateArray())
                     {
+                        var message = JsonConvert.DeserializeAnonymousType(i.ToString(), new { message = "" });
+                        if (message != null)
+                        {
+                            SharedData.Logger.LogInfo(message.message);
+                            continue;
+                        }   
                         PrintJsonElement(i);
                     }
                     break;

@@ -83,7 +83,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 try
                 {
                     fai = await storage.Express(Utils.HashToFileName(hash), context);
-                    SharedData.DataStatistician.DownloadCount();
+                    SharedData.DataStatistician.DownloadCount(fai);
                 }
                 catch
                 {
@@ -125,15 +125,16 @@ namespace CSharpOpenBMCLAPI.Modules
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(SharedData.DataStatistician.Dashboard));
                     break;
                 case "system":
+
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(new
                     {
                         memory = SharedData.DataStatistician.Memory,
                         connections = SharedData.DataStatistician.Connections,
-                        cpu = 20,//SharedData.DataStatistician.Cpu,
+                        cpu = SharedData.DataStatistician.Cpu,
                         cache = new
                         {
-                            total = 1,
-                            bytes = 10
+                            total = 0,
+                            bytes = 0
                         }
                     }));
                     break;

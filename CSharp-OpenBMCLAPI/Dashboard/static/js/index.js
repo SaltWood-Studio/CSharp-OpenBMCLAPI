@@ -404,7 +404,7 @@
         display_left()
         update_left()
     }
-    header.append(ttb.createElement("h3").setText("Python OpenBMCLAPI Dashboard"))
+    header.append(ttb.createElement("h3").setText("SharpBMCLAPI Dashboard"))
     left_copyright.append(
         ttb.createElement("p").append(ttb.createElement("a").setAttribute("href", "mailto:administrator@ttb-network.top").setText("TTB Network"), " - ", ttb.VERSION)
     )
@@ -563,10 +563,10 @@
                     }, 
                 })
                 this._e_qps.setOption({
-                    color: "#0fc6c2",
+                    color: "#ad453f",
                     tooltip: {
                         trigger: 'axis',
-                        formatter: e => '<div style="margin: 0px 0 0;line-height:1;"><div style="margin: 0px 0 0;line-height:1;"><div style="font-size:14px;color:#666;font-weight:400;line-height:1;">' + e[0].name + '</div><div style="margin: 10px 0 0;line-height:1;"><div style="margin: 0px 0 0;line-height:1;"><div style="margin: 0px 0 0;line-height:1;"><span style="display:inline-block;margin-right:4px;border-radius:10px;width:10px;height:10px;background-color:#0fc6c2;"></span><span style="font-size:14px;color:#666;font-weight:400;margin-left:2px">QPS</span><span style="float:right;margin-left:20px;font-size:14px;color:#666;font-weight:900">Avg: ' + e[0].data.value + " total: " + ttb.sum(...e[0].data.raw) + '</span><div style="clear:both"></div></div><div style="clear:both"></div></div><div style="clear:both"></div></div><div style="clear:both"></div></div><div style="clear:both"></div></div>',
+                        formatter: e => '<div style="margin: 0px 0 0;line-height:1;"><div style="margin: 0px 0 0;line-height:1;"><div style="font-size:14px;color:#666;font-weight:400;line-height:1;">' + e[0].name + '</div><div style="margin: 10px 0 0;line-height:1;"><div style="margin: 0px 0 0;line-height:1;"><div style="margin: 0px 0 0;line-height:1;"><span style="display:inline-block;margin-right:4px;border-radius:10px;width:10px;height:10px;background-color:#ad453f;"></span><span style="font-size:14px;color:#666;font-weight:400;margin-left:2px">QPS</span><span style="float:right;margin-left:20px;font-size:14px;color:#666;font-weight:900">Avg: ' + e[0].data.value + " total: " + ttb.sum(...e[0].data.raw) + '</span><div style="clear:both"></div></div><div style="clear:both"></div></div><div style="clear:both"></div></div><div style="clear:both"></div></div><div style="clear:both"></div></div>',
                     },
                     stateAnimation: {
                         duration: 300,
