@@ -83,6 +83,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 try
                 {
                     fai = await storage.Express(Utils.HashToFileName(hash), context);
+                    SharedData.DataStatistician.DownloadCount();
                 }
                 catch
                 {
@@ -120,6 +121,7 @@ namespace CSharpOpenBMCLAPI.Modules
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(SharedData.DataStatistician.Qps));
                     break;
                 case "dashboard":
+                    // SharedData.Logger.LogDebug(JsonConvert.SerializeObject(SharedData.DataStatistician.Dashboard));
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(SharedData.DataStatistician.Dashboard));
                     break;
                 case "system":
@@ -127,18 +129,26 @@ namespace CSharpOpenBMCLAPI.Modules
                     {
                         memory = SharedData.DataStatistician.Memory,
                         connections = SharedData.DataStatistician.Connections,
-                        cpu = SharedData.DataStatistician.Cpu,
-                        cache = new FileAccessInfo()
+                        cpu = 20,//SharedData.DataStatistician.Cpu,
+                        cache = new
+                        {
+                            total = 1,
+                            bytes = 10
+                        }
                     }));
                     break;
                 case "status":
-                    await context.Response.WriteAsync(JsonConvert.SerializeObject(new
-                    {
-                        uptime = SharedData.DataStatistician.Uptime,
-                        status = "正常"
-                    }));
+                    await context.Response.WriteAsync("正常");
+                    break;
+                case "uptime":
+                    await context.Response.WriteAsync(SharedData.DataStatistician.Uptime.ToString("0.00"));
                     break;
             }
+        }
+
+        public static void Dashboard(HttpContext context, string filePath = "/index.html")
+        {
+            context.Response.SendFileAsync(Path.Combine(Environment.CurrentDirectory, $"Dashboard{filePath}")).Wait();
         }
     }
 }

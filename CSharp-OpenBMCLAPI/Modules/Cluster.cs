@@ -178,6 +178,13 @@ namespace CSharpOpenBMCLAPI.Modules
             application.MapPost("/api/{name}", (HttpContext context, string name) => HttpServiceProvider.LogAndRun(context,
                 () => HttpServiceProvider.Api(context, name, this).Wait()
             ));
+            application.MapGet("/", (context) => HttpServiceProvider.LogAndRun(context, 
+            () => {
+                context.Response.StatusCode = 302;
+                context.Response.Headers.Append("Location", "/dashboard");
+            }));
+            application.MapGet("/dashboard", (HttpContext context) => HttpServiceProvider.LogAndRun(context, () => HttpServiceProvider.Dashboard(context)));
+            application.MapGet("/static/js/{file}", (HttpContext context, string file) => HttpServiceProvider.LogAndRun(context, () => HttpServiceProvider.Dashboard(context, $"/static/js/{file}")));
             Task task = application.RunAsync();
             Task.Run(async () =>
             {

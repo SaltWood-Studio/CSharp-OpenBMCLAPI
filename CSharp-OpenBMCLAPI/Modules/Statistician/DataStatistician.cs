@@ -10,29 +10,47 @@ namespace CSharpOpenBMCLAPI.Modules.Statistician
 {
     public class DataStatistician
     {
-        public Pair<long, int>[] Qps = new Pair<long, int>[60];
+        private Pair<long, int>[] qps = new Pair<long, int>[60];
 
-        public void DownloadCount()
+        public Dictionary<long, int> Qps
         {
-            lock (this)
+            get
             {
-                Pair<long, int> last = Qps[^1];
-                if (last.Key == 0)
+                Dictionary<long, int> pairs = new Dictionary<long, int>();
+                lock (qps)
                 {
-                    last.Key = DateTime.Now.Ticks;
+                    foreach (var pair in qps)
+                    {
+                        pairs[pair.Key] = pair.Value;
+                    }
                 }
-                else if (last.Key != DateTime.Now.Ticks)
-                {
-                    Qps[1..^1].CopyTo(Qps, 0);
-                    last.Key = DateTime.Now.Ticks;
-                }
-                last.Value += 1;
+                return pairs;
             }
         }
 
-        private long startTime = DateTime.Now.Ticks;
+        public void DownloadCount()
+        {
+            lock (qps)
+            {
+                Pair<long, int> last = qps[0];
+                if (last.Key == 0)
+                {
+                    last.Key = DateTimeOffset.Now.ToUnixTimeSeconds() / 5;
+                }
+                else if (last.Key != DateTimeOffset.Now.ToUnixTimeSeconds() / 5)
+                {
+                    qps[0..^1].CopyTo(qps, 1);
+                    last.Value = 0;
+                    last.Key = DateTimeOffset.Now.ToUnixTimeSeconds() / 5;
+                }
+                last.Value += 1;
+                qps[0] = last;
+            }
+        }
 
-        public long Uptime => DateTime.Now.Ticks - startTime;
+        private long startTime = DateTimeOffset.Now.ToUnixTimeSeconds();
+
+        public double Uptime => startTime;
 
         public long Memory
         {
