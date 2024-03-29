@@ -98,3 +98,7 @@
 
 **SALTWOOD**
 - [TeraIO](https://github.com/SALTWOOD/TeraIO) - 其实也没用到多少（目前是废物一个），以后会抽空把一些 utils 丢进去的
+
+[OpenBMCLAPI](https://github.com/bangbang93/openbmclapi
+[go-openbmclapi](https://github.com/LiterMC/go-openbmclapi
+[python-openbmclapi](https://github.com/TTB-Network/python-openbmclapi
