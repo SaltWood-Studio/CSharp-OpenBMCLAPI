@@ -347,10 +347,7 @@ namespace CSharpOpenBMCLAPI.Modules
             var resp = await this.client.GetAsync("openbmclapi/files");
             byte[] bytes = await resp.Content.ReadAsByteArrayAsync();
 
-            Decompressor decompressor = new Decompressor();
-
-            bytes = decompressor.Unwrap(bytes).ToArray();
-            decompressor.Dispose();
+            UnpackBytes(ref bytes);
 
             AvroParser avro = new AvroParser(bytes);
             List<ApiFileInfo> files;
@@ -382,6 +379,13 @@ namespace CSharpOpenBMCLAPI.Modules
             files = null!;
             countLock = null!;
             bytes = null!;
+        }
+
+        protected void UnpackBytes(ref byte[] bytes)
+        {
+            Decompressor decompressor = new Decompressor();
+            bytes = decompressor.Unwrap(bytes).ToArray();
+            decompressor.Dispose();
             decompressor = null!;
         }
 
