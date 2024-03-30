@@ -35,6 +35,7 @@ namespace CSharpOpenBMCLAPI.Modules
         public Guid guid;
         private SocketIOClient.SocketIO socket;
         public bool IsEnabled { get; set; }
+        public bool WantEnable { get; set; }
         private Task? _keepAlive;
         protected IStorage storage;
         protected AccessCounter counter;
@@ -174,9 +175,7 @@ namespace CSharpOpenBMCLAPI.Modules
             application.MapGet("/measure/{size}", (context) => HttpServiceProvider.LogAndRun(context,
                 () => HttpServiceProvider.Measure(context).Wait()
             ));
-            application.MapPost("/api/{name}", (HttpContext context, string name) => HttpServiceProvider.LogAndRun(context,
-                () => HttpServiceProvider.Api(context, name, this).Wait()
-            ));
+            application.MapPost("/api/{name}", (HttpContext context, string name) => HttpServiceProvider.Api(context, name, this).Wait());
             application.MapGet("/", (context) => HttpServiceProvider.LogAndRun(context,
             () =>
             {
@@ -232,6 +231,11 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 SharedData.Logger.LogWarn($"与主控断开连接：{r}");
                 this.IsEnabled = false;
+                if (this.WantEnable)
+                {
+                    this.Connect();
+                    this.Enable().Wait();
+                }
             });
         }
 
@@ -249,6 +253,7 @@ namespace CSharpOpenBMCLAPI.Modules
             await socket.EmitAsync("enable", (SocketIOResponse resp) =>
             {
                 this.IsEnabled = true;
+                this.WantEnable = true;
                 Utils.PrintResponseMessage(resp);
                 // Debugger.Break();
                 SharedData.Logger.LogSystem($"启用成功");
@@ -285,6 +290,10 @@ namespace CSharpOpenBMCLAPI.Modules
                 SharedData.Logger.LogSystem($"禁用成功");
                 this.IsEnabled = false;
             });
+            if (this.WantEnable)
+            {
+                await this.Enable();
+            }
         }
 
         /// <summary>

@@ -131,7 +131,7 @@ namespace CSharpOpenBMCLAPI.Modules.Statistician
             get
             {
                 IPGlobalProperties properti = IPGlobalProperties.GetIPGlobalProperties();
-                var tcps = properti.GetActiveTcpConnections().ToList();
+                var tcps = properti.GetActiveTcpConnections();
 
                 var list = tcps.Where(f => f.LocalEndPoint.Port == SharedData.Config.PORT);
 
