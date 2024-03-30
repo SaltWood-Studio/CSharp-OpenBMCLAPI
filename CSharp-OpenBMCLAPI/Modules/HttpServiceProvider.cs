@@ -125,7 +125,6 @@ namespace CSharpOpenBMCLAPI.Modules
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(SharedData.DataStatistician.Dashboard));
                     break;
                 case "system":
-
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(new
                     {
                         memory = SharedData.DataStatistician.Memory,
@@ -133,8 +132,8 @@ namespace CSharpOpenBMCLAPI.Modules
                         cpu = SharedData.DataStatistician.Cpu,
                         cache = new
                         {
-                            total = 0,
-                            bytes = 0
+                            total = (cluster.storage as ICachedStorage != null) ? ((ICachedStorage)cluster.storage).GetCachedFiles() : 0,
+                            bytes = (cluster.storage as ICachedStorage != null) ? ((ICachedStorage)cluster.storage).GetCachedMemory() : 0
                         }
                     }));
                     break;

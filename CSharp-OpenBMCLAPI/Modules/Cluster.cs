@@ -37,7 +37,7 @@ namespace CSharpOpenBMCLAPI.Modules
         public bool IsEnabled { get; set; }
         public bool WantEnable { get; set; }
         private Task? _keepAlive;
-        protected IStorage storage;
+        internal IStorage storage;
         protected AccessCounter counter;
         public CancellationTokenSource cancellationSrc = new CancellationTokenSource();
         public WebApplication? application = null;
@@ -58,7 +58,7 @@ namespace CSharpOpenBMCLAPI.Modules
             client = HttpRequest.client;
             client.DefaultRequestHeaders.Authorization = new("Bearer", SharedData.Token?.Token.token);
 
-            this.storage = new FileStorage(SharedData.Config.clusterFileDirectory);
+            this.storage = new CachedStorage(new FileStorage(SharedData.Config.clusterFileDirectory));
 
             this.counter = new();
             InitializeSocket();
