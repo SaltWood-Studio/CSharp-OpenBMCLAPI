@@ -176,14 +176,18 @@ namespace CSharpOpenBMCLAPI.Modules
                 () => HttpServiceProvider.Measure(context).Wait()
             ));
             application.MapPost("/api/{name}", (HttpContext context, string name) => HttpServiceProvider.Api(context, name, this).Wait());
-            application.MapGet("/", (context) => HttpServiceProvider.LogAndRun(context,
-            () =>
+            application.MapGet("/", (context) =>
             {
                 context.Response.StatusCode = 302;
                 context.Response.Headers.Append("Location", "/dashboard");
-            }));
-            application.MapGet("/dashboard", (HttpContext context) => HttpServiceProvider.LogAndRun(context, () => HttpServiceProvider.Dashboard(context)));
-            application.MapGet("/static/js/{file}", (HttpContext context, string file) => HttpServiceProvider.LogAndRun(context, () => HttpServiceProvider.Dashboard(context, $"/static/js/{file}")));
+                return Task.CompletedTask;
+            });
+            application.MapGet("/dashboard", (context) =>
+            {
+                HttpServiceProvider.Dashboard(context);
+                return Task.CompletedTask;
+            });
+            application.MapGet("/static/js/{file}", (HttpContext context, string file) => HttpServiceProvider.Dashboard(context, $"/static/js/{file}"));
             //application.
             Task task = application.RunAsync();
             Task.Run(async () =>
@@ -352,8 +356,8 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 return;
             }
-
             var resp = await this.client.GetAsync("openbmclapi/files");
+            SharedData.Logger.LogDebug($"文件检查策略：{SharedData.Config.startupCheckMode}");
             byte[] bytes = await resp.Content.ReadAsByteArrayAsync();
 
             UnpackBytes(ref bytes);
@@ -366,28 +370,48 @@ namespace CSharpOpenBMCLAPI.Modules
             object countLock = new();
             int count = 0;
 
-            Parallel.ForEach(files, file =>
+            CancellationTokenSource t = new();
+
+            _ = Task.Run(() =>
             {
-                string path = file.path;
-                string hash = file.hash;
-                long size = file.size;
-                DownloadFile(hash, path).Wait();
+                while (true)
+                {
+                    GC.Collect();
+                    Thread.Sleep(1000);
+                    t.Token.ThrowIfCancellationRequested();
+                }
+            }, t.Token);
+
+            //Parallel.ForEach(files, file =>
+            foreach (var file in files)
+            {
+                CheckSingleFile(file);
                 lock (countLock)
                 {
                     count++;
                 }
-                bool valid = VerifyFile(hash, size, SharedData.Config.startupCheckMode);
-                if (!valid)
-                {
-                    SharedData.Logger.LogWarn($"文件 {path} 损坏！期望哈希值为 {hash}");
-                    DownloadFile(hash, path, true).Wait();
-                }
                 SharedData.Logger.LogInfoNoNewLine($"\r{count}/{files.Count}");
-            });
+            }//);
+
+            t.Cancel();
 
             files = null!;
             countLock = null!;
             bytes = null!;
+        }
+
+        void CheckSingleFile(ApiFileInfo file)
+        {
+            string path = file.path;
+            string hash = file.hash;
+            long size = file.size;
+            DownloadFile(hash, path).Wait();
+            bool valid = VerifyFile(hash, size, SharedData.Config.startupCheckMode);
+            if (!valid)
+            {
+                SharedData.Logger.LogWarn($"文件 {path} 损坏！期望哈希值为 {hash}");
+                DownloadFile(hash, path, true).Wait();
+            }
         }
 
         protected void UnpackBytes(ref byte[] bytes)

@@ -54,6 +54,7 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
             if (!cache.ContainsKey(hashPath))
             {
                 byte[] bytes = this.ReadFile(hashPath);
+                await context.Response.BodyWriter.WriteAsync(bytes);
                 this[hashPath] = new CachedFile(bytes);
                 return new FileAccessInfo
                 {
