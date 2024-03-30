@@ -82,6 +82,7 @@
 
 **Newtonsoft**
 - [Newtonsoft.Json](https://www.newtonsoft.com/json) - 使用 Newtonsoft.Json 解析 Json
+- [Newtonsoft.Json.Bson](https://www.newtonsoft.com/json) - 使用 Newtonsoft.Json.Bson 解析 Bson，用于统计数据的存储
 
 **Behzad Khosravifar**
 - [Downloader](https://github.com/bezzad/Downloader) - 使用 Downloader 下载文件
@@ -90,7 +91,6 @@
 - [SocketIOCLient](https://github.com/doghappy/socket.io-client-csharp) - 使用 SocketIOClient 与主控通信
 
 **Apache**
-- [Avro](https://avro.apache.org/) - 使用 Avro 包解析主控返回的解压缩过的文件列表
 - [log4net](https://logging.apache.org/log4net/) - 使用 log4net 记录日志（虽然目前没用到）
 
 **@oleg-st (Oleg Stepanischev)**
@@ -98,6 +98,11 @@
 
 **SALTWOOD**
 - [TeraIO](https://github.com/SALTWOOD/TeraIO) - 其实也没用到多少（目前是废物一个），以后会抽空把一些 utils 丢进去的
+
+**@aaubry (Antoine Aubry)**
+- [YamlDotNet](https://github.com/aaubry/YamlDotNet) - 用于配置文件的读写
+
+# 友情链接
 
 [OpenBMCLAPI](https://github.com/bangbang93/openbmclapi)
 

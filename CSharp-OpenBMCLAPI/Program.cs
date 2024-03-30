@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using TeraIO.Runnable;
+using YamlDotNet.Serialization;
 
 namespace CSharpOpenBMCLAPI
 {
@@ -64,45 +65,31 @@ namespace CSharpOpenBMCLAPI
 
         protected Config GetConfig()
         {
-            if (!File.Exists("config.json5"))
+            const string configPath = "config.yml";
+            if (!File.Exists(configPath))
             {
-                // 获取正在运行方法所在的命名空间空间
-                Type? type = MethodBase.GetCurrentMethod()?.DeclaringType;
-
-                string? _namespace = type?.Namespace;
-
-                // 获取当前运行的 Assembly
-                Assembly _assembly = Assembly.GetExecutingAssembly();
-
-                // 获取资源名称
-                string resourceName = $"{_namespace}.DefaultConfig.json5";
-
-                // 从 Assembly 中提取资源
-                Stream? stream = _assembly.GetManifestResourceStream(resourceName);
-
-                if (stream != null)
-                {
-                    using (var file = File.Create("config.json5"))
-                    {
-                        file.Seek(0, SeekOrigin.Begin);
-                        stream.CopyTo(file);
-                    }
-                }
-
-                return new Config();
+                Config config = new Config();
+                Serializer serializer = new Serializer();
+                File.WriteAllText(configPath, serializer.Serialize(config));
+                return config;
             }
             else
             {
-                string file = File.ReadAllText("config.json5");
-                Config? config = JsonConvert.DeserializeObject<Config>(file);
+                string file = File.ReadAllText(configPath);
+                Deserializer deserializer = new Deserializer();
+                Config? config = deserializer.Deserialize<Config>(file);
+                Config result;
                 if (config != null)
                 {
-                    return config;
+                    result = config;
                 }
                 else
                 {
-                    return new Config();
+                    result = new Config();
                 }
+                Serializer serializer = new Serializer();
+                File.WriteAllText(configPath, serializer.Serialize(config));
+                return result;
             }
         }
 
@@ -121,7 +108,8 @@ namespace CSharpOpenBMCLAPI
             }
             else
             {
-                using (var file = File.Create("totals.bson"))
+                const string bsonFilePath = "totals.bson";
+                using (var file = File.Create(bsonFilePath))
                 {
                     file.Write(Utils.BsonSerializeObject(SharedData.DataStatistician));
                 }

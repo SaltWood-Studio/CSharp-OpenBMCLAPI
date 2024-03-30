@@ -164,7 +164,7 @@ namespace CSharpOpenBMCLAPI.Modules
             });
             application = builder.Build();
             application.UseHttpsRedirection();
-            var path = $"{SharedData.Config.clusterFileDirectory}cache";
+            var path = Path.Combine(SharedData.Config.clusterFileDirectory, $"cache");
             // application.UseStaticFiles();
             application.MapGet("/download/{hash}", (context) => HttpServiceProvider.LogAndRun(context, () =>
             {
@@ -205,11 +205,11 @@ namespace CSharpOpenBMCLAPI.Modules
         /// </returns>
         protected X509Certificate2 LoadAndConvertCert()
         {
-            X509Certificate2 cert = X509Certificate2.CreateFromPemFile($"{SharedData.Config.clusterFileDirectory}certifications/cert.pem",
-                $"{SharedData.Config.clusterFileDirectory}certifications/key.pem");
+            X509Certificate2 cert = X509Certificate2.CreateFromPemFile(Path.Combine(SharedData.Config.clusterFileDirectory, $"certifications/cert.pem"),
+                Path.Combine(SharedData.Config.clusterFileDirectory, $"certifications/key.pem"));
             byte[] pfxCert = cert.Export(X509ContentType.Pfx);
             SharedData.Logger.LogDebug($"将 PEM 格式的证书转换为 PFX 格式");
-            using (var file = File.Create($"{SharedData.Config.clusterFileDirectory}certifications/cert.pfx"))
+            using (var file = File.Create(Path.Combine(SharedData.Config.clusterFileDirectory, $"certifications/cert.pfx")))
             {
                 file.Write(pfxCert);
             }
@@ -257,7 +257,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 host = SharedData.Config.HOST,
                 port = SharedData.Config.PORT,
                 version = SharedData.Config.clusterVersion,
-                byoc = SharedData.Config.byoc,
+                byoc = SharedData.Config.bringYourOwnCertficate,
                 noFastEnable = SharedData.Config.noFastEnable,
                 flavor = new
                 {
@@ -445,6 +445,11 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         public async Task RequestCertification()
         {
+            if (SharedData.Config.bringYourOwnCertficate)
+            {
+                SharedData.Logger.LogDebug($"{nameof(SharedData.Config.bringYourOwnCertficate)} 为 true，跳过请求证书……");
+                return;
+            }
             await socket.EmitAsync("request-cert", (SocketIOResponse resp) =>
             {
                 var data = resp;
@@ -456,10 +461,10 @@ namespace CSharpOpenBMCLAPI.Modules
                 string? certString = cert.GetString();
                 string? keyString = key.GetString();
 
-                string certPath = $"{SharedData.Config.clusterFileDirectory}certifications/cert.pem";
-                string keyPath = $"{SharedData.Config.clusterFileDirectory}certifications/key.pem";
+                string certPath = Path.Combine(SharedData.Config.clusterFileDirectory, $"certifications/cert.pem");
+                string keyPath = Path.Combine(SharedData.Config.clusterFileDirectory, $"certifications/key.pem");
 
-                Directory.CreateDirectory($"{SharedData.Config.clusterFileDirectory}certifications");
+                Directory.CreateDirectory(Path.Combine(SharedData.Config.clusterFileDirectory, $"certifications"));
 
                 using (var file = File.Create(certPath))
                 {
