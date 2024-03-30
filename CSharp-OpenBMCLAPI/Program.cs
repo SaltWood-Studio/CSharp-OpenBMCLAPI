@@ -2,9 +2,10 @@
 using CSharpOpenBMCLAPI.Modules.Plugin;
 using CSharpOpenBMCLAPI.Modules.Statistician;
 using Newtonsoft.Json;
-using System.Data.SQLite;
+using Newtonsoft.Json.Bson;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using TeraIO.Runnable;
 
@@ -113,35 +114,18 @@ namespace CSharpOpenBMCLAPI
 
             int returns = 0;
 
-            SQLiteConnection conn = new SQLiteConnection("Data Source=total.db;");
-            conn.Open();
-
-            conn.ExecuteSqlCommand("create table if not exists access_data_daily (day bigint, hits bigint, bytes bigint, cache_hits bigint, cache_bytes bigint, last_hits bigint, last_bytes bigint, failed bigint)");
-            conn.ExecuteSqlCommand("create table if not exists access_data_hourly (hour bigint, hits bigint, bytes bigint, cache_hits bigint, cache_bytes bigint, last_hits bigint, last_bytes bigint, failed bigint)");
-
-            conn.Close();
-            /*
-            if (!Utils.IsAdministrator())
+            if (File.Exists("totals.bson"))
             {
-                bool success = Utils.RunAsAdministrator();
-                if (success)
+                DataStatistician t = Utils.BsonDeserializeObject<DataStatistician>(File.ReadAllBytes("totals.bson")).ThrowIfNull();
+                SharedData.DataStatistician = t;
+            }
+            else
+            {
+                using (var file = File.Create("totals.bson"))
                 {
-                    Environment.Exit(0);
-                }
-                else
-                {
-                    SharedData.Logger.LogWarn("用户拒绝了管理员权限，集群可能无法正常运行！");
+                    file.Write(Utils.BsonSerializeObject(SharedData.DataStatistician));
                 }
             }
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                Utils.CreatePortRule("CSharp-OpenBMCLAPI",
-                    SharedData.Config.PORT,
-                    WindowsFirewallHelper.FirewallAction.Allow,
-                    WindowsFirewallHelper.FirewallDirection.Inbound
-                );
-            }*/
 
             // 从 .env.json 读取密钥然后 FetchToken
             ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(File.ReadAllTextAsync(".env.json").Result);
@@ -154,7 +138,8 @@ namespace CSharpOpenBMCLAPI
 
             Cluster cluster = new(info, token);
             SharedData.Logger.LogSystem($"成功创建 Cluster 实例");
-            AppDomain.CurrentDomain.ProcessExit += async (sender, e) => await Utils.ExitCluster(cluster);
+            AppDomain.CurrentDomain.ProcessExit += (sender, e) => Utils.ExitCluster(cluster).Wait();
+
             cluster.Start();
             cluster.WaitForStop();
 

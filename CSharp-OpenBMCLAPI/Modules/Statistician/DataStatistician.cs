@@ -1,6 +1,7 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Storage;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.NetworkInformation;
@@ -13,9 +14,11 @@ namespace CSharpOpenBMCLAPI.Modules.Statistician
     public class DataStatistician
     {
         private Task _updateTask;
+        private bool _started;
 
         public DataStatistician()
         {
+            this._started = false;
             for (int i = 0; i < this.Dashboard.Hours.Length; i++)
             {
                 this.Dashboard.Hours[i]._hour = i;
@@ -33,20 +36,24 @@ namespace CSharpOpenBMCLAPI.Modules.Statistician
                 };
                 while (true)
                 {
-                    this.DownloadCount(fai);
-                    Thread.Sleep(1000);
+                    if (this._started)
+                    {
+                        this.DownloadCount(fai);
+                        Thread.Sleep(1000);
+                    }
                 }
             });
         }
 
         private Pair<long, int>[] qps = new Pair<long, int>[60];
 
+        [Browsable(false)]
         public Dictionary<long, int> Qps
         {
             get
             {
                 Dictionary<long, int> pairs = new Dictionary<long, int>();
-                lock (qps)
+                lock (this)
                 {
                     foreach (var pair in qps)
                     {
@@ -59,8 +66,9 @@ namespace CSharpOpenBMCLAPI.Modules.Statistician
 
         public void DownloadCount(FileAccessInfo fileAccessInfo)
         {
-            lock (qps)
+            lock (this)
             {
+                this._started = true;
                 Pair<long, int> last = qps[0];
                 if (last.Key == 0)
                 {
@@ -74,9 +82,6 @@ namespace CSharpOpenBMCLAPI.Modules.Statistician
                 }
                 last.Value += (int)fileAccessInfo.hits;
                 qps[0] = last;
-            }
-            lock (Dashboard)
-            {
                 Dashboard.Hours[DateTime.Now.Hour].bytes += fileAccessInfo.bytes;
                 Dashboard.Hours[DateTime.Now.Hour].hits += fileAccessInfo.hits;
                 Dashboard.Hours[DateTime.Now.Hour].last_bytes += fileAccessInfo.bytes;
@@ -88,10 +93,13 @@ namespace CSharpOpenBMCLAPI.Modules.Statistician
             }
         }
 
+        [Browsable(false)]
         private long startTime = DateTimeOffset.Now.ToUnixTimeSeconds();
 
+        [Browsable(false)]
         public double Uptime => startTime;
 
+        [Browsable(false)]
         public long Memory
         {
             get
@@ -102,6 +110,7 @@ namespace CSharpOpenBMCLAPI.Modules.Statistician
             }
         }
 
+        [Browsable(false)]
         public double Cpu
         {
             get
@@ -116,6 +125,7 @@ namespace CSharpOpenBMCLAPI.Modules.Statistician
 
         public DashboardInformation Dashboard { get; set; } = new();
 
+        [Browsable(false)]
         public int Connections
         {
             get

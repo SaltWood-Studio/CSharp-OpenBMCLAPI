@@ -13,6 +13,7 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
     {
         public string path;
         public string hash;
-        public int size;
+        public long size;
+        public long mtime;
     }
 }

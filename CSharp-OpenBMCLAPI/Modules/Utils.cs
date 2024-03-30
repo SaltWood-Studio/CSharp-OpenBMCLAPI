@@ -1,7 +1,8 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Storage;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 using SocketIOClient;
-using System.Data.SQLite;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -62,12 +63,6 @@ namespace CSharpOpenBMCLAPI.Modules
             }
         }
 
-        public static int ExecuteSqlCommand(this SQLiteConnection conn, string command)
-        {
-            SQLiteCommand sql = new SQLiteCommand(command, conn);
-            return sql.ExecuteNonQuery();
-        }
-
         /// <summary>
         /// 关闭节点
         /// </summary>
@@ -77,11 +72,11 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             cluster.cancellationSrc.Cancel();
             await cluster.KeepAlive();
-            cluster.IsEnabled = false;
             Thread.Sleep(1000);
             await cluster.Disable();
             await cluster.application.ThrowIfNull().StopAsync();
             cluster.Stop();
+            cluster.IsEnabled = false;
         }
 
         /// <summary>
@@ -307,6 +302,30 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 // FirewallManager.Instance.Rules.Remove(rule);
                 SharedData.Logger.LogInfo($"防火墙规则已存在：<IFirewallRule {rule.Name} {string.Join(',', rule.LocalPorts)} => {string.Join(',', rule.RemotePorts)} {rule.Protocol} {rule.Action}>");
+            }
+        }
+
+        public static IEnumerator<T> GetEnumerator<T>(this IEnumerator<T> enumerator) => enumerator;
+
+        public static byte[] BsonSerializeObject(object obj)
+        {
+            MemoryStream stream = new MemoryStream();
+            using (BsonDataWriter writer = new BsonDataWriter(stream))
+            {
+                Newtonsoft.Json.JsonSerializer serializer = new();
+                serializer.Serialize(writer, obj);
+                return stream.ToArray();
+            }
+        }
+
+        public static T? BsonDeserializeObject<T>(byte[] bytes)
+        {
+            MemoryStream stream = new MemoryStream(bytes);
+            using (BsonDataReader reader = new BsonDataReader(stream))
+            {
+                Newtonsoft.Json.JsonSerializer serializer = new();
+                T? e = serializer.Deserialize<T>(reader);
+                return e;
             }
         }
     }

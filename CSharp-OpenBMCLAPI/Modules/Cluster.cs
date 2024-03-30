@@ -1,7 +1,4 @@
-﻿using Avro;
-using Avro.Generic;
-using Avro.IO;
-using CSharpOpenBMCLAPI.Modules.Plugin;
+﻿using CSharpOpenBMCLAPI.Modules.Plugin;
 using CSharpOpenBMCLAPI.Modules.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -10,6 +7,7 @@ using Microsoft.Extensions.Options;
 using SocketIOClient;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -179,8 +177,9 @@ namespace CSharpOpenBMCLAPI.Modules
             application.MapPost("/api/{name}", (HttpContext context, string name) => HttpServiceProvider.LogAndRun(context,
                 () => HttpServiceProvider.Api(context, name, this).Wait()
             ));
-            application.MapGet("/", (context) => HttpServiceProvider.LogAndRun(context, 
-            () => {
+            application.MapGet("/", (context) => HttpServiceProvider.LogAndRun(context,
+            () =>
+            {
                 context.Response.StatusCode = 302;
                 context.Response.Headers.Append("Location", "/dashboard");
             }));
@@ -314,6 +313,14 @@ namespace CSharpOpenBMCLAPI.Modules
                     hits = this.counter.hits,
                     bytes = this.counter.bytes
                 });
+
+            using (var file = File.Create("totals.bson"))
+            {
+                lock (SharedData.DataStatistician)
+                {
+                    file.Write(Utils.BsonSerializeObject(SharedData.DataStatistician));
+                }
+            }
         }
 
         /// <summary>
@@ -337,61 +344,45 @@ namespace CSharpOpenBMCLAPI.Modules
                 return;
             }
 
-            const string avroString = @"{""type"": ""array"",""items"": {""type"": ""record"",""name"": ""fileinfo"",""fields"": [{""name"": ""path"", ""type"": ""string""},{""name"": ""hash"", ""type"": ""string""},{""name"": ""size"", ""type"": ""long""}]}}";
-
             var resp = await this.client.GetAsync("openbmclapi/files");
             byte[] bytes = await resp.Content.ReadAsByteArrayAsync();
-            var decompressor = new Decompressor();
+
+            Decompressor decompressor = new Decompressor();
+
             bytes = decompressor.Unwrap(bytes).ToArray();
             decompressor.Dispose();
 
-            Schema schema = Schema.Parse(avroString);
-            var decoder = new BinaryDecoder(new MemoryStream(bytes));
+            AvroParser avro = new AvroParser(bytes);
+            List<ApiFileInfo> files;
 
-            object[] files = new GenericDatumReader<object[]>(schema, schema).Read(null!, decoder);
+            files = avro.Parse();
 
             object countLock = new();
             int count = 0;
 
-            SharedData.Logger.LogDebug($"文件检查策略：{SharedData.Config.startupCheckMode}");
-
-            Parallel.ForEach(files, async (obj) =>
-            //foreach (var obj in files)
+            Parallel.ForEach(files, file =>
             {
-                GenericRecord? record = obj as GenericRecord;
-                if (record != null)
+                string path = file.path;
+                string hash = file.hash;
+                long size = file.size;
+                DownloadFile(hash, path).Wait();
+                lock (countLock)
                 {
-                    object t;
-                    record.TryGetValue("path", out t);
-                    string path = t.ToString().ThrowIfNull();
-                    record.TryGetValue("hash", out t);
-                    string hash = t.ToString().ThrowIfNull();
-                    record.TryGetValue("size", out t);
-                    long size;
-
-                    if (long.TryParse(t.ToString().ThrowIfNull(), out size))
-                    {
-                        await DownloadFile(hash, path);
-                        lock (countLock)
-                        {
-                            count++;
-                        }
-                        bool valid = VerifyFile(hash, size, SharedData.Config.startupCheckMode);
-                        if (!valid)
-                        {
-                            SharedData.Logger.LogWarn($"文件 {path} 损坏！期望哈希值为 {hash}");
-                            await DownloadFile(hash, path, true);
-                        }
-                        SharedData.Logger.LogInfoNoNewLine($"\r{count}/{files.Length}");
-                    }
-
-                    // 销毁值
-                    t = null!;
-                    path = null!;
-                    hash = null!;
-                    size = default;
+                    count++;
                 }
+                bool valid = VerifyFile(hash, size, SharedData.Config.startupCheckMode);
+                if (!valid)
+                {
+                    SharedData.Logger.LogWarn($"文件 {path} 损坏！期望哈希值为 {hash}");
+                    DownloadFile(hash, path, true).Wait();
+                }
+                SharedData.Logger.LogInfoNoNewLine($"\r{count}/{files.Count}");
             });
+
+            files = null!;
+            countLock = null!;
+            bytes = null!;
+            decompressor = null!;
         }
 
         /// <summary>
