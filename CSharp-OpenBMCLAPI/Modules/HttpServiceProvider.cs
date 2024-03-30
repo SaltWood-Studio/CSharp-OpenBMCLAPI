@@ -139,7 +139,7 @@ namespace CSharpOpenBMCLAPI.Modules
                     }));
                     break;
                 case "status":
-                    await context.Response.WriteAsync("正常");
+                    await context.Response.WriteAsync(cluster.IsEnabled ? "正常" : "关闭");
                     break;
                 case "uptime":
                     await context.Response.WriteAsync(SharedData.DataStatistician.Uptime.ToString("0.00"));
