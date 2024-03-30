@@ -101,7 +101,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             SharedData.PluginManager.TriggerEvent(this, ProgramEventType.ClusterStarted);
             // 工作进程启动
-            SharedData.Logger.LogInfo($"工作进程 {guid} 已启动");
+            SharedData.Logger.LogSystem($"工作进程 {guid} 已启动");
             Task<int> task = AsyncRun();
             task.Wait();
             SharedData.PluginManager.TriggerEvent(this, ProgramEventType.ClusterStopped);
@@ -119,7 +119,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
             // await GetConfiguration();
             // 检查文件
-            //await CheckFiles();
+            await CheckFiles();
             SharedData.Logger.LogInfo();
             Connect();
 
@@ -129,7 +129,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
             await Enable();
 
-            SharedData.Logger.LogInfo($"工作进程 {guid} 在 <{SharedData.Config.HOST}:{SharedData.Config.PORT}> 提供服务");
+            SharedData.Logger.LogSystem($"工作进程 {guid} 在 <{SharedData.Config.HOST}:{SharedData.Config.PORT}> 提供服务");
 
             _keepAlive = Task.Run(_KeepAlive, cancellationSrc.Token);
 
@@ -143,7 +143,7 @@ namespace CSharpOpenBMCLAPI.Modules
             while (true)
             {
                 cancellationSrc.Token.ThrowIfCancellationRequested();
-                await Task.Delay(25 * 1000);
+                await Task.Delay(15 * 1000);
                 // Disable().Wait();
                 await KeepAlive();
                 GC.Collect();
@@ -209,7 +209,7 @@ namespace CSharpOpenBMCLAPI.Modules
             X509Certificate2 cert = X509Certificate2.CreateFromPemFile($"{SharedData.Config.clusterFileDirectory}certifications/cert.pem",
                 $"{SharedData.Config.clusterFileDirectory}certifications/key.pem");
             byte[] pfxCert = cert.Export(X509ContentType.Pfx);
-            SharedData.Logger.LogInfo($"将 PEM 格式的证书转换为 PFX 格式");
+            SharedData.Logger.LogDebug($"将 PEM 格式的证书转换为 PFX 格式");
             using (var file = File.Create($"{SharedData.Config.clusterFileDirectory}certifications/cert.pfx"))
             {
                 file.Write(pfxCert);
@@ -249,10 +249,10 @@ namespace CSharpOpenBMCLAPI.Modules
             }
             await socket.EmitAsync("enable", (SocketIOResponse resp) =>
             {
+                this.IsEnabled = true;
                 Utils.PrintResponseMessage(resp);
                 // Debugger.Break();
-                SharedData.Logger.LogInfo($"启用成功");
-                this.IsEnabled = true;
+                SharedData.Logger.LogSystem($"启用成功");
             }, new
             {
                 host = SharedData.Config.HOST,
@@ -283,7 +283,7 @@ namespace CSharpOpenBMCLAPI.Modules
             await socket.EmitAsync("disable", (SocketIOResponse resp) =>
             {
                 Utils.PrintResponseMessage(resp);
-                SharedData.Logger.LogInfo($"禁用成功");
+                SharedData.Logger.LogSystem($"禁用成功");
                 this.IsEnabled = false;
             });
         }
@@ -305,7 +305,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 (SocketIOResponse resp) =>
                 {
                     Utils.PrintResponseMessage(resp);
-                    SharedData.Logger.LogInfo($"保活成功 at {time}，served {Utils.GetLength(this.counter.bytes)}({this.counter.bytes} bytes)/{this.counter.hits} hits");
+                    SharedData.Logger.LogSystem($"保活成功 at {time}，served {Utils.GetLength(this.counter.bytes)}({this.counter.bytes} bytes)/{this.counter.hits} hits");
                     this.counter.Reset();
                 },
                 new
@@ -332,6 +332,11 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         protected async Task CheckFiles()
         {
+            if (SharedData.Config.skipStartupCheck || SharedData.Config.startupCheckMode == FileVerificationMode.None)
+            {
+                return;
+            }
+
             const string avroString = @"{""type"": ""array"",""items"": {""type"": ""record"",""name"": ""fileinfo"",""fields"": [{""name"": ""path"", ""type"": ""string""},{""name"": ""hash"", ""type"": ""string""},{""name"": ""size"", ""type"": ""long""}]}}";
 
             var resp = await this.client.GetAsync("openbmclapi/files");
@@ -436,7 +441,7 @@ namespace CSharpOpenBMCLAPI.Modules
             var resp = await this.client.GetAsync($"openbmclapi/download/{hash}");
 
             this.storage.WriteFile(Utils.HashToFileName(hash), await resp.Content.ReadAsByteArrayAsync());
-            SharedData.Logger.LogInfo($"文件 {path} 下载成功");
+            SharedData.Logger.LogDebug($"文件 {path} 下载成功");
         }
 
         /// <summary>

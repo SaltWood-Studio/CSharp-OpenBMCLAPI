@@ -1,8 +1,11 @@
 ﻿using CSharpOpenBMCLAPI.Modules;
 using CSharpOpenBMCLAPI.Modules.Plugin;
+using CSharpOpenBMCLAPI.Modules.Statistician;
 using Newtonsoft.Json;
+using System.Data.SQLite;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using TeraIO.Runnable;
 
 namespace CSharpOpenBMCLAPI
@@ -13,23 +16,12 @@ namespace CSharpOpenBMCLAPI
 
         static void Main(string[] args)
         {
-            SharedData.Logger.LogInfo($"Starting CSharp-OpenBMCLAPI v{SharedData.Config.clusterVersion}");
-            SharedData.Logger.LogInfo("高性能、低メモリ占有！");
-            SharedData.Logger.LogInfo($"运行时环境：{Utils.GetRuntime()}");
+            SharedData.Logger.LogSystem($"Starting CSharp-OpenBMCLAPI v{SharedData.Config.clusterVersion}");
+            SharedData.Logger.LogSystem("高性能、低メモリ占有！");
+            SharedData.Logger.LogSystem($"运行时环境：{Utils.GetRuntime()}");
             Program program = new Program();
             program.Start();
             program.WaitForStop();
-        }
-
-        protected override int Run(string[] args)
-        {
-            SharedData.Config = GetConfig();
-            LoadPlugins();
-            SharedData.PluginManager.TriggerEvent(this, ProgramEventType.ProgramStarted);
-            Task<int> task = AsyncRun(args);
-            task.Wait();
-            SharedData.PluginManager.TriggerEvent(this, ProgramEventType.ProgramStopped);
-            return task.Result;
         }
 
         protected void LoadPlugins()
@@ -113,10 +105,21 @@ namespace CSharpOpenBMCLAPI
             }
         }
 
-        protected async Task<int> AsyncRun(string[] args)
+        protected override int Run(string[] args)
         {
+            SharedData.Config = GetConfig();
+            LoadPlugins();
+            SharedData.PluginManager.TriggerEvent(this, ProgramEventType.ProgramStarted);
+
             int returns = 0;
 
+            SQLiteConnection conn = new SQLiteConnection("Data Source=total.db;");
+            conn.Open();
+
+            conn.ExecuteSqlCommand("create table if not exists access_data_daily (day bigint, hits bigint, bytes bigint, cache_hits bigint, cache_bytes bigint, last_hits bigint, last_bytes bigint, failed bigint)");
+            conn.ExecuteSqlCommand("create table if not exists access_data_hourly (hour bigint, hits bigint, bytes bigint, cache_hits bigint, cache_bytes bigint, last_hits bigint, last_bytes bigint, failed bigint)");
+
+            conn.Close();
             /*
             if (!Utils.IsAdministrator())
             {
@@ -141,20 +144,21 @@ namespace CSharpOpenBMCLAPI
             }*/
 
             // 从 .env.json 读取密钥然后 FetchToken
-            ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(await File.ReadAllTextAsync(".env.json"));
+            ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(File.ReadAllTextAsync(".env.json").Result);
             SharedData.ClusterInfo = info;
-            SharedData.Logger.LogInfo($"Cluster id: {info.ClusterID}");
+            SharedData.Logger.LogSystem($"Cluster id: {info.ClusterID}");
             TokenManager token = new TokenManager(info);
-            await token.FetchToken();
+            token.FetchToken().Wait();
 
             SharedData.Token = token;
 
             Cluster cluster = new(info, token);
-            SharedData.Logger.LogInfo($"成功创建 Cluster 实例");
+            SharedData.Logger.LogSystem($"成功创建 Cluster 实例");
             AppDomain.CurrentDomain.ProcessExit += async (sender, e) => await Utils.ExitCluster(cluster);
             cluster.Start();
             cluster.WaitForStop();
 
+            SharedData.PluginManager.TriggerEvent(this, ProgramEventType.ProgramStopped);
             return returns;
         }
     }

@@ -1,6 +1,7 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Storage;
 using Newtonsoft.Json;
 using SocketIOClient;
+using System.Data.SQLite;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -42,19 +43,29 @@ namespace CSharpOpenBMCLAPI.Modules
                 case JsonValueKind.Array:
                     foreach (var i in element.EnumerateArray())
                     {
-                        var message = JsonConvert.DeserializeAnonymousType(i.ToString(), new { message = "" });
-                        if (message != null)
+                        try
                         {
-                            SharedData.Logger.LogInfo(message.message);
-                            continue;
-                        }   
-                        PrintJsonElement(i);
+                            var message = JsonConvert.DeserializeAnonymousType(i.ToString(), new { message = "" });
+                            if (message != null)
+                            {
+                                SharedData.Logger.LogInfo(message.message);
+                                continue;
+                            }
+                            PrintJsonElement(i);
+                        }
+                        catch { }
                     }
                     break;
                 default:
                     break;
 
             }
+        }
+
+        public static int ExecuteSqlCommand(this SQLiteConnection conn, string command)
+        {
+            SQLiteCommand sql = new SQLiteCommand(command, conn);
+            return sql.ExecuteNonQuery();
         }
 
         /// <summary>
