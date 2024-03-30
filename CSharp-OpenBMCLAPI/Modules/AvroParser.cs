@@ -26,7 +26,6 @@ namespace CSharpOpenBMCLAPI.Modules
         public List<ApiFileInfo> Parse()
         {
             this._files.Clear();
-            // File.WriteAllBytes("debug.bin", this.data);
             long elements = this.ReadLong();
             for (long i = 0; i < elements; i++)
             {
