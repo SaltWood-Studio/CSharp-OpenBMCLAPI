@@ -35,31 +35,37 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             listener.Start();
 
             HttpListener httpListener = new();
-            Console.WriteLine("已监听");
 
             while (true)
             {
                 TcpClient tcpClient = await listener.AcceptTcpClientAsync();
-                Console.WriteLine("Accepted ");
                 Stream stream = tcpClient.GetStream();
                 if (_certificate != null)
                 {
                     stream = new SslStream(stream, false, ValidateServerCertificate, null);
 
                 }
-                Console.WriteLine("已Handle");
-                await Handle(new Client(tcpClient, stream));
+                if (await Handle(new Client(tcpClient, stream)) && tcpClient.Connected)
+                {
+                    stream.Close();
+                    tcpClient.Close();
+                }
             }
         }
-        protected async Task Handle(Client client)
+        protected async Task<bool> Handle(Client client) // 返回值代表是否关闭连接？
         {
             try
             {
                 byte[] buf = await client.Read(this.buffer);
                 Request request = new Request(client, buf);
+                // 路由，你需要自己写了
+                Response response = new Response();
+                await response.call(client, request); // 可以多次调用Response
+                return false;
             } catch (Exception e)
             {
                 e.PrintTypeInfo();
+                return true;
             }
         }
 
@@ -76,16 +82,13 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             }
             Console.WriteLine(text);
         }
+        public static void printArrayBytes(byte[][] bytes)
+        {
+            bytes.ForEach(e => printBytes(e));
+        }
         public static string byteToString(byte hex)
         {
             return hex <= 8 || (hex >= 11 && hex <= 12) || (hex >= 14 && hex <= 31) || (hex >= 127 && hex <= 255) ? "\\x" + BitConverter.ToString(new byte[] { hex }) : (hex == 9 ? "\\t" : (hex == 10 ? "\\n" : (hex == 13 ? "\\r" : Encoding.ASCII.GetString(new byte[] { hex }))));
         }
-        /*
-         * By TTB
-         *  function Socket_tostring(hex) {
-                hex = hex < 0 ? hex + 256 : hex
-                return hex <= 8 || (hex >= 11 && hex <= 12) || (hex >= 14 && hex <= 31) || (hex >= 127 && hex <= 255) ? "\\x" + format("%02x", hex) : (hex == 9 ? "\\t" : (hex == 10 ? "\\n" : (hex == 13 ? "\\r" : hex.tochar())))
-            }
-         */
     }
 }
