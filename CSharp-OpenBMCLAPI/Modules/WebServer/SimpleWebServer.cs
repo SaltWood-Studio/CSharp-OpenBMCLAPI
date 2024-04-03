@@ -11,6 +11,7 @@ using TeraIO.Runnable;
 
 namespace CSharpOpenBMCLAPI.Modules.WebServer
 {
+    [Obsolete("懒得写了")]
     class SimpleWebServer : RunnableBase
     {
         private const int Port = 443; // HTTPS默认端口  
@@ -44,9 +45,9 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
                 {
                     await sslStream.AuthenticateAsServerAsync(_certificate, false, SslProtocols.None, false);
 
-                    byte[] responseBytes = Array.Empty<byte>();
+                    //sslStream.Read()
 
-                    HttpContentPacket? packet = HttpContentPacket.Create(responseBytes, client);
+                    byte[] responseBytes = Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nObsolete");
 
                     await sslStream.WriteAsync(responseBytes, 0, responseBytes.Length);
                     sslStream.Close();

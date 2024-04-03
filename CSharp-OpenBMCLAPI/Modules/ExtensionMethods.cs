@@ -1,4 +1,10 @@
 ﻿using System.Reflection;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Runtime.ConstrainedExecution;
+using YamlDotNet.Core.Tokens;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using System.Linq;
+using System.Text;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
@@ -55,6 +61,44 @@ namespace CSharpOpenBMCLAPI.Modules
                     Console.WriteLine($"|   |---returns: {method.ReturnType.Name}");
                 }
             }
+        }
+
+        public static List<byte[]> Split(this byte[] bytes, string key, int count = 0) => bytes.Split(Encoding.UTF8.GetBytes(key), count);
+
+        public static List<byte[]> Split(this byte[] bytes, byte[] key, int count = 0)
+        {
+            if (count <= -1)
+                count = 0;
+            else
+                count += 1;
+            int data_length = bytes.Length;
+            int key_length = key.Length;
+            List<byte[]> splitted_data = [];
+            int start = 0;
+            int cur = 0;
+            bool ckd = false;
+            foreach (int i in Enumerable.Range(0, data_length))
+            {
+                if (bytes[i] == key[0] && i + key_length <= data_length)
+                    ckd = true;
+                foreach (int j in Enumerable.Range(1, key_length - 1))
+                {
+                    if (bytes[i + j] != key[j])
+                        ckd = false;
+                    break;
+                }
+                if (ckd)
+                {
+                    splitted_data.Add(bytes[start..(i - 1)]);
+                    cur += 1;
+                    start = i + key_length;
+                }
+                if (count != 0 && cur >= count)
+                    break;
+            }
+            if (count == 0 || cur < count)
+                splitted_data.Add(bytes[start..]);
+            return splitted_data;
         }
     }
 }

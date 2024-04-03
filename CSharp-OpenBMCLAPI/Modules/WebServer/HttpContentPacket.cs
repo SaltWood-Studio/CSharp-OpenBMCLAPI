@@ -11,37 +11,32 @@ using TeraIO.Runnable;
 
 namespace CSharpOpenBMCLAPI.Modules.WebServer
 {
+    [Obsolete("懒得写了")]
     public class HttpContentPacket
     {
-        protected long startTime;
-        protected byte[] info;
-        protected byte[] body;
-        protected EndPoint endpoint;
+        //protected long startTime;
+        //protected byte[] info;
+        //protected byte[] body;
+        //protected EndPoint endpoint;
+        //protected string useragent;
+        //protected Dictionary<string, string> headers;
 
-        public HttpContentPacket()
-        {
 
-        }
+        //public HttpContentPacket(byte[] bytes, TcpClient client)
+        //{
+            //startTime = DateTimeOffset.Now.ToUnixTimeSeconds();
+            //endpoint = client.Client.RemoteEndPoint.ThrowIfNull();
+            //List<byte[]> list = bytes.Split("\r\n", 2);
+            //info = list[0];
+            //body = list[1];
+            //headers = ParseToHeaders(list[2]);
+        //}
 
-        [Obsolete($"Please use {nameof(HttpContentPacket.Create)} instead.")]
-        public HttpContentPacket(byte[] data)
-        {
+        //private Dictionary<string, string> ParseToHeaders(byte[] bytes)
+        //{
+        //
+        //}
 
-        }
-
-        public static HttpContentPacket? Create(byte[] bytes, TcpClient client)
-        {
-            // = bytes.Split("\r\n")
-            HttpContentPacket result = new()
-            {
-                startTime = DateTimeOffset.Now.ToUnixTimeSeconds(),
-                //info
-                //body = ,
-                endpoint = client.Client.RemoteEndPoint.ThrowIfNull()
-            };
-            return null;
-        }
-
-#error 未完成代码，不要编译
+        // #error 未完成代码，不要编译
     }
 }
