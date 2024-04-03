@@ -382,8 +382,8 @@ namespace CSharpOpenBMCLAPI.Modules
                 }
             }, t.Token);
 
-            //Parallel.ForEach(files, file =>
-            foreach (var file in files)
+            Parallel.ForEach(files, file =>
+            //foreach (var file in files)
             {
                 CheckSingleFile(file);
                 lock (countLock)
@@ -391,7 +391,7 @@ namespace CSharpOpenBMCLAPI.Modules
                     count++;
                 }
                 SharedData.Logger.LogInfoNoNewLine($"\r{count}/{files.Count}");
-            }//);
+            });
 
             t.Cancel();
 
