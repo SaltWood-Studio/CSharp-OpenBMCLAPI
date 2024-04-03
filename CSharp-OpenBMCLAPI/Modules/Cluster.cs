@@ -188,7 +188,6 @@ namespace CSharpOpenBMCLAPI.Modules
                 return Task.CompletedTask;
             });
             application.MapGet("/static/js/{file}", (HttpContext context, string file) => HttpServiceProvider.Dashboard(context, $"/static/js/{file}"));
-            //application.
             Task task = application.RunAsync();
             Task.Run(async () =>
             {

@@ -46,7 +46,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
 
                     byte[] responseBytes = Array.Empty<byte>();
 
-                    HttpContentPacket packet = HttpContentPacket.Create(responseBytes);
+                    HttpContentPacket? packet = HttpContentPacket.Create(responseBytes, client);
 
                     await sslStream.WriteAsync(responseBytes, 0, responseBytes.Length);
                     sslStream.Close();
