@@ -104,6 +104,9 @@
 **SALTWOOD**
 - [TeraIO](https://github.com/SALTWOOD/TeraIO) - 其实也没用到多少（目前是废物一个），以后会抽空把一些 utils 丢进去的
 
+**tianxiu2b2t**
+- [Avro-Ninifiy](https://github.com/SALTWOOD/TeraIO) - 减少了Avro的代码量，保留主要代码
+
 **@aaubry (Antoine Aubry)**
 - [YamlDotNet](https://github.com/aaubry/YamlDotNet) - 用于配置文件的读写
 
