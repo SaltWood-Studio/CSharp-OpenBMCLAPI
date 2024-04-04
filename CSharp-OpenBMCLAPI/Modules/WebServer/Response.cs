@@ -11,13 +11,15 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
         int status_code = 200;
         Header header = new Header();
         Stream stream = new MemoryStream();
-        public async Task call(Client client, Request request)
+
+        public async Task Call(Client client, Request request)
         {
-            header.set("Content-Length", stream.Length);
-            header.set("Server", "CSharp-SaltWood");
+            header.Set("Content-Length", stream.Length);
+            header.Set("Server", "CSharp-SaltWood");
             string responseHeader = "HTTP/1.1 " + status_code + " " + GetStatusMsg(status_code) + "\r\n" + header.ToString() + "\r\n";
-            await client.Write(WebUtils.encode(responseHeader));
+            await client.Write(WebUtils.Encode(responseHeader));
         }
+
         public static Dictionary<int, string> STATUS_CODES = new Dictionary<int, string>
         {
             { 100, "Continue" },
@@ -73,6 +75,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             { 504, "Gateway Time-out" },
             { 505, "HTTP Version not supported" },
         };
+
         public static string GetStatusMsg(int status)
         {
             return STATUS_CODES.ContainsKey(status) ? STATUS_CODES[status] : STATUS_CODES[int.Parse((status / 100) + "") * 100];

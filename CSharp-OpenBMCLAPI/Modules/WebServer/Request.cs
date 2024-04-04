@@ -15,19 +15,22 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
         Header header;
         int bodyLength;
         Client client;
-        byte[] bodyData = new byte[]{};
-        public Request(Client client, byte[] data) {
+        byte[] bodyData = Array.Empty<byte>();
+
+        public Request(Client client, byte[] data)
+        {
             this.client = client;
-            byte[][] temp = WebUtils.SplitBytes(data, WebUtils.encode("\r\n\r\n")).ToArray();
+            byte[][] temp = WebUtils.SplitBytes(data, WebUtils.Encode("\r\n\r\n")).ToArray();
             this.bodyData = temp[1];
-            byte[][] requestHeader = WebUtils.SplitBytes(temp[0], WebUtils.encode("\r\n")).ToArray();
-            temp = WebUtils.SplitBytes(requestHeader[0], WebUtils.encode(" "), 3).ToArray();
-            (method, path, httpProtocol) = (WebUtils.decode(temp[0]), WebUtils.decode(temp[1]), WebUtils.decode(temp[2]));
+            byte[][] requestHeader = WebUtils.SplitBytes(temp[0], WebUtils.Encode("\r\n")).ToArray();
+            temp = WebUtils.SplitBytes(requestHeader[0], WebUtils.Encode(" "), 3).ToArray();
+            (method, path, httpProtocol) = (WebUtils.Decode(temp[0]), WebUtils.Decode(temp[1]), WebUtils.Decode(temp[2]));
             Array.Copy(requestHeader, 1, requestHeader, 0, requestHeader.Length - 1);
-            header = Header.fromBytes(requestHeader);
-            bodyLength = int.Parse(header.get("Content-Length", 0) + "");
+            header = Header.FromBytes(requestHeader);
+            bodyLength = int.Parse(header.Get("Content-Length", 0) + "");
         }
-        public async Task skipContent()
+
+        public async Task SkipContent()
         {
             await this.client.Read(bodyLength - bodyData.Length);
         }

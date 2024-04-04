@@ -68,17 +68,20 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             Array.Copy(data, start, result, 0, length);
             return result;
         }
-        public static Object[] SubArray(Object[] data, int start, int length)
+
+        public static object[] SubArray(object[] data, int start, int length)
         {
             Object[] result = new Object[length];
             Array.Copy(data, start, result, 0, length);
             return result;
         }
-        public static string decode(byte[] data)
+
+        public static string Decode(byte[] data)
         {
             return Encoding.UTF8.GetString(data);
         }
-        public static byte[] encode(string data)
+
+        public static byte[] Encode(string data)
         {
             return Encoding.UTF8.GetBytes(data).ToArray();
         }
