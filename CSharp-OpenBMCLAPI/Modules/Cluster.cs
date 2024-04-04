@@ -1,5 +1,6 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Plugin;
 using CSharpOpenBMCLAPI.Modules.Storage;
+using CSharpOpenBMCLAPI.Modules.WebServer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -118,15 +119,17 @@ namespace CSharpOpenBMCLAPI.Modules
 
             // await GetConfiguration();
             // 检查文件
-            await CheckFiles();
+            //await CheckFiles();
             SharedData.Logger.LogInfo();
-            Connect();
+            //Connect();
 
-            await RequestCertification();
+            //await RequestCertification();
+
+            LoadAndConvertCert();
 
             InitializeService();
 
-            await Enable();
+            //await Enable();
 
             SharedData.Logger.LogSystem($"工作进程 {guid} 在 <{SharedData.Config.HOST}:{SharedData.Config.PORT}> 提供服务");
 
@@ -154,8 +157,11 @@ namespace CSharpOpenBMCLAPI.Modules
         /// </summary>
         private void InitializeService()
         {
-            var builder = WebApplication.CreateBuilder();
+            //var builder = WebApplication.CreateBuilder();
             X509Certificate2 cert = LoadAndConvertCert();
+            SimpleWebServer server = new(SharedData.Config.PORT, cert);//cert);
+            server.Start();
+            /*
             builder.WebHost.UseKestrel(options =>
             {
                 options.ListenAnyIP(SharedData.Config.PORT, listenOptions =>
@@ -188,6 +194,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 return Task.CompletedTask;
             });
             application.MapGet("/static/js/{file}", (HttpContext context, string file) => HttpServiceProvider.Dashboard(context, $"/static/js/{file}"));
+
             Task task = application.RunAsync();
             Task.Run(async () =>
             {
@@ -196,7 +203,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 {
                     await this.Disable();
                 }
-            });
+            });*/
         }
 
         /// <summary>
@@ -209,6 +216,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             X509Certificate2 cert = X509Certificate2.CreateFromPemFile(Path.Combine(SharedData.Config.clusterFileDirectory, $"certifications/cert.pem"),
                 Path.Combine(SharedData.Config.clusterFileDirectory, $"certifications/key.pem"));
+            //return cert;
             byte[] pfxCert = cert.Export(X509ContentType.Pfx);
             SharedData.Logger.LogDebug($"将 PEM 格式的证书转换为 PFX 格式");
             using (var file = File.Create(Path.Combine(SharedData.Config.clusterFileDirectory, $"certifications/cert.pfx")))

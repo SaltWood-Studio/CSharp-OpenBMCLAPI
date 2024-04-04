@@ -19,10 +19,6 @@ namespace CSharpOpenBMCLAPI
 
         static void Main(string[] args)
         {
-            WebServer web = new WebServer(8800, null);
-            web.Start();
-            web.WaitForStop();
-            // 
             SharedData.Logger.LogSystem($"Starting CSharp-OpenBMCLAPI v{SharedData.Config.clusterVersion}");
             SharedData.Logger.LogSystem("高性能、低メモリ占有！");
             SharedData.Logger.LogSystem($"运行时环境：{Utils.GetRuntime()}");

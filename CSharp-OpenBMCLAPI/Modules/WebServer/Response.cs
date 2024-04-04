@@ -3,21 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TeraIO.Extension;
 
 namespace CSharpOpenBMCLAPI.Modules.WebServer
 {
     public class Response
     {
-        int status_code = 200;
-        Header header = new Header();
-        Stream stream = new MemoryStream();
+        public int StatusCode { get; set; } = 200;
+        public Header Header { get; set; } = new Header();
+        public Stream Stream { get; set; } = new MemoryStream();
 
         public async Task Call(Client client, Request request)
         {
-            header.Set("Content-Length", stream.Length);
-            header.Set("Server", "CSharp-SaltWood");
-            string responseHeader = "HTTP/1.1 " + status_code + " " + GetStatusMsg(status_code) + "\r\n" + header.ToString() + "\r\n";
-            await client.Write(WebUtils.Encode(responseHeader));
+            Header.Set("Content-Length", Stream.Length);
+            Header.Set("Server", "CSharp-SaltWood");
+            string responseHeader = $"HTTP/1.1 {StatusCode} {GetStatusMsg(StatusCode)}\r\n{Header}\r\n";
+            await client.Write(responseHeader.Encode());
+            Stream.CopyTo(client.Stream);
         }
 
         public static Dictionary<int, string> STATUS_CODES = new Dictionary<int, string>

@@ -259,7 +259,7 @@ namespace CSharpOpenBMCLAPI.Modules
             }
         }
 
-        public static string ExceptionToDetail(Exception ex)
+        public static string ExceptionToDetail(this Exception ex)
         {
             return $"""
                 {ex.GetType().FullName}: {ex.Message}

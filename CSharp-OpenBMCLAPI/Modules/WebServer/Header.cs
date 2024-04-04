@@ -1,12 +1,14 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace CSharpOpenBMCLAPI.Modules.WebServer
 {
-    public class Header
+    public class Header : IDictionary<string, string>
     {
         Dictionary<string, string> tables;
 
@@ -50,10 +52,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             tables.TryAdd(key, value + "");
         }
 
-        public bool ContainsKey(string key)
-        {
-            return tables.ContainsKey(key);
-        }
+        public bool ContainsKey(string key) => tables.ContainsKey(key);
 
         public override string ToString()
         {
@@ -63,6 +62,75 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
                 header += key + ": " + tables[key] + "\r\n";
             }
             return header;
+        }
+
+        // Auto generated.
+
+        public string this[string key] { get => tables[key]; set => tables[key] = value; }
+
+        public ICollection<string> Keys => tables.Keys;
+
+        public ICollection<string> Values => tables.Values;
+
+        public int Count => tables.Count;
+
+        public bool IsReadOnly => ((ICollection<KeyValuePair<string, string>>)tables).IsReadOnly;
+
+        public void Add(string key, string value)
+        {
+            tables.Add(key, value);
+        }
+
+        public void Add(KeyValuePair<string, string> item)
+        {
+            ((ICollection<KeyValuePair<string, string>>)tables).Add(item);
+        }
+
+        public void Clear()
+        {
+            tables.Clear();
+        }
+
+        public bool Contains(KeyValuePair<string, string> item)
+        {
+            return tables.Contains(item);
+        }
+
+        public void CopyTo(KeyValuePair<string, string>[] array, int arrayIndex)
+        {
+            ((ICollection<KeyValuePair<string, string>>)tables).CopyTo(array, arrayIndex);
+        }
+
+        public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
+        {
+            return ((IEnumerable<KeyValuePair<string, string>>)tables).GetEnumerator();
+        }
+
+        public bool Remove(string key)
+        {
+            return tables.Remove(key);
+        }
+
+        public bool Remove(KeyValuePair<string, string> item)
+        {
+            return ((ICollection<KeyValuePair<string, string>>)tables).Remove(item);
+        }
+
+        public bool TryGetValue(string key, [MaybeNullWhen(false)] out string value)
+        {
+            return tables.TryGetValue(key, out value);
+        }
+
+        public string? TryGetValue(string key)
+        {
+            string? value;
+            tables.TryGetValue(key, out value);
+            return value;
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IEnumerable)tables).GetEnumerator();
         }
     }
 }

@@ -12,21 +12,21 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
 {
     public class Client : IDisposable
     {
-        TcpClient client;
+        public TcpClient TcpClient;
         Stream stream;
 
         public Stream Stream { get => this.stream; }
 
         public Client(TcpClient client, Stream stream)
         {
-            this.client = client;
+            this.TcpClient = client;
             this.stream = stream;
         }
 
         public void Close()
         {
             this.stream.Close();
-            this.client.Close();
+            this.TcpClient.Close();
         }
 
         public void Dispose() => this.Close();
@@ -46,10 +46,16 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             await this.stream.FlushAsync();
         }
 
-        public async Task ZeroCopy(Stream stream)
+        public async Task CopyTo(Stream stream)
         {
             await this.stream.CopyToAsync(stream);
             await this.stream.FlushAsync();
+        }
+
+        public async Task CopyFrom(Stream stream)
+        {
+            await stream.CopyToAsync(this.stream);
+            await stream.FlushAsync();
         }
     }
 }

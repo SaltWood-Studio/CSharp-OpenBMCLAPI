@@ -9,16 +9,18 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using TeraIO.Runnable;
+using System.Text.RegularExpressions;
+using TeraIO.Extension;
 
 namespace CSharpOpenBMCLAPI.Modules.WebServer
 {
-    class WebServer : RunnableBase
+    public class SimpleWebServer : RunnableBase
     {
         private int Port = 0; // TCP 随机端口  
         private readonly X509Certificate2? _certificate; // SSL证书  
         private readonly int bufferSize = 8192;
 
-        public WebServer(int port, X509Certificate2? certificate)
+        public SimpleWebServer(int port, X509Certificate2? certificate)
         {
             Port = port;
             _certificate = certificate;
@@ -39,36 +41,44 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             while (true)
             {
                 TcpClient tcpClient = await listener.AcceptTcpClientAsync();
-                Stream stream = tcpClient.GetStream();
-                if (_certificate != null)
+                _ = Task.Run(() =>
                 {
-                    stream = new SslStream(stream, false, ValidateServerCertificate, null);
-
-                }
-                if (await Handle(new Client(tcpClient, stream)) && tcpClient.Connected)
-                {
-                    stream.Close();
-                    tcpClient.Close();
-                }
+                    Stream stream = tcpClient.GetStream();
+                    if (_certificate != null)
+                    {
+                        SslStream sslStream = new SslStream(stream, true, ValidateServerCertificate, null);
+                        sslStream.AuthenticateAsServer(this._certificate, false, false);
+                        stream = sslStream;
+                    }
+                    if (Handle(new Client(tcpClient, stream)).Result && tcpClient.Connected)
+                    {
+                        stream.Close();
+                        tcpClient.Close();
+                    }
+                });
             }
         }
 
         protected async Task<bool> Handle(Client client) // 返回值代表是否关闭连接？
         {
-            try
-            {
-                byte[] buffer = await client.Read(this.bufferSize);
-                Request request = new Request(client, buffer);
-                // 路由，你需要自己写了
-                Response response = new Response();
-                await response.Call(client, request); // 可以多次调用Response
-                return true;
-            }
-            catch (Exception e)
-            {
-                e.PrintTypeInfo();
-                return true;
-            }
+            byte[] buffer = await client.Read(this.bufferSize);
+            Request request = new Request(client, buffer);
+            Response response = new Response();
+
+            Regex regex = new("/download/([0-9a-zA-Z]{32,40})");
+            Match match = regex.Match(request.Path);
+
+            response.Header.Add("Content-Type", "application/octet-stream");
+
+            var filePath = Path.Combine(SharedData.Config.cacheDirectory, Utils.HashToFileName(match.Groups[1].Value));
+            FileInfo fileInfo = new FileInfo(filePath);
+            response.Stream = File.OpenRead(filePath);
+
+            await response.Call(client, request); // 可以多次调用Response
+
+            //SharedData.Logger.LogInfo($"{request.Method} {request.Path} <{response.StatusCode}> - [{request.Client.TcpClient.Client.RemoteEndPoint}] {request.Header.TryGetValue("User-Agent")}");
+
+            return true;
         }
 
         private bool ValidateServerCertificate(object sender, X509Certificate? certificate, X509Chain? chain, SslPolicyErrors sslPolicyErrors)

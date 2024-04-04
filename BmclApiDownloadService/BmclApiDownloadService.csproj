@@ -13,4 +13,10 @@
     <None Remove="Pages\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="index.min.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

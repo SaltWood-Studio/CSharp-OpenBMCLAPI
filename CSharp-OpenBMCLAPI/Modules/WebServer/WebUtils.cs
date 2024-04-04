@@ -8,7 +8,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
 {
     public static class WebUtils
     {
-        public static List<byte[]> SplitBytes(byte[] data, byte[] key, int count = -1)
+        public static List<byte[]> SplitBytes(this byte[] data, byte[] key, int count = -1)
         {
             if (count <= -1)
             {
@@ -62,26 +62,26 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
         }
 
         // Helper method to create a subarray from an existing array  
-        public static byte[] SubArray(byte[] data, int start, int length)
+        public static byte[] SubArray(this byte[] data, int start, int length)
         {
             byte[] result = new byte[length];
             Array.Copy(data, start, result, 0, length);
             return result;
         }
 
-        public static object[] SubArray(object[] data, int start, int length)
+        public static object[] SubArray(this object[] data, int start, int length)
         {
-            Object[] result = new Object[length];
+            object[] result = new object[length];
             Array.Copy(data, start, result, 0, length);
             return result;
         }
 
-        public static string Decode(byte[] data)
+        public static string Decode(this byte[] data)
         {
             return Encoding.UTF8.GetString(data);
         }
 
-        public static byte[] Encode(string data)
+        public static byte[] Encode(this string data)
         {
             return Encoding.UTF8.GetBytes(data).ToArray();
         }
