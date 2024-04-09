@@ -34,5 +34,20 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
         {
             await this.Client.Read(BodyLength - BodyData.Length);
         }
+
+        public override string ToString()
+        {
+            string result = $"""
+                {Method} {Path} {Protocol}
+
+                Headers:
+                    {string.Join("\n    ", this.Header.Select(f => $"{f.Key}: {f.Value}"))}
+
+                Data:
+                
+                {Convert.ToHexString(this.BodyData)}
+                """;
+            return result;
+        }
     }
 }
