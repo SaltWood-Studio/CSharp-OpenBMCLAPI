@@ -20,13 +20,13 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
         public Request(Client client, byte[] data)
         {
             this.Client = client;
-            byte[][] temp = WebUtils.SplitBytes(data, WebUtils.Encode("\r\n\r\n")).ToArray();
+            byte[][] temp = WebUtils.SplitBytes(data, WebUtils.Encode("\r\n\r\n"), 2).ToArray();
             this.BodyData = temp[1];
             byte[][] requestHeader = WebUtils.SplitBytes(temp[0], WebUtils.Encode("\r\n")).ToArray();
             temp = WebUtils.SplitBytes(requestHeader[0], WebUtils.Encode(" "), 3).ToArray();
             (Method, Path, Protocol) = (WebUtils.Decode(temp[0]), WebUtils.Decode(temp[1]), WebUtils.Decode(temp[2]));
             Array.Copy(requestHeader, 1, requestHeader, 0, requestHeader.Length - 1);
-            Header = Header.FromBytes(requestHeader);
+            Header = Header.FromBytes(requestHeader[1..]);
             BodyLength = int.Parse(Header.Get("Content-Length", 0) + "");
         }
 

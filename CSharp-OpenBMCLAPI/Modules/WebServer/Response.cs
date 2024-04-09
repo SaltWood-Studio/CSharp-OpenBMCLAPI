@@ -22,7 +22,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             Stream.CopyTo(client.Stream);
         }
 
-        public static Dictionary<int, string> STATUS_CODES = new Dictionary<int, string>
+        public static readonly Dictionary<int, string> STATUS_CODES = new Dictionary<int, string>
         {
             { 100, "Continue" },
             { 101, "Switching Protocols" },

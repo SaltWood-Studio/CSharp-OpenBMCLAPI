@@ -28,7 +28,18 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
 
         protected override int Run(string[] args)
         {
-            return AsyncRun().Result;
+            int result = -1;
+            try
+            {
+                result = AsyncRun().Result;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                ex.GetType();
+                SharedData.Logger.LogError(ex.ExceptionToDetail());
+                return result;
+            }
         }
 
         protected async Task<int> AsyncRun()
@@ -43,17 +54,24 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
                 TcpClient tcpClient = await listener.AcceptTcpClientAsync();
                 _ = Task.Run(() =>
                 {
-                    Stream stream = tcpClient.GetStream();
-                    if (_certificate != null)
+                    try
                     {
-                        SslStream sslStream = new SslStream(stream, true, ValidateServerCertificate, null);
-                        sslStream.AuthenticateAsServer(this._certificate, false, false);
-                        stream = sslStream;
+                        Stream stream = tcpClient.GetStream();
+                        if (_certificate != null)
+                        {
+                            SslStream sslStream = new SslStream(stream, true, ValidateServerCertificate, null);
+                            sslStream.AuthenticateAsServer(this._certificate, false, false);
+                            stream = sslStream;
+                        }
+                        if (Handle(new Client(tcpClient, stream)).Result && tcpClient.Connected)
+                        {
+                            stream.Close();
+                            tcpClient.Close();
+                        }
                     }
-                    if (Handle(new Client(tcpClient, stream)).Result && tcpClient.Connected)
+                    catch (Exception ex)
                     {
-                        stream.Close();
-                        tcpClient.Close();
+                        SharedData.Logger.LogError(ex.ExceptionToDetail());
                     }
                 });
             }

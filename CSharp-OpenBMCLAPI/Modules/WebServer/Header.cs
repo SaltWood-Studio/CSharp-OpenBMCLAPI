@@ -27,7 +27,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             Dictionary<string, string> tables = new Dictionary<string, string>();
             foreach (var header in headers)
             {
-                var h = WebUtils.SplitBytes(header, WebUtils.Encode(": ").ToArray(), 1).ToArray();
+                var h = WebUtils.SplitBytes(header, WebUtils.Encode(": "), 1).ToArray();
                 if (h.Length < 1)
                 {
                     continue;
