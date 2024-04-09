@@ -80,7 +80,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
 
         public static string GetStatusMsg(int status)
         {
-            return STATUS_CODES.ContainsKey(status) ? STATUS_CODES[status] : STATUS_CODES[int.Parse((status / 100) + "") * 100];
+            return STATUS_CODES.ContainsKey(status) ? STATUS_CODES[status] : STATUS_CODES[status / 100 * 100];
         }
     }
 }
