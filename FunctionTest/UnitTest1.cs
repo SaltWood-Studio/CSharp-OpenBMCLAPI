@@ -12,7 +12,17 @@ namespace FunctionTest
         {
             byte[] data = Encoding.UTF8.GetBytes("GET /1024 HTTP/1.1\r\nHost: localhost\r\n\r\n");
             var resp = new Request(null!, data);
-            Debug.WriteLine(resp);
+            var str = resp.ToString();
+            Assert.AreEqual(str, """
+                GET /1024 HTTP/1.1
+
+                Headers:
+                    Host: localhost
+
+                Data:
+
+
+                """);
         }
     }
 }
