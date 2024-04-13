@@ -13,13 +13,13 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
         public Header Header { get; set; } = new Header();
         public Stream Stream { get; set; } = new MemoryStream();
 
-        public async Task Call(Client client, Request request)
+        public async Task Call(Client client, Request request, bool needCopy = true)
         {
             Header.Set("Content-Length", Stream.Length);
             Header.Set("Server", "CSharp-SaltWood");
             string responseHeader = $"HTTP/1.1 {StatusCode} {GetStatusMsg(StatusCode)}\r\n{Header}\r\n";
             await client.Write(responseHeader.Encode());
-            Stream.CopyTo(client.Stream);
+            if (needCopy) Stream.CopyTo(client.Stream);
         }
 
         public static readonly Dictionary<int, string> STATUS_CODES = new Dictionary<int, string>
@@ -82,5 +82,23 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
         {
             return STATUS_CODES.ContainsKey(status) ? STATUS_CODES[status] : STATUS_CODES[int.Parse((status / 100) + "") * 100];
         }
+
+        public Task SendFileAsync(string filePath)
+        {
+            this.Stream = File.OpenRead(filePath);
+            return Task.CompletedTask;
+        }
+
+        public Task WriteAsync(byte[] buffer, int offset, int count)
+        {
+            return this.Stream.WriteAsync(buffer, offset, count);
+        }
+
+        public Task WriteAsync(byte[] buffer)
+        {
+            return this.Stream.WriteAsync(buffer, 0, buffer.Length);
+        }
+
+        public Task WriteAsync(string data) => this.WriteAsync(Encoding.UTF8.GetBytes(data));
     }
 }

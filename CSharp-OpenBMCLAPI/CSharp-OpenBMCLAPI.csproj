@@ -21,10 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BmclApiDownloadService\BmclApiDownloadService.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update=".env.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

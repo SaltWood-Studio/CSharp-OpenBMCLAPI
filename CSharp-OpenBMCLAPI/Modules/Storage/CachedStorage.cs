@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using CSharpOpenBMCLAPI.Modules.WebServer;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,7 +54,7 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
             if (!cache.ContainsKey(hashPath))
             {
                 byte[] bytes = this.ReadFile(hashPath);
-                await context.Response.BodyWriter.WriteAsync(bytes);
+                await context.Response.Stream.WriteAsync(bytes);
                 this[hashPath] = new CachedFile(bytes);
                 return new FileAccessInfo
                 {
@@ -64,7 +64,7 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
             }
             else
             {
-                await context.Response.BodyWriter.WriteAsync(this[hashPath].Content);
+                await context.Response.WriteAsync(this[hashPath].Content);
                 return new FileAccessInfo
                 {
                     hits = 1,

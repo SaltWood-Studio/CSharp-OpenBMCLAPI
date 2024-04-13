@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc.Formatters;
 
 namespace CSharpOpenBMCLAPI.Modules.WebServer
 {
     public class Request
     {
+        internal string? QueryString = "";
+
         public string Method { get; set; }
         public string Path { get; set; }
         public string Protocol { get; set; }

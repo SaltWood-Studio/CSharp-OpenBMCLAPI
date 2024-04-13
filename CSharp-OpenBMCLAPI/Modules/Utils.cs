@@ -1,5 +1,4 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Storage;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
 using SocketIOClient;
@@ -75,7 +74,6 @@ namespace CSharpOpenBMCLAPI.Modules
             await cluster.KeepAlive();
             Thread.Sleep(1000);
             await cluster.Disable();
-            await cluster.application.ThrowIfNull().StopAsync();
             cluster.Stop();
             cluster.IsEnabled = false;
         }

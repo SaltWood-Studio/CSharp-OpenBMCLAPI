@@ -1,6 +1,5 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Storage;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Primitives;
+using CSharpOpenBMCLAPI.Modules.WebServer;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Security.Cryptography.X509Certificates;
@@ -23,9 +22,7 @@ namespace CSharpOpenBMCLAPI.Modules
             action.Invoke();
             if (!SharedData.Config.disableAccessLog)
             {
-                StringValues ua;
-                context.Request.Headers.TryGetValue("User-Agent", out ua);
-                SharedData.Logger.LogInfo($"{context.Request.Method} {context.Request.Path} <{context.Response.StatusCode}> - [{context.Connection.RemoteIpAddress}] {ua.FirstOrDefault()}");
+                SharedData.Logger.LogInfo($"{context.Request.Method} {context.Request.Path} <{context.Response.StatusCode}> - [{context.RemoteIPAddress}] {context.Request.Header.TryGetValue("User-Agent")}");
             }
             return Task.CompletedTask;
         }
@@ -37,8 +34,8 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         public static async Task Measure(HttpContext context)
         {
-            var pairs = Utils.GetQueryStrings(context.Request.QueryString.Value);
-            bool valid = Utils.CheckSign(context.Request.Path.Value
+            var pairs = Utils.GetQueryStrings(context.Request.QueryString);
+            bool valid = Utils.CheckSign(context.Request.Path
                 , SharedData.ClusterInfo.ClusterSecret
                 , pairs.GetValueOrDefault("s")
                 , pairs.GetValueOrDefault("e")
@@ -47,11 +44,11 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 context.Response.StatusCode = 200;
                 byte[] buffer = new byte[1024];
-                for (int i = 0; i < Convert.ToInt32(context.Request.Path.Value?.Split('/').LastOrDefault()); i++)
+                for (int i = 0; i < Convert.ToInt32(context.Request.Path.Split('/').LastOrDefault()); i++)
                 {
                     for (int j = 0; j < 1024; j++)
                     {
-                        await context.Response.BodyWriter.WriteAsync(buffer);
+                        await context.Response.Stream.WriteAsync(buffer);
                     }
                 }
             }
@@ -71,8 +68,8 @@ namespace CSharpOpenBMCLAPI.Modules
         public static async Task<FileAccessInfo> DownloadHash(HttpContext context, IStorage storage)
         {
             FileAccessInfo fai = default;
-            var pairs = Utils.GetQueryStrings(context.Request.QueryString.Value);
-            string? hash = context.Request.Path.Value?.Split('/').LastOrDefault();
+            var pairs = Utils.GetQueryStrings(context.Request.QueryString);
+            string? hash = context.Request.Path.Split('/').LastOrDefault();
             string? s = pairs.GetValueOrDefault("s");
             string? e = pairs.GetValueOrDefault("e");
 
@@ -114,7 +111,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
         public static async Task Api(HttpContext context, string query, Cluster cluster)
         {
-            context.Response.ContentType = "application/json";
+            context.Response.Header.Set("Content-Type", "application/json");
             switch (query)
             {
                 case "qps":

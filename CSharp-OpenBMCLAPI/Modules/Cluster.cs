@@ -1,10 +1,6 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Plugin;
 using CSharpOpenBMCLAPI.Modules.Storage;
 using CSharpOpenBMCLAPI.Modules.WebServer;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
 using SocketIOClient;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
@@ -41,7 +37,6 @@ namespace CSharpOpenBMCLAPI.Modules
         internal IStorage storage;
         protected AccessCounter counter;
         public CancellationTokenSource cancellationSrc = new CancellationTokenSource();
-        public WebApplication? application = null;
         //List<Task> tasks = new List<Task>();
 
         /// <summary>
