@@ -15,8 +15,8 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
 
         public async Task Call(Client client, Request request, bool needCopy = true)
         {
-            if (!Header.ContainsKey("Content-Length")) Header.Set("Content-Length", Stream.Length);
-            Header.Set("Server", "CSharp-SaltWood");
+            if (!Header.ContainsKey("content-length")) Header.Set("content-length", Stream.Length);
+            Header.Set("server", "CSharp-SaltWood");
             string responseHeader = $"HTTP/1.1 {StatusCode} {GetStatusMsg(StatusCode)}\r\n{Header}\r\n";
             await client.Write(responseHeader.Encode());
             Stream.Position = 0;

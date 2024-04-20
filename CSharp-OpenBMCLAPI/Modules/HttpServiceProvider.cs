@@ -81,13 +81,13 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 try
                 {
-                    if (context.Request.Header.ContainsKey("Range"))
+                    if (context.Request.Header.ContainsKey("range"))
                     {
                         (long from, long to) = ToRangeByte(context.Request.Header["Range"].Split("=").Last().Split("-"));
                         long length = (to - from);
-                        context.Response.Header["Content-Length"] = length.ToString();
+                        context.Response.Header["content-length"] = length.ToString();
                         using Stream file = cluster.storage.ReadFileStream(Utils.HashToFileName(hash));
-                        context.Response.Header["Content-Range"] = $"{from}-{to}/{file.Length}";
+                        context.Response.Header["content-range"] = $"{from}-{to}/{file.Length}";
                         file.Seek(from, SeekOrigin.Begin);
                         file.CopyTo(context.Response.Stream);
                         context.Response.StatusCode = 206;
@@ -112,7 +112,7 @@ namespace CSharpOpenBMCLAPI.Modules
             else
             {
                 context.Response.StatusCode = 403;
-                context.Response.Header.Remove("Content-Length");
+                context.Response.Header.Remove("content-length");
                 await context.Response.WriteAsync($"Access to \"{context.Request.Path}\" has been blocked due to your request timeout or invalidity.");
             }
             LogAccess(context);
@@ -135,7 +135,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
         public static async Task Api(HttpContext context, string query, Cluster cluster)
         {
-            context.Response.Header.Set("Content-Type", "application/json");
+            context.Response.Header.Set("content-type", "application/json");
             switch (query)
             {
                 case "qps":

@@ -28,7 +28,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             (Method, Path, Protocol) = (WebUtils.Decode(temp[0]), WebUtils.Decode(temp[1]), WebUtils.Decode(temp[2]));
             Array.Copy(requestHeader, 1, requestHeader, 0, requestHeader.Length - 1);
             Header = Header.FromBytes(requestHeader[1..]);
-            BodyLength = int.Parse(Header.Get("Content-Length", 0) + "");
+            BodyLength = int.Parse(Header.Get("content-length", 0) + "");
         }
 
         public async Task SkipContent()
