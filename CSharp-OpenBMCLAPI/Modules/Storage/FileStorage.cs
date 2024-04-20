@@ -93,7 +93,7 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
             return file;
         }
 
-        public async Task<FileAccessInfo> Express(string hashPath, HttpContext context)
+        public async Task<FileAccessInfo> HandleRequest(string hashPath, HttpContext context)
         {
             string filePath = GetAbsolutePath(hashPath);
             await context.Response.SendFileAsync(filePath);

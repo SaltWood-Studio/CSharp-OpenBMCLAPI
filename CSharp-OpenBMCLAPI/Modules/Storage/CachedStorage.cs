@@ -49,7 +49,7 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
             return cache.ContainsKey(hashPath) || storage.Exists(hashPath);
         }
 
-        public async Task<FileAccessInfo> Express(string hashPath, HttpContext context)
+        public async Task<FileAccessInfo> HandleRequest(string hashPath, HttpContext context)
         {
             if (!cache.ContainsKey(hashPath))
             {

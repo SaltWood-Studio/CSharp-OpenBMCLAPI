@@ -79,8 +79,16 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 try
                 {
-                    fai = await cluster.storage.Express(Utils.HashToFileName(hash), context);
-                    ClusterRequiredData.DataStatistician.DownloadCount(fai);
+                    if (context.Request.Header.Select(f => f.Key).Contains("Range"))
+                    {
+                        (long from, long to) = ToRangeByte(context.Request.Header["Range"].Split("=").Last().Split("-"));
+                        //TODO: Range 请求
+                    }
+                    else
+                    {
+                        fai = await cluster.storage.HandleRequest(Utils.HashToFileName(hash), context);
+                        ClusterRequiredData.DataStatistician.DownloadCount(fai);
+                    }
                 }
                 catch
                 {
