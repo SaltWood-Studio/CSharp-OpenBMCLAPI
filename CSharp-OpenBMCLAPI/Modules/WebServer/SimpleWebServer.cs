@@ -20,6 +20,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
         private int Port = 0; // TCP 随机端口  
         private readonly X509Certificate2? _certificate; // SSL证书  
         private Cluster cluster;
+        public readonly List<Route> routes = new();
         private readonly int bufferSize = 8192;
 
         public SimpleWebServer(int port, X509Certificate2? certificate, Cluster cluster)
@@ -80,32 +81,33 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             catch (Exception ex)
             {
                 Logger.Instance.LogError(ex.ExceptionToDetail());
+                if (tcpClient.Connected) tcpClient.Close();
             }
         }
 
         protected async Task<bool> Handle(Client client) // 返回值代表是否关闭连接？
         {
-            
+
             byte[] buffer = await client.Read(this.bufferSize);
             Request request = new Request(client, buffer);
             Response response = new Response();
-
-            Regex regex = new("/download/([0-9a-zA-Z]{32,40})");
-            Match match = regex.Match(request.Path);
-
-            response.Header.Add("Content-Type", "application/octet-stream");
-
             HttpContext context = new HttpContext() { Request = request, RemoteIPAddress = client.TcpClient.Client.RemoteEndPoint!, Response = response };
 
-            try
+            foreach (Route route in this.routes)
             {
-                var count = match.Groups.Count;
-                if (count == 0) return true;
-                await HttpServiceProvider.DownloadHash(context, cluster);
-            }
-            catch
-            {
-                Debugger.Break();
+                if (route.matchRegex.Match(context.Request.Path).Success)
+                {
+                    foreach (var func in route.conditionExpressions)
+                    {
+                        bool result = func.Invoke(context.Request.Path);
+                        if (!result) goto NextOne;
+                    }
+                    // 已经判断符合所有条件
+
+                    route.handler?.Invoke(context, cluster);
+                    break;
+                }
+                NextOne: continue;
             }
 
             await response.Call(client, request); // 可以多次调用Response

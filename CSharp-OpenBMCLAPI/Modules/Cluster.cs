@@ -14,6 +14,7 @@ using System.Security.Policy;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using TeraIO.Network.Http;
 using TeraIO.Runnable;
 using ZstdSharp;
@@ -157,6 +158,17 @@ namespace CSharpOpenBMCLAPI.Modules
             //var builder = WebApplication.CreateBuilder();
             X509Certificate2 cert = LoadAndConvertCert();
             SimpleWebServer server = new(ClusterRequiredData.Config.PORT, cert, this);//cert);
+
+            server.routes.Add(new Route { matchRegex = new Regex(@"/download/[0-9a-fA-F]{32,40}?.*"), conditionExpressions =
+                {
+                    (path) => path.Contains("s=") && path.Contains("e=")
+                },
+                handler = (context, cluster) => HttpServiceProvider.DownloadHash(context, cluster).Wait()
+            });
+            server.routes.Add(new Route { matchRegex = new Regex(@"/measure/\d"),
+                handler = (context, cluster) => HttpServiceProvider.Measure(context, cluster).Wait()
+            });
+
             server.Start();
             /*
             builder.WebHost.UseKestrel(options =>

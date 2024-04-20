@@ -34,8 +34,8 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         public static async Task Measure(HttpContext context, Cluster cluster)
         {
-            var pairs = Utils.GetQueryStrings(context.Request.QueryString);
-            bool valid = Utils.CheckSign(context.Request.Path
+            var pairs = Utils.GetQueryStrings(context.Request.Path.Split('?').Last());
+            bool valid = Utils.CheckSign(context.Request.Path.Split('?').First()
                 , cluster.requiredData.ClusterInfo.ClusterSecret
                 , pairs.GetValueOrDefault("s")
                 , pairs.GetValueOrDefault("e")
@@ -44,7 +44,7 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 context.Response.StatusCode = 200;
                 byte[] buffer = new byte[1024];
-                for (int i = 0; i < Convert.ToInt32(context.Request.Path.Split('/').LastOrDefault()); i++)
+                for (int i = 0; i < Convert.ToInt32(context.Request.Path.Split('/').Last().Split('?').First()); i++)
                 {
                     for (int j = 0; j < 1024; j++)
                     {
@@ -82,12 +82,19 @@ namespace CSharpOpenBMCLAPI.Modules
                     if (context.Request.Header.ContainsKey("Range"))
                     {
                         (long from, long to) = ToRangeByte(context.Request.Header["Range"].Split("=").Last().Split("-"));
-                        context.Response.Header["Content-Length"] = (to - from).ToString();
+                        long length = (to - from);
+                        context.Response.Header["Content-Length"] = length.ToString();
                         using Stream file = cluster.storage.ReadFileStream(Utils.HashToFileName(hash));
                         context.Response.Header["Content-Range"] = $"{from}-{to}/{file.Length}";
                         file.Seek(from, SeekOrigin.Begin);
                         file.CopyTo(context.Response.Stream);
                         context.Response.StatusCode = 206;
+                        fai = new FileAccessInfo
+                        {
+                            hits = 1,
+                            bytes = length
+                        };
+                        ClusterRequiredData.DataStatistician.DownloadCount(fai);
                     }
                     else
                     {
