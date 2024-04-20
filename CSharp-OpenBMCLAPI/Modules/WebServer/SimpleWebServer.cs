@@ -27,7 +27,6 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
         {
             Port = port;
             _certificate = certificate;
-            _certificate = null;
             this.cluster = cluster;
         }
 
@@ -89,6 +88,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
         {
 
             byte[] buffer = await client.Read(this.bufferSize);
+            var str = Encoding.UTF8.GetString(buffer);
             Request request = new Request(client, buffer);
             Response response = new Response();
             HttpContext context = new HttpContext() { Request = request, RemoteIPAddress = client.TcpClient.Client.RemoteEndPoint!, Response = response };

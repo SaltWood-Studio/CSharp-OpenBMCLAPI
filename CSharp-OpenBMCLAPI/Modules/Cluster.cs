@@ -117,17 +117,29 @@ namespace CSharpOpenBMCLAPI.Modules
 
             // await GetConfiguration();
             // 检查文件
-            //await CheckFiles();
+            await CheckFiles();
             Logger.Instance.LogInfo();
-            //Connect();
+            Connect();
 
-            //await RequestCertification();
+            await RequestCertification();
 
-            LoadAndConvertCert();
+            //LoadAndConvertCert();
+
+            Logger.Instance.LogInfo($"{nameof(AsyncRun)} 正在等待证书请求……");
+
+            while (true)
+            {
+                if (File.Exists(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/key.pem")) &&
+                    File.Exists(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/cert.pem")))
+                {
+                    break;
+                }
+                Thread.Sleep(200);
+            }
 
             InitializeService();
 
-            //await Enable();
+            await Enable();
 
             Logger.Instance.LogSystem($"工作进程 {guid} 在 <{ClusterRequiredData.Config.HOST}:{ClusterRequiredData.Config.PORT}> 提供服务");
 
@@ -494,6 +506,8 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         public async Task RequestCertification()
         {
+            File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/cert.pem"));
+            File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/key.pem"));
             if (ClusterRequiredData.Config.bringYourOwnCertficate)
             {
                 Logger.Instance.LogDebug($"{nameof(ClusterRequiredData.Config.bringYourOwnCertficate)} 为 true，跳过请求证书……");

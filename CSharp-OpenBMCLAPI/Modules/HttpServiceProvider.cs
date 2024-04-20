@@ -17,14 +17,12 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <param name="context"></param>
         /// <param name="action"></param>
         /// <returns></returns>
-        public static Task LogAndRun(HttpContext context, Action action)
+        public static void LogAccess(HttpContext context)
         {
-            action.Invoke();
             if (!ClusterRequiredData.Config.disableAccessLog)
             {
                 Logger.Instance.LogInfo($"{context.Request.Method} {context.Request.Path} <{context.Response.StatusCode}> - [{context.RemoteIPAddress}] {context.Request.Header.TryGetValue("User-Agent")}");
             }
-            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -57,6 +55,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 context.Response.StatusCode = 403;
                 await context.Response.WriteAsync($"Access to \"{context.Request.Path}\" has been blocked due to your request timeout or invalidity.");
             }
+            LogAccess(context);
         }
 
         /// <summary>
@@ -69,6 +68,9 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             FileAccessInfo fai = default;
             var pairs = Utils.GetQueryStrings(context.Request.Path.Split('?').Last());
+            Logger.Instance.LogInfo(string.Join("\n", pairs.Select(f => $"{f.Key}: {f.Value}")));
+            Logger.Instance.LogInfo();
+            Logger.Instance.LogInfo(string.Join("\n", context.Request.Header.Select(f => $"{f.Key}: {f.Value}")));
             string? hash = context.Request.Path.Split('/').LastOrDefault()?.Split('?').First();
             string? s = pairs.GetValueOrDefault("s");
             string? e = pairs.GetValueOrDefault("e");
@@ -113,6 +115,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 context.Response.Header.Remove("Content-Length");
                 await context.Response.WriteAsync($"Access to \"{context.Request.Path}\" has been blocked due to your request timeout or invalidity.");
             }
+            LogAccess(context);
             return fai;
         }
 
