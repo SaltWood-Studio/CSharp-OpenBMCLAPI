@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using TeraIO.Runnable;
 using System.Text.RegularExpressions;
 using TeraIO.Extension;
+using System.Diagnostics;
 
 namespace CSharpOpenBMCLAPI.Modules.WebServer
 {
@@ -18,12 +19,15 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
     {
         private int Port = 0; // TCP 随机端口  
         private readonly X509Certificate2? _certificate; // SSL证书  
+        private Cluster cluster;
         private readonly int bufferSize = 8192;
 
-        public SimpleWebServer(int port, X509Certificate2? certificate)
+        public SimpleWebServer(int port, X509Certificate2? certificate, Cluster cluster)
         {
             Port = port;
             _certificate = certificate;
+            _certificate = null;
+            this.cluster = cluster;
         }
 
         protected override int Run(string[] args)
@@ -52,33 +56,36 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             while (true)
             {
                 TcpClient tcpClient = await listener.AcceptTcpClientAsync();
-                _ = Task.Run(() =>
+                _ = Task.Run(() => HandleRequest(tcpClient));
+            }
+        }
+
+        protected void HandleRequest(TcpClient tcpClient)
+        {
+            try
+            {
+                Stream stream = tcpClient.GetStream();
+                if (_certificate != null)
                 {
-                    try
-                    {
-                        Stream stream = tcpClient.GetStream();
-                        if (_certificate != null)
-                        {
-                            SslStream sslStream = new SslStream(stream, true, ValidateServerCertificate, null);
-                            sslStream.AuthenticateAsServer(this._certificate, false, false);
-                            stream = sslStream;
-                        }
-                        if (Handle(new Client(tcpClient, stream)).Result && tcpClient.Connected)
-                        {
-                            stream.Close();
-                            tcpClient.Close();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Instance.LogError(ex.ExceptionToDetail());
-                    }
-                });
+                    SslStream sslStream = new SslStream(stream, false, ValidateServerCertificate, null);
+                    sslStream.AuthenticateAsServer(this._certificate, false, false);
+                    stream = sslStream;
+                }
+                if (Handle(new Client(tcpClient, stream)).Result && tcpClient.Connected)
+                {
+                    stream.Close();
+                    tcpClient.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.LogError(ex.ExceptionToDetail());
             }
         }
 
         protected async Task<bool> Handle(Client client) // 返回值代表是否关闭连接？
         {
+            
             byte[] buffer = await client.Read(this.bufferSize);
             Request request = new Request(client, buffer);
             Response response = new Response();
@@ -88,9 +95,18 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
 
             response.Header.Add("Content-Type", "application/octet-stream");
 
-            var filePath = Path.Combine(ClusterRequiredData.Config.cacheDirectory, Utils.HashToFileName(match.Groups[1].Value));
-            FileInfo fileInfo = new FileInfo(filePath);
-            response.Stream = File.OpenRead(filePath);
+            HttpContext context = new HttpContext() { Request = request, RemoteIPAddress = client.TcpClient.Client.RemoteEndPoint!, Response = response };
+
+            try
+            {
+                var count = match.Groups.Count;
+                if (count == 0) return true;
+                await HttpServiceProvider.DownloadHash(context, cluster);
+            }
+            catch
+            {
+                Debugger.Break();
+            }
 
             await response.Call(client, request); // 可以多次调用Response
 

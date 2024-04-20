@@ -156,7 +156,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             //var builder = WebApplication.CreateBuilder();
             X509Certificate2 cert = LoadAndConvertCert();
-            SimpleWebServer server = new(ClusterRequiredData.Config.PORT, cert);//cert);
+            SimpleWebServer server = new(ClusterRequiredData.Config.PORT, cert, this);//cert);
             server.Start();
             /*
             builder.WebHost.UseKestrel(options =>

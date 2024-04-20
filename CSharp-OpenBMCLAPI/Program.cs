@@ -96,45 +96,53 @@ namespace CSharpOpenBMCLAPI
 
         protected override int Run(string[] args)
         {
-            ClusterRequiredData.Config = GetConfig();
-            LoadPlugins();
-            PluginManager.Instance.TriggerEvent(this, ProgramEventType.ProgramStarted);
-
-            int returns = 0;
-
-            if (File.Exists("totals.bson"))
+            try
             {
-                DataStatistician t = Utils.BsonDeserializeObject<DataStatistician>(File.ReadAllBytes("totals.bson")).ThrowIfNull();
-                ClusterRequiredData.DataStatistician = t;
-            }
-            else
-            {
-                const string bsonFilePath = "totals.bson";
-                using (var file = File.Create(bsonFilePath))
+                ClusterRequiredData.Config = GetConfig();
+                LoadPlugins();
+                PluginManager.Instance.TriggerEvent(this, ProgramEventType.ProgramStarted);
+
+                int returns = 0;
+
+                if (File.Exists("totals.bson"))
                 {
-                    file.Write(Utils.BsonSerializeObject(ClusterRequiredData.DataStatistician));
+                    DataStatistician t = Utils.BsonDeserializeObject<DataStatistician>(File.ReadAllBytes("totals.bson")).ThrowIfNull();
+                    ClusterRequiredData.DataStatistician = t;
                 }
+                else
+                {
+                    const string bsonFilePath = "totals.bson";
+                    using (var file = File.Create(bsonFilePath))
+                    {
+                        file.Write(Utils.BsonSerializeObject(ClusterRequiredData.DataStatistician));
+                    }
+                }
+
+                // 从 .env.json 读取密钥然后 FetchToken
+                ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(File.ReadAllTextAsync(".env.json").Result);
+                ClusterRequiredData requiredData = new(info);
+                Logger.Instance.LogSystem($"Cluster id: {info.ClusterID}");
+                TokenManager token = new TokenManager(info);
+                token.FetchToken().Wait();
+
+                requiredData.Token = token;
+
+                Cluster cluster = new(requiredData);
+                Logger.Instance.LogSystem($"成功创建 Cluster 实例");
+                AppDomain.CurrentDomain.ProcessExit += (sender, e) => Utils.ExitCluster(cluster).Wait();
+                Console.CancelKeyPress += (sender, e) => Utils.ExitCluster(cluster).Wait();
+
+                cluster.Start();
+                cluster.WaitForStop();
+
+                requiredData.PluginManager.TriggerEvent(this, ProgramEventType.ProgramStopped);
+                return returns;
             }
-
-            // 从 .env.json 读取密钥然后 FetchToken
-            ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(File.ReadAllTextAsync(".env.json").Result);
-            ClusterRequiredData requiredData = new(info);
-            Logger.Instance.LogSystem($"Cluster id: {info.ClusterID}");
-            TokenManager token = new TokenManager(info);
-            token.FetchToken().Wait();
-
-            requiredData.Token = token;
-
-            Cluster cluster = new(requiredData);
-            Logger.Instance.LogSystem($"成功创建 Cluster 实例");
-            AppDomain.CurrentDomain.ProcessExit += (sender, e) => Utils.ExitCluster(cluster).Wait();
-            Console.CancelKeyPress += (sender, e) => Utils.ExitCluster(cluster).Wait();
-
-            cluster.Start();
-            cluster.WaitForStop();
-
-            requiredData.PluginManager.TriggerEvent(this, ProgramEventType.ProgramStopped);
-            return returns;
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ExceptionToDetail());
+                return -1;
+            }
         }
     }
 }

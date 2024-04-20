@@ -11,6 +11,6 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
     {
         public required Request Request { get; set; }
         public required Response Response { get; set; }
-        public required IPEndPoint RemoteIPAddress { get;  set; }
+        public required EndPoint RemoteIPAddress { get;  set; }
     }
 }

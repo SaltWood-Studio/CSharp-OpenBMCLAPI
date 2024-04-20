@@ -68,8 +68,8 @@ namespace CSharpOpenBMCLAPI.Modules
         public static async Task<FileAccessInfo> DownloadHash(HttpContext context, Cluster cluster)
         {
             FileAccessInfo fai = default;
-            var pairs = Utils.GetQueryStrings(context.Request.QueryString);
-            string? hash = context.Request.Path.Split('/').LastOrDefault();
+            var pairs = Utils.GetQueryStrings(context.Request.Path.Split('?').Last());
+            string? hash = context.Request.Path.Split('/').LastOrDefault()?.Split('?').First();
             string? s = pairs.GetValueOrDefault("s");
             string? e = pairs.GetValueOrDefault("e");
 
@@ -79,10 +79,14 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 try
                 {
-                    if (context.Request.Header.Select(f => f.Key).Contains("Range"))
+                    if (context.Request.Header.ContainsKey("Range"))
                     {
                         (long from, long to) = ToRangeByte(context.Request.Header["Range"].Split("=").Last().Split("-"));
-                        //TODO: Range 请求
+                        context.Response.Header["Content-Length"] = (to - from).ToString();
+                        using Stream file = cluster.storage.ReadFileStream(Utils.HashToFileName(hash));
+                        file.Seek(from, SeekOrigin.Begin);
+                        file.CopyTo(context.Response.Stream);
+                        context.Response.StatusCode = 206;
                     }
                     else
                     {
@@ -98,6 +102,7 @@ namespace CSharpOpenBMCLAPI.Modules
             else
             {
                 context.Response.StatusCode = 403;
+                context.Response.Header.Remove("Content-Length");
                 await context.Response.WriteAsync($"Access to \"{context.Request.Path}\" has been blocked due to your request timeout or invalidity.");
             }
             return fai;
@@ -107,7 +112,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             int from, to;
             if (string.IsNullOrWhiteSpace(rangeHeader?.FirstOrDefault()))
-                from = -1;
+                from = 0;
             else
                 from = Convert.ToInt32(rangeHeader?.FirstOrDefault());
             if (string.IsNullOrWhiteSpace(rangeHeader?.LastOrDefault()))

@@ -202,7 +202,7 @@ namespace CSharpOpenBMCLAPI.Modules
         public static Dictionary<string, string> GetQueryStrings(string? query)
         {
             Dictionary<string, string> pairs = new();
-            query?[1..].Split('&').ForEach(s =>
+            query?.Split('&').ForEach(s =>
             {
                 var pair = s.Split('=');
                 pairs[pair[0]] = pair[1];
