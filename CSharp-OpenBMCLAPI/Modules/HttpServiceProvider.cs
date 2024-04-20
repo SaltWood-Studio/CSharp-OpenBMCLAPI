@@ -84,6 +84,7 @@ namespace CSharpOpenBMCLAPI.Modules
                         (long from, long to) = ToRangeByte(context.Request.Header["Range"].Split("=").Last().Split("-"));
                         context.Response.Header["Content-Length"] = (to - from).ToString();
                         using Stream file = cluster.storage.ReadFileStream(Utils.HashToFileName(hash));
+                        context.Response.Header["Content-Range"] = $"{from}-{to}/{file.Length}";
                         file.Seek(from, SeekOrigin.Begin);
                         file.CopyTo(context.Response.Stream);
                         context.Response.StatusCode = 206;
