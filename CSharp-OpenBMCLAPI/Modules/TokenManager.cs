@@ -63,12 +63,12 @@ namespace CSharpOpenBMCLAPI.Modules
 
                 this._updateTask = Task.Run(() =>
                 {
-                    Thread.Sleep(this.token.ttl - SharedData.Config.refreshTokenTime);
+                    Thread.Sleep(this.token.ttl - ClusterRequiredData.Config.refreshTokenTime);
                     RefreshToken();
                 });
             }
 
-            SharedData.Logger.LogInfo($"Token 刷新成功：有效时长 <{TimeSpan.FromMilliseconds(this.token.ttl).ToString(@"dd\:hh\:mm\:ss")}>");
+            Logger.Instance.LogInfo($"Token 刷新成功：有效时长 <{TimeSpan.FromMilliseconds(this.token.ttl).ToString(@"dd\:hh\:mm\:ss")}>");
             return token;
         }
 

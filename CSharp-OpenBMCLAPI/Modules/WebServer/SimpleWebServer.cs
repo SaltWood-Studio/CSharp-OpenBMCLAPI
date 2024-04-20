@@ -37,7 +37,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             catch (Exception ex)
             {
                 ex.GetType();
-                SharedData.Logger.LogError(ex.ExceptionToDetail());
+                Logger.Instance.LogError(ex.ExceptionToDetail());
                 return result;
             }
         }
@@ -71,7 +71,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
                     }
                     catch (Exception ex)
                     {
-                        SharedData.Logger.LogError(ex.ExceptionToDetail());
+                        Logger.Instance.LogError(ex.ExceptionToDetail());
                     }
                 });
             }
@@ -88,7 +88,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
 
             response.Header.Add("Content-Type", "application/octet-stream");
 
-            var filePath = Path.Combine(SharedData.Config.cacheDirectory, Utils.HashToFileName(match.Groups[1].Value));
+            var filePath = Path.Combine(ClusterRequiredData.Config.cacheDirectory, Utils.HashToFileName(match.Groups[1].Value));
             FileInfo fileInfo = new FileInfo(filePath);
             response.Stream = File.OpenRead(filePath);
 

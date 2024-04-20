@@ -26,7 +26,7 @@ namespace CSharpOpenBMCLAPI.Modules
     /// </summary>
     public class Cluster : RunnableBase
     {
-        private ClusterInfo clusterInfo;
+        internal ClusterInfo clusterInfo;
         private TokenManager token;
         private HttpClient client;
         public Guid guid;
@@ -37,6 +37,7 @@ namespace CSharpOpenBMCLAPI.Modules
         internal IStorage storage;
         protected AccessCounter counter;
         public CancellationTokenSource cancellationSrc = new CancellationTokenSource();
+        internal ClusterRequiredData requiredData;
         //List<Task> tasks = new List<Task>();
 
         /// <summary>
@@ -45,16 +46,17 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <param name="info"></param>
         /// <param name="token"></param>
         /// <exception cref="Exception"></exception>
-        public Cluster(ClusterInfo info, TokenManager token) : base()
+        public Cluster(ClusterRequiredData requiredData) : base()
         {
-            this.clusterInfo = info;
-            this.token = token;
+            this.requiredData = requiredData;
+            this.clusterInfo = requiredData.ClusterInfo;
+            this.token = requiredData.Token;
             this.guid = Guid.NewGuid();
 
             client = HttpRequest.client;
-            client.DefaultRequestHeaders.Authorization = new("Bearer", SharedData.Token?.Token.token);
+            client.DefaultRequestHeaders.Authorization = new("Bearer", requiredData.Token?.Token.token);
 
-            this.storage = new CachedStorage(new FileStorage(SharedData.Config.clusterFileDirectory));
+            this.storage = new CachedStorage(new FileStorage(ClusterRequiredData.Config.clusterFileDirectory));
 
             this.counter = new();
             InitializeSocket();
@@ -94,12 +96,12 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         protected override int Run(string[] args)
         {
-            SharedData.PluginManager.TriggerEvent(this, ProgramEventType.ClusterStarted);
+            requiredData.PluginManager.TriggerEvent(this, ProgramEventType.ClusterStarted);
             // 工作进程启动
-            SharedData.Logger.LogSystem($"工作进程 {guid} 已启动");
+            Logger.Instance.LogSystem($"工作进程 {guid} 已启动");
             Task<int> task = AsyncRun();
             task.Wait();
-            SharedData.PluginManager.TriggerEvent(this, ProgramEventType.ClusterStopped);
+            requiredData.PluginManager.TriggerEvent(this, ProgramEventType.ClusterStopped);
             return task.Result;
         }
 
@@ -115,7 +117,7 @@ namespace CSharpOpenBMCLAPI.Modules
             // await GetConfiguration();
             // 检查文件
             //await CheckFiles();
-            SharedData.Logger.LogInfo();
+            Logger.Instance.LogInfo();
             //Connect();
 
             //await RequestCertification();
@@ -126,7 +128,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
             //await Enable();
 
-            SharedData.Logger.LogSystem($"工作进程 {guid} 在 <{SharedData.Config.HOST}:{SharedData.Config.PORT}> 提供服务");
+            Logger.Instance.LogSystem($"工作进程 {guid} 在 <{ClusterRequiredData.Config.HOST}:{ClusterRequiredData.Config.PORT}> 提供服务");
 
             _keepAlive = Task.Run(_KeepAlive, cancellationSrc.Token);
 
@@ -154,7 +156,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             //var builder = WebApplication.CreateBuilder();
             X509Certificate2 cert = LoadAndConvertCert();
-            SimpleWebServer server = new(SharedData.Config.PORT, cert);//cert);
+            SimpleWebServer server = new(ClusterRequiredData.Config.PORT, cert);//cert);
             server.Start();
             /*
             builder.WebHost.UseKestrel(options =>
@@ -209,12 +211,12 @@ namespace CSharpOpenBMCLAPI.Modules
         /// </returns>
         protected X509Certificate2 LoadAndConvertCert()
         {
-            X509Certificate2 cert = X509Certificate2.CreateFromPemFile(Path.Combine(SharedData.Config.clusterFileDirectory, $"certifications/cert.pem"),
-                Path.Combine(SharedData.Config.clusterFileDirectory, $"certifications/key.pem"));
+            X509Certificate2 cert = X509Certificate2.CreateFromPemFile(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/cert.pem"),
+                Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/key.pem"));
             //return cert;
             byte[] pfxCert = cert.Export(X509ContentType.Pfx);
-            SharedData.Logger.LogDebug($"将 PEM 格式的证书转换为 PFX 格式");
-            using (var file = File.Create(Path.Combine(SharedData.Config.clusterFileDirectory, $"certifications/cert.pfx")))
+            Logger.Instance.LogDebug($"将 PEM 格式的证书转换为 PFX 格式");
+            using (var file = File.Create(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/cert.pfx")))
             {
                 file.Write(pfxCert);
             }
@@ -232,10 +234,10 @@ namespace CSharpOpenBMCLAPI.Modules
 
             this.socket.On("error", error => HandleError(error));
             this.socket.On("message", msg => Utils.PrintResponseMessage(msg));
-            this.socket.On("connect", (_) => SharedData.Logger.LogInfo("与主控连接成功"));
+            this.socket.On("connect", (_) => Logger.Instance.LogInfo("与主控连接成功"));
             this.socket.On("disconnect", (r) =>
             {
-                SharedData.Logger.LogWarn($"与主控断开连接：{r}");
+                Logger.Instance.LogWarn($"与主控断开连接：{r}");
                 this.IsEnabled = false;
                 if (this.WantEnable)
                 {
@@ -253,7 +255,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             if (socket.Connected && IsEnabled)
             {
-                SharedData.Logger.LogWarn($"试图在节点禁用且连接未断开时调用 Enable");
+                Logger.Instance.LogWarn($"试图在节点禁用且连接未断开时调用 Enable");
                 return;
             }
             await socket.EmitAsync("enable", (SocketIOResponse resp) =>
@@ -262,14 +264,14 @@ namespace CSharpOpenBMCLAPI.Modules
                 this.WantEnable = true;
                 Utils.PrintResponseMessage(resp);
                 // Debugger.Break();
-                SharedData.Logger.LogSystem($"启用成功");
+                Logger.Instance.LogSystem($"启用成功");
             }, new
             {
-                host = SharedData.Config.HOST,
-                port = SharedData.Config.PORT,
-                version = SharedData.Config.clusterVersion,
-                byoc = SharedData.Config.bringYourOwnCertficate,
-                noFastEnable = SharedData.Config.noFastEnable,
+                host = ClusterRequiredData.Config.HOST,
+                port = ClusterRequiredData.Config.PORT,
+                version = ClusterRequiredData.Config.clusterVersion,
+                byoc = ClusterRequiredData.Config.bringYourOwnCertficate,
+                noFastEnable = ClusterRequiredData.Config.noFastEnable,
                 flavor = new
                 {
                     runtime = Utils.GetRuntime(),
@@ -287,13 +289,13 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             if (!this.IsEnabled)
             {
-                SharedData.Logger.LogWarn($"试图在节点禁用时调用 Disable");
+                Logger.Instance.LogWarn($"试图在节点禁用时调用 Disable");
                 return;
             }
             await socket.EmitAsync("disable", (SocketIOResponse resp) =>
             {
                 Utils.PrintResponseMessage(resp);
-                SharedData.Logger.LogSystem($"禁用成功");
+                Logger.Instance.LogSystem($"禁用成功");
                 this.IsEnabled = false;
             });
             if (this.WantEnable)
@@ -310,7 +312,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             if (!this.IsEnabled)
             {
-                SharedData.Logger.LogWarn($"试图在节点禁用时调用 KeepAlive");
+                Logger.Instance.LogWarn($"试图在节点禁用时调用 KeepAlive");
                 return;
             }
             string time = DateTime.Now.ToStandardTimeString();
@@ -319,7 +321,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 (SocketIOResponse resp) =>
                 {
                     Utils.PrintResponseMessage(resp);
-                    SharedData.Logger.LogSystem($"保活成功 at {time}，served {Utils.GetLength(this.counter.bytes)}({this.counter.bytes} bytes)/{this.counter.hits} hits");
+                    Logger.Instance.LogSystem($"保活成功 at {time}，served {Utils.GetLength(this.counter.bytes)}({this.counter.bytes} bytes)/{this.counter.hits} hits");
                     this.counter.Reset();
                 },
                 new
@@ -331,9 +333,9 @@ namespace CSharpOpenBMCLAPI.Modules
 
             using (var file = File.Create("totals.bson"))
             {
-                lock (SharedData.DataStatistician)
+                lock (ClusterRequiredData.DataStatistician)
                 {
-                    file.Write(Utils.BsonSerializeObject(SharedData.DataStatistician));
+                    file.Write(Utils.BsonSerializeObject(ClusterRequiredData.DataStatistician));
                 }
             }
         }
@@ -354,12 +356,12 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         protected async Task CheckFiles()
         {
-            if (SharedData.Config.skipStartupCheck || SharedData.Config.startupCheckMode == FileVerificationMode.None)
+            if (ClusterRequiredData.Config.skipStartupCheck || ClusterRequiredData.Config.startupCheckMode == FileVerificationMode.None)
             {
                 return;
             }
             var resp = await this.client.GetAsync("openbmclapi/files");
-            SharedData.Logger.LogDebug($"文件检查策略：{SharedData.Config.startupCheckMode}");
+            Logger.Instance.LogDebug($"文件检查策略：{ClusterRequiredData.Config.startupCheckMode}");
             byte[] bytes = await resp.Content.ReadAsByteArrayAsync();
 
             UnpackBytes(ref bytes);
@@ -392,7 +394,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 {
                     count++;
                 }
-                SharedData.Logger.LogInfoNoNewLine($"\r{count}/{files.Count}");
+                Logger.Instance.LogInfoNoNewLine($"\r{count}/{files.Count}");
             });
 
             t.Cancel();
@@ -408,10 +410,10 @@ namespace CSharpOpenBMCLAPI.Modules
             string hash = file.hash;
             long size = file.size;
             DownloadFile(hash, path).Wait();
-            bool valid = VerifyFile(hash, size, SharedData.Config.startupCheckMode);
+            bool valid = VerifyFile(hash, size, ClusterRequiredData.Config.startupCheckMode);
             if (!valid)
             {
-                SharedData.Logger.LogWarn($"文件 {path} 损坏！期望哈希值为 {hash}");
+                Logger.Instance.LogWarn($"文件 {path} 损坏！期望哈希值为 {hash}");
                 DownloadFile(hash, path, true).Wait();
             }
         }
@@ -471,7 +473,7 @@ namespace CSharpOpenBMCLAPI.Modules
             var resp = await this.client.GetAsync($"openbmclapi/download/{hash}");
 
             this.storage.WriteFile(Utils.HashToFileName(hash), await resp.Content.ReadAsByteArrayAsync());
-            SharedData.Logger.LogDebug($"文件 {path} 下载成功");
+            Logger.Instance.LogDebug($"文件 {path} 下载成功");
         }
 
         /// <summary>
@@ -480,9 +482,9 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         public async Task RequestCertification()
         {
-            if (SharedData.Config.bringYourOwnCertficate)
+            if (ClusterRequiredData.Config.bringYourOwnCertficate)
             {
-                SharedData.Logger.LogDebug($"{nameof(SharedData.Config.bringYourOwnCertficate)} 为 true，跳过请求证书……");
+                Logger.Instance.LogDebug($"{nameof(ClusterRequiredData.Config.bringYourOwnCertficate)} 为 true，跳过请求证书……");
                 return;
             }
             await socket.EmitAsync("request-cert", (SocketIOResponse resp) =>
@@ -496,10 +498,10 @@ namespace CSharpOpenBMCLAPI.Modules
                 string? certString = cert.GetString();
                 string? keyString = key.GetString();
 
-                string certPath = Path.Combine(SharedData.Config.clusterFileDirectory, $"certifications/cert.pem");
-                string keyPath = Path.Combine(SharedData.Config.clusterFileDirectory, $"certifications/key.pem");
+                string certPath = Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/cert.pem");
+                string keyPath = Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/key.pem");
 
-                Directory.CreateDirectory(Path.Combine(SharedData.Config.clusterFileDirectory, $"certifications"));
+                Directory.CreateDirectory(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications"));
 
                 using (var file = File.Create(certPath))
                 {

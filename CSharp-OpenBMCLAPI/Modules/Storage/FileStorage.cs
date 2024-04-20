@@ -44,7 +44,7 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
                 {
                     if (!fileHashes.Contains(info.Name))
                     {
-                        SharedData.Logger.LogInfo($"删除无用文件：{info.Name}");
+                        Logger.Instance.LogInfo($"删除无用文件：{info.Name}");
                         info.Delete();
                     }
                 }
@@ -71,7 +71,7 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
 
         public void Initialize()
         {
-            SharedData.Logger.LogInfo($"存储池类型 <{typeof(FileStorage).FullName}> 初始化完毕！");
+            Logger.Instance.LogInfo($"存储池类型 <{typeof(FileStorage).FullName}> 初始化完毕！");
         }
 
         public void WriteFile(string hashPath, byte[] buffer)

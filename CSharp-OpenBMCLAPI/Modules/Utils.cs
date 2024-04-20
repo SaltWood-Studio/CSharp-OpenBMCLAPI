@@ -38,7 +38,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 case JsonValueKind.String:
                 case JsonValueKind.Number:
                 case JsonValueKind.Object:
-                    SharedData.Logger.LogInfo(element);
+                    Logger.Instance.LogInfo(element);
                     break;
                 case JsonValueKind.Array:
                     foreach (var i in element.EnumerateArray())
@@ -48,7 +48,7 @@ namespace CSharpOpenBMCLAPI.Modules
                             var message = JsonConvert.DeserializeAnonymousType(i.ToString(), new { message = "" });
                             if (message != null)
                             {
-                                SharedData.Logger.LogInfo(message.message);
+                                Logger.Instance.LogInfo(message.message);
                                 continue;
                             }
                             PrintJsonElement(i);
@@ -290,17 +290,17 @@ namespace CSharpOpenBMCLAPI.Modules
 
                     FirewallManager.Instance.Rules.Add(rule);
 
-                    SharedData.Logger.LogInfo($"添加防火墙规则成功：<IFirewallRule {rule.Name} {string.Join(',', rule.LocalPorts)} => {string.Join(',', rule.RemotePorts)} {rule.Protocol} {rule.Action}>");
+                    Logger.Instance.LogInfo($"添加防火墙规则成功：<IFirewallRule {rule.Name} {string.Join(',', rule.LocalPorts)} => {string.Join(',', rule.RemotePorts)} {rule.Protocol} {rule.Action}>");
                 }
                 catch (Exception ex)
                 {
-                    SharedData.Logger.LogWarn($"添加防火墙规则失败：{ExceptionToDetail(ex)}");
+                    Logger.Instance.LogWarn($"添加防火墙规则失败：{ExceptionToDetail(ex)}");
                 }
             }
             else
             {
                 // FirewallManager.Instance.Rules.Remove(rule);
-                SharedData.Logger.LogInfo($"防火墙规则已存在：<IFirewallRule {rule.Name} {string.Join(',', rule.LocalPorts)} => {string.Join(',', rule.RemotePorts)} {rule.Protocol} {rule.Action}>");
+                Logger.Instance.LogInfo($"防火墙规则已存在：<IFirewallRule {rule.Name} {string.Join(',', rule.LocalPorts)} => {string.Join(',', rule.RemotePorts)} {rule.Protocol} {rule.Action}>");
             }
         }
 

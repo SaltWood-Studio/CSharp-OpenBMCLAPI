@@ -20,9 +20,9 @@ namespace CSharpOpenBMCLAPI.Modules
         public static Task LogAndRun(HttpContext context, Action action)
         {
             action.Invoke();
-            if (!SharedData.Config.disableAccessLog)
+            if (!ClusterRequiredData.Config.disableAccessLog)
             {
-                SharedData.Logger.LogInfo($"{context.Request.Method} {context.Request.Path} <{context.Response.StatusCode}> - [{context.RemoteIPAddress}] {context.Request.Header.TryGetValue("User-Agent")}");
+                Logger.Instance.LogInfo($"{context.Request.Method} {context.Request.Path} <{context.Response.StatusCode}> - [{context.RemoteIPAddress}] {context.Request.Header.TryGetValue("User-Agent")}");
             }
             return Task.CompletedTask;
         }
@@ -32,11 +32,11 @@ namespace CSharpOpenBMCLAPI.Modules
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        public static async Task Measure(HttpContext context)
+        public static async Task Measure(HttpContext context, Cluster cluster)
         {
             var pairs = Utils.GetQueryStrings(context.Request.QueryString);
             bool valid = Utils.CheckSign(context.Request.Path
-                , SharedData.ClusterInfo.ClusterSecret
+                , cluster.requiredData.ClusterInfo.ClusterSecret
                 , pairs.GetValueOrDefault("s")
                 , pairs.GetValueOrDefault("e")
             );
@@ -65,7 +65,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <param name="context"></param>
         /// <param name="storage"></param>
         /// <returns></returns>
-        public static async Task<FileAccessInfo> DownloadHash(HttpContext context, IStorage storage)
+        public static async Task<FileAccessInfo> DownloadHash(HttpContext context, Cluster cluster)
         {
             FileAccessInfo fai = default;
             var pairs = Utils.GetQueryStrings(context.Request.QueryString);
@@ -73,14 +73,14 @@ namespace CSharpOpenBMCLAPI.Modules
             string? s = pairs.GetValueOrDefault("s");
             string? e = pairs.GetValueOrDefault("e");
 
-            bool valid = Utils.CheckSign(hash, SharedData.ClusterInfo.ClusterSecret, s, e);
+            bool valid = Utils.CheckSign(hash, cluster.clusterInfo.ClusterSecret, s, e);
 
             if (valid && hash != null && s != null && e != null)
             {
                 try
                 {
-                    fai = await storage.Express(Utils.HashToFileName(hash), context);
-                    SharedData.DataStatistician.DownloadCount(fai);
+                    fai = await cluster.storage.Express(Utils.HashToFileName(hash), context);
+                    ClusterRequiredData.DataStatistician.DownloadCount(fai);
                 }
                 catch
                 {
@@ -115,18 +115,18 @@ namespace CSharpOpenBMCLAPI.Modules
             switch (query)
             {
                 case "qps":
-                    await context.Response.WriteAsync(JsonConvert.SerializeObject(SharedData.DataStatistician.Qps));
+                    await context.Response.WriteAsync(JsonConvert.SerializeObject(ClusterRequiredData.DataStatistician.Qps));
                     break;
                 case "dashboard":
                     // SharedData.Logger.LogDebug(JsonConvert.SerializeObject(SharedData.DataStatistician.Dashboard));
-                    await context.Response.WriteAsync(JsonConvert.SerializeObject(SharedData.DataStatistician.Dashboard));
+                    await context.Response.WriteAsync(JsonConvert.SerializeObject(ClusterRequiredData.DataStatistician.Dashboard));
                     break;
                 case "system":
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(new
                     {
-                        memory = SharedData.DataStatistician.Memory,
-                        connections = SharedData.DataStatistician.Connections,
-                        cpu = SharedData.DataStatistician.Cpu,
+                        memory = ClusterRequiredData.DataStatistician.Memory,
+                        connections = ClusterRequiredData.DataStatistician.Connections,
+                        cpu = ClusterRequiredData.DataStatistician.Cpu,
                         cache = new
                         {
                             total = (cluster.storage as ICachedStorage != null) ? ((ICachedStorage)cluster.storage).GetCachedFiles() : 0,
@@ -138,7 +138,7 @@ namespace CSharpOpenBMCLAPI.Modules
                     await context.Response.WriteAsync(cluster.IsEnabled ? "好闲啊o(*￣▽￣*)ブ" : "似了w(ﾟДﾟ)w");
                     break;
                 case "uptime":
-                    await context.Response.WriteAsync(SharedData.DataStatistician.Uptime.ToString("0.00"));
+                    await context.Response.WriteAsync(ClusterRequiredData.DataStatistician.Uptime.ToString("0.00"));
                     break;
             }
         }

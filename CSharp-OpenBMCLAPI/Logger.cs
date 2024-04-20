@@ -4,7 +4,12 @@ namespace CSharpOpenBMCLAPI
 {
     public class Logger
     {
-        public Logger()
+        private static readonly Logger _instance = new Logger();
+
+        // 通过单例控制来使得 Logger 类不会被创建多次，进而保证日志写入锁只有一个，保证日志输出不会错位
+        public static Logger Instance { get =>  _instance; }
+
+        private Logger()
         {
             
         }

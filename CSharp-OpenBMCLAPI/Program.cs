@@ -19,9 +19,9 @@ namespace CSharpOpenBMCLAPI
 
         static void Main(string[] args)
         {
-            SharedData.Logger.LogSystem($"Starting CSharp-OpenBMCLAPI v{SharedData.Config.clusterVersion}");
-            SharedData.Logger.LogSystem("高性能、低メモリ占有！");
-            SharedData.Logger.LogSystem($"运行时环境：{Utils.GetRuntime()}");
+            Logger.Instance.LogSystem($"Starting CSharp-OpenBMCLAPI v{ClusterRequiredData.Config.clusterVersion}");
+            Logger.Instance.LogSystem("高性能、低メモリ占有！");
+            Logger.Instance.LogSystem($"运行时环境：{Utils.GetRuntime()}");
             Program program = new Program();
             program.Start();
             program.WaitForStop();
@@ -29,7 +29,7 @@ namespace CSharpOpenBMCLAPI
 
         protected void LoadPlugins()
         {
-            string path = Path.Combine(SharedData.Config.clusterFileDirectory, "plugins");
+            string path = Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, "plugins");
 
             Directory.CreateDirectory(path);
 
@@ -49,7 +49,7 @@ namespace CSharpOpenBMCLAPI
                                 PluginAttribute? attr = type.GetCustomAttribute<PluginAttribute>();
                                 if (attr == null || !attr.Hidden)
                                 {
-                                    SharedData.PluginManager.RegisterPlugin(type);
+                                    PluginManager.Instance.RegisterPlugin(type);
                                 }
                                 break;
                             }
@@ -59,7 +59,7 @@ namespace CSharpOpenBMCLAPI
                 }
                 catch (Exception ex)
                 {
-                    SharedData.Logger.LogError($"跳过加载插件 {Path.Combine(file)}。加载插件时出现未知错误。\n", Utils.ExceptionToDetail(ex));
+                    Logger.Instance.LogError($"跳过加载插件 {Path.Combine(file)}。加载插件时出现未知错误。\n", Utils.ExceptionToDetail(ex));
                 }
             }
         }
@@ -96,44 +96,44 @@ namespace CSharpOpenBMCLAPI
 
         protected override int Run(string[] args)
         {
-            SharedData.Config = GetConfig();
+            ClusterRequiredData.Config = GetConfig();
             LoadPlugins();
-            SharedData.PluginManager.TriggerEvent(this, ProgramEventType.ProgramStarted);
+            PluginManager.Instance.TriggerEvent(this, ProgramEventType.ProgramStarted);
 
             int returns = 0;
 
             if (File.Exists("totals.bson"))
             {
                 DataStatistician t = Utils.BsonDeserializeObject<DataStatistician>(File.ReadAllBytes("totals.bson")).ThrowIfNull();
-                SharedData.DataStatistician = t;
+                ClusterRequiredData.DataStatistician = t;
             }
             else
             {
                 const string bsonFilePath = "totals.bson";
                 using (var file = File.Create(bsonFilePath))
                 {
-                    file.Write(Utils.BsonSerializeObject(SharedData.DataStatistician));
+                    file.Write(Utils.BsonSerializeObject(ClusterRequiredData.DataStatistician));
                 }
             }
 
             // 从 .env.json 读取密钥然后 FetchToken
             ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(File.ReadAllTextAsync(".env.json").Result);
-            SharedData.ClusterInfo = info;
-            SharedData.Logger.LogSystem($"Cluster id: {info.ClusterID}");
+            ClusterRequiredData requiredData = new(info);
+            Logger.Instance.LogSystem($"Cluster id: {info.ClusterID}");
             TokenManager token = new TokenManager(info);
             token.FetchToken().Wait();
 
-            SharedData.Token = token;
+            requiredData.Token = token;
 
-            Cluster cluster = new(info, token);
-            SharedData.Logger.LogSystem($"成功创建 Cluster 实例");
+            Cluster cluster = new(requiredData);
+            Logger.Instance.LogSystem($"成功创建 Cluster 实例");
             AppDomain.CurrentDomain.ProcessExit += (sender, e) => Utils.ExitCluster(cluster).Wait();
             Console.CancelKeyPress += (sender, e) => Utils.ExitCluster(cluster).Wait();
 
             cluster.Start();
             cluster.WaitForStop();
 
-            SharedData.PluginManager.TriggerEvent(this, ProgramEventType.ProgramStopped);
+            requiredData.PluginManager.TriggerEvent(this, ProgramEventType.ProgramStopped);
             return returns;
         }
     }

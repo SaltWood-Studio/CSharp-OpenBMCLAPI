@@ -11,8 +11,10 @@ namespace CSharpOpenBMCLAPI.Modules.Plugin
     public class PluginManager
     {
         private List<PluginBase> plugins = new List<PluginBase>();
+        private static PluginManager _instance = new PluginManager();
+        public static PluginManager Instance { get => _instance; }
 
-        public PluginManager()
+        private PluginManager()
         {
 
         }
@@ -28,15 +30,15 @@ namespace CSharpOpenBMCLAPI.Modules.Plugin
 
                 plugins.Add(plugin);
 
-                SharedData.Logger.LogInfo($"插件 {plugin} 已成功加载！");
+                Logger.Instance.LogInfo($"插件 {plugin} 已成功加载！");
             }
             catch (InvalidOperationException)
             {
-                SharedData.Logger.LogError($"无法执行的操作：在不允许的位置调用了 {nameof(RegisterPlugin)}：{caller}！");
+                Logger.Instance.LogError($"无法执行的操作：在不允许的位置调用了 {nameof(RegisterPlugin)}：{caller}！");
             }
             catch (Exception ex)
             {
-                SharedData.Logger.LogError($"注册插件 {plugin} 时出现错误（阶段 1，添加插件）：", Utils.ExceptionToDetail(ex));
+                Logger.Instance.LogError($"注册插件 {plugin} 时出现错误（阶段 1，添加插件）：", Utils.ExceptionToDetail(ex));
             }
         }
 
@@ -52,7 +54,7 @@ namespace CSharpOpenBMCLAPI.Modules.Plugin
             }
             catch (Exception ex)
             {
-                SharedData.Logger.LogError("注册插件时出现错误（阶段 0，实例化）：", Utils.ExceptionToDetail(ex));
+                Logger.Instance.LogError("注册插件时出现错误（阶段 0，实例化）：", Utils.ExceptionToDetail(ex));
             }
         }
 
