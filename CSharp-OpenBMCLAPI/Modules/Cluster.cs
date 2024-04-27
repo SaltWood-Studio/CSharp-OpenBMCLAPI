@@ -115,15 +115,15 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             int returns = 0;
 
-            // await GetConfiguration();
+            await GetConfiguration();
             // 检查文件
-            //await CheckFiles();
+            await CheckFiles();
             Logger.Instance.LogInfo();
-            //Connect();
+            Connect();
 
-            //await RequestCertification();
+            await RequestCertification();
 
-            //LoadAndConvertCert();
+            LoadAndConvertCert();
 
             Logger.Instance.LogInfo($"{nameof(AsyncRun)} 正在等待证书请求……");
 
@@ -139,7 +139,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
             InitializeService();
 
-            //await Enable();
+            await Enable();
 
             Logger.Instance.LogSystem($"工作进程 {guid} 在 <{ClusterRequiredData.Config.HOST}:{ClusterRequiredData.Config.PORT}> 提供服务");
 
