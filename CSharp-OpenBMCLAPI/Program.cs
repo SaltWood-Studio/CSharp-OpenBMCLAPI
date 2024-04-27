@@ -118,8 +118,12 @@ namespace CSharpOpenBMCLAPI
                     }
                 }
 
+                const string environment = ".env.json";
+
+                if (!File.Exists(environment)) throw new FileNotFoundException($"请在程序目录下新建 {environment} 文件，然后填入 \"ClusterId\" 和 \"ClusterSecret\"以启动集群！");
+
                 // 从 .env.json 读取密钥然后 FetchToken
-                ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(File.ReadAllTextAsync(".env.json").Result);
+                ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(File.ReadAllTextAsync(environment).Result);
                 ClusterRequiredData requiredData = new(info);
                 Logger.Instance.LogSystem($"Cluster id: {info.ClusterID}");
                 TokenManager token = new TokenManager(info);
@@ -141,6 +145,7 @@ namespace CSharpOpenBMCLAPI
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ExceptionToDetail());
+                Console.ReadKey();
                 return -1;
             }
         }
