@@ -22,7 +22,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             if (!ClusterRequiredData.Config.disableAccessLog)
             {
-                Logger.Instance.LogInfo($"{context.Request.Method} {context.Request.Path} <{context.Response.StatusCode}> - [{context.RemoteIPAddress}] {context.Request.Header.TryGetValue("User-Agent")}");
+                Logger.Instance.LogInfo($"{context.Request.Method} {context.Request.Path.Split('?').First()} <{context.Response.StatusCode}> - [{context.RemoteIPAddress}] {context.Request.Header.TryGetValue("User-Agent")}");
             }
         }
 
@@ -74,7 +74,7 @@ namespace CSharpOpenBMCLAPI.Modules
             string? s = pairs.GetValueOrDefault("s");
             string? e = pairs.GetValueOrDefault("e");
 
-            bool valid = true;//Utils.CheckSign(hash, cluster.clusterInfo.ClusterSecret, s, e);
+            bool valid = Utils.CheckSign(hash, cluster.clusterInfo.ClusterSecret, s, e);
 
             if (valid && hash != null && s != null && e != null)
             {
@@ -86,7 +86,6 @@ namespace CSharpOpenBMCLAPI.Modules
                         context.Response.StatusCode = 206;
                         (long from, long to) = ToRangeByte(context.Request.Header["range"].Split("=").Last().Split("-"));
                         long length = (to - from + 1);
-                        context.Request.Header.ToString().Dump();
                         context.Response.Header["Content-Length"] = length.ToString();
 
                         //TODO: 尝试优化这坨屎
@@ -180,9 +179,9 @@ namespace CSharpOpenBMCLAPI.Modules
             }
         }
 
-        public static async Task Dashboard(HttpContext context, string filePath = "/index.html")
+        public static async Task Dashboard(HttpContext context, string filePath = "index.html")
         {
-            await context.Response.SendFile(Path.Combine(Environment.CurrentDirectory, $"Dashboard{filePath}"));
+            await context.Response.SendFile(Path.Combine(Environment.CurrentDirectory, $"Dashboard/{filePath}"));
         }
     }
 }

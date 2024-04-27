@@ -104,7 +104,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
                     }
                     // 已经判断符合所有条件
 
-                    route.handler?.Invoke(context, cluster);
+                    route.handler?.Invoke(context, cluster, route.matchRegex.Match(context.Request.Path));
                     break;
                 }
                 NextOne: continue;

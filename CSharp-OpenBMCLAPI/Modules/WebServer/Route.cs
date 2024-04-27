@@ -11,7 +11,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
     {
         public required Regex matchRegex;
         public List<Func<string, bool>> conditionExpressions = new();
-        public Action<HttpContext, Cluster>? handler;
+        public Action<HttpContext, Cluster, Match>? handler;
 
         public Route()
         {

@@ -175,10 +175,17 @@ namespace CSharpOpenBMCLAPI.Modules
                 {
                     (path) => path.Contains("s=") && path.Contains("e=")
                 },
-                handler = (context, cluster) => HttpServiceProvider.DownloadHash(context, cluster).Wait()
+                handler = (context, cluster, Match) => HttpServiceProvider.DownloadHash(context, cluster).Wait()
             });
             server.routes.Add(new Route { matchRegex = new Regex(@"/measure/\d"),
-                handler = (context, cluster) => HttpServiceProvider.Measure(context, cluster).Wait()
+                handler = (context, cluster, match) => HttpServiceProvider.Measure(context, cluster).Wait()
+            });
+
+            server.routes.Add(new Route { matchRegex = new Regex(@"/"),
+                handler = (context, cluster, match) => HttpServiceProvider.Dashboard(context).Wait()
+            });
+            server.routes.Add(new Route { matchRegex = new Regex(@"/api/(.*)"),
+                handler = (context, cluster, match) => HttpServiceProvider.Api(context, match.Groups[0].Value, this).Wait()
             });
 
             server.Start();
