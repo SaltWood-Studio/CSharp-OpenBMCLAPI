@@ -83,19 +83,26 @@ namespace CSharpOpenBMCLAPI.Modules
                     if (context.Request.Header.ContainsKey("range"))
                     {
                         // 206 处理部分
+                        context.Response.StatusCode = 206;
                         (long from, long to) = ToRangeByte(context.Request.Header["range"].Split("=").Last().Split("-"));
                         long length = (to - from + 1);
                         context.Request.Header.ToString().Dump();
                         context.Response.Header["Content-Length"] = length.ToString();
-                        await cluster.storage.HandleRequest(Utils.HashToFileName(hash), context);
+
+                        //TODO: 尝试优化这坨屎
+                        Stream file = cluster.storage.ReadFileStream(Utils.HashToFileName(hash));
+                        file.Seek(from, SeekOrigin.Begin);
+                        for (long i = from; i <= to; i++)
+                        {
+                            context.Response.Stream.WriteByte((byte)file.ReadByte());
+                        }
                         context.Response.Stream.Position = 0;
-                        context.Response.Stream.Seek(from, SeekOrigin.Begin);
+
                         context.Response.Header["Content-Range"] = $"{from}-{to}/{context.Response.Stream.Length}";
                         context.Response.Header["x-bmclapi-hash"] = hash;
                         context.Response.Header["Accept-Ranges"] = "bytes";
                         context.Response.Header["Content-Type"] = "application/octet-stream";
                         context.Response.Header["Connection"] = "closed";
-                        context.Response.StatusCode = 206;
                         fai = new FileAccessInfo
                         {
                             hits = 1,
