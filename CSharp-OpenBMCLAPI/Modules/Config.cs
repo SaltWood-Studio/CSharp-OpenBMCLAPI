@@ -18,8 +18,8 @@ namespace CSharpOpenBMCLAPI.Modules
         public FileVerificationMode startupCheckMode;
 
         [YamlMember(Description = """
-        跳过启动前检查跳过启动前检查
-        这会导致无法发现文件错误，但是能够将内存占用压缩到约正常情况下的 30%！
+        跳过启动前检查
+        这会导致无法发现文件错误，但是能够将内存占用压缩到很低！
         [注] 当此项启用时，"startupCheckMode"无效
         """, Order = 2)]
         public bool skipStartupCheck;

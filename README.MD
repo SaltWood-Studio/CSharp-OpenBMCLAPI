@@ -24,39 +24,32 @@
 
 如果你想加入 OpenBMCLAPI，可以向 [bangbang93](https://github.com/bangbang93) 索取 `CLUSTER_ID` 和 `CLUSTER_SECRET`
 
+# 贡献说明
+
+如果你想为本项目做出贡献，请遵守以下规则：
+1. 不要贡献比我的代码还烂的屎山
+2. 每条 commit 请认真填写信息，可以加上一些前缀方便识别，请**不要使用类似“🐛修复漏洞”之类的无意义信息！**
+3. 在提交 issue 之前，请认真确认**没有重复的 issue 再提交！**
+4. 自己的代码，自己先测试，别一堆 bug 没修就想丢上来（尤其是想丢到 master 分支的，你丢 dev 分支还好说，只要不是编译都没法通过的那种），真的想请开 draft pull request
+5. 请统一贡献到 **dev** 分支，master 分支**不接受** pull request，collaborator 们也**不要直接向 master 分支 commit！**
+
+
 # 特性
 
 - 基于 .NET 的跨平台使用
-- 内置仪表盘（感谢 @tianxiu2b2t 提供）
+- 内置仪表盘（感谢 **@tianxiu2b2t** 提供）
 - 得益于 .NET 优秀的内存管理机制、垃圾回收机制，本程序内存占用低（约 150MB，极限情况下甚至能到 30 MB）
 - 插件系统，对你的节点做一些自定义！
 
 # 使用
 
-## 从源码启动
-
-1. 克隆仓库
-2. 在 `CSharp-OpenBMCLAPI/CSharp-OpenBMCLAPI` 下新建 `.env.json`，按照如下方式填入 `ClusterId` 和 `ClusterSecret`：
-```
-{
-	"ClusterId": "************************",
-	"ClusterSecret": "********************************"
-}
-```
-3. 运行 `dotnet build` 或打开项目，运行构建好的程序
-
-## 从 Release 启动
-
-1. 下载 Release 版本，解压缩
-2. 在工作目录下新建 `.env.json`，填入 `ClusterId` 和 `ClusterSecret`（格式参见“从源码启动”）
-3. 双击可执行文件，启动集群
+详见 [Wiki](https://github.com/SALTWOOD/CSharp-OpenBMCLAPI/wiki)
 
 # TODO
 
 - [ ] 原生多实例运行
 - [ ] 继续优化插件功能
 - [ ] *[优先级低]* 高级控制台，在控制台中调整设置、查看监控信息而不只是看日志
-- [ ] Actions 自动构建
 ___
 - [x] ~~**[优先级高]** 弃用 ASP.NET，使用其他框架~~
 - [x] ~~仪表盘~~
@@ -64,6 +57,7 @@ ___
 - [x] ~~内存优化，使得程序可用~~
 - [x] ~~上线节点，能够被主控登记为在线~~
 - [x] ~~提供服务~~
+- [ ] ~~Actions 自动构建~~
 
 # 已知问题
 - ~~当一次性下载文件太多时，有概率报 **NullReferenceException**~~
