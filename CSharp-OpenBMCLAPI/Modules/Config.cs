@@ -60,7 +60,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
             this.refreshTokenTime = 1800000;
             this.clusterFileDirectory = "./";
-            this.clusterVersion = "1.10.2-0";
+            this.clusterVersion = "1.10.4";
 
             this.HOST = "";
             this.PORT = 4000;

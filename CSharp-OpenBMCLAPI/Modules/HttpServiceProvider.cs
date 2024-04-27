@@ -22,7 +22,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             if (!ClusterRequiredData.Config.disableAccessLog)
             {
-                Logger.Instance.LogInfo($"{context.Request.Method} {context.Request.Path.Split('?').First()} <{context.Response.StatusCode}> - [{context.RemoteIPAddress}] {context.Request.Header.TryGetValue("User-Agent")}");
+                Logger.Instance.LogInfo($"{context.Request.Method} {context.Request.Path.Split('?').First()} <{context.Response.StatusCode}> - [{context.RemoteIPAddress}] {context.Request.Header.TryGetValue("user-agent")}");
             }
         }
 
@@ -50,7 +50,7 @@ namespace CSharpOpenBMCLAPI.Modules
                         await context.Response.Stream.WriteAsync(buffer);
                     }
                 }
-                context.Response.Stream.Position = 0;
+                context.Response.ResetStreamPosition();
             }
             else
             {
@@ -78,24 +78,29 @@ namespace CSharpOpenBMCLAPI.Modules
 
             if (valid && hash != null && s != null && e != null)
             {
+                long from, to;
                 try
                 {
                     if (context.Request.Header.ContainsKey("range"))
                     {
                         // 206 处理部分
                         context.Response.StatusCode = 206;
-                        (long from, long to) = ToRangeByte(context.Request.Header["range"].Split("=").Last().Split("-"));
-                        long length = (to - from + 1);
-                        context.Response.Header["Content-Length"] = length.ToString();
+                        (from, to) = ToRangeByte(context.Request.Header["range"].Split("=").Last().Split("-"));
+                        if (to < from && to != -1) (from, to) = (to, from);
 
                         //TODO: 尝试优化这坨屎
                         Stream file = cluster.storage.ReadFileStream(Utils.HashToFileName(hash));
+                        if (to == -1) to = file.Length;
+
+                        long length = (to - from + 1);
+                        context.Response.Header["Content-Length"] = length.ToString();
+
                         file.Seek(from, SeekOrigin.Begin);
                         for (long i = from; i <= to; i++)
                         {
                             context.Response.Stream.WriteByte((byte)file.ReadByte());
                         }
-                        context.Response.Stream.Position = 0;
+                        context.Response.ResetStreamPosition();
 
                         context.Response.Header["Content-Range"] = $"{from}-{to}/{context.Response.Stream.Length}";
                         context.Response.Header["x-bmclapi-hash"] = hash;
@@ -112,12 +117,14 @@ namespace CSharpOpenBMCLAPI.Modules
                     else
                     {
                         fai = await cluster.storage.HandleRequest(Utils.HashToFileName(hash), context);
-                        context.Response.Stream.Position = 0;
+                        context.Response.ResetStreamPosition();
                         ClusterRequiredData.DataStatistician.DownloadCount(fai);
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Logger.Instance.LogError(ex.ExceptionToDetail());
+                    //Logger.Instance.LogError(ex.StackTrace);
                     context.Response.StatusCode = 404;
                 }
             }
@@ -148,6 +155,7 @@ namespace CSharpOpenBMCLAPI.Modules
         public static async Task Api(HttpContext context, string query, Cluster cluster)
         {
             context.Response.Header.Set("content-type", "application/json");
+            context.Response.StatusCode = 200;
             switch (query)
             {
                 case "qps":
@@ -177,10 +185,12 @@ namespace CSharpOpenBMCLAPI.Modules
                     await context.Response.WriteAsync(ClusterRequiredData.DataStatistician.Uptime.ToString("0.00"));
                     break;
             }
+            context.Response.ResetStreamPosition();
         }
 
         public static async Task Dashboard(HttpContext context, string filePath = "index.html")
         {
+            context.Response.StatusCode = 200;
             await context.Response.SendFile(Path.Combine(Environment.CurrentDirectory, $"Dashboard/{filePath}"));
         }
     }

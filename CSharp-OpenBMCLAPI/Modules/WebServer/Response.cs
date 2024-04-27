@@ -102,5 +102,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
         }
 
         public Task WriteAsync(string data) => this.WriteAsync(Encoding.UTF8.GetBytes(data));
+
+        public void ResetStreamPosition() => this.Stream.Position = 0;
     }
 }

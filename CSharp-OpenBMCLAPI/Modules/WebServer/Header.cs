@@ -32,7 +32,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
                 {
                     continue;
                 }
-                tables.TryAdd(WebUtils.Decode(h[0]).ToLower(), WebUtils.Decode(h[1]).ToLower());
+                tables.TryAdd(WebUtils.Decode(h[0]).ToLower(), WebUtils.Decode(h[1]));
             }
             return new Header(tables);
         }

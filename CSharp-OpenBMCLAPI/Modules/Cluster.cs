@@ -117,11 +117,11 @@ namespace CSharpOpenBMCLAPI.Modules
 
             // await GetConfiguration();
             // 检查文件
-            await CheckFiles();
+            //await CheckFiles();
             Logger.Instance.LogInfo();
-            Connect();
+            //Connect();
 
-            await RequestCertification();
+            //await RequestCertification();
 
             //LoadAndConvertCert();
 
@@ -139,7 +139,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
             InitializeService();
 
-            await Enable();
+            //await Enable();
 
             Logger.Instance.LogSystem($"工作进程 {guid} 在 <{ClusterRequiredData.Config.HOST}:{ClusterRequiredData.Config.PORT}> 提供服务");
 
@@ -171,21 +171,41 @@ namespace CSharpOpenBMCLAPI.Modules
             X509Certificate2 cert = LoadAndConvertCert();
             SimpleWebServer server = new(ClusterRequiredData.Config.PORT, cert, this);//cert);
 
-            server.routes.Add(new Route { matchRegex = new Regex(@"/download/[0-9a-fA-F]{32,40}?.*"), conditionExpressions =
+            // 下载路由
+            server.routes.Add(new Route { MatchRegex = new Regex(@"/download/[0-9a-fA-F]{32,40}?.*"), ConditionExpressions =
                 {
                     (path) => path.Contains("s=") && path.Contains("e=")
                 },
-                handler = (context, cluster, Match) => HttpServiceProvider.DownloadHash(context, cluster).Wait()
-            });
-            server.routes.Add(new Route { matchRegex = new Regex(@"/measure/\d"),
-                handler = (context, cluster, match) => HttpServiceProvider.Measure(context, cluster).Wait()
+                Handler = (context, cluster, Match) =>
+                {
+                    FileAccessInfo fai = HttpServiceProvider.DownloadHash(context, cluster).Result;
+                    this.counter.Add(fai);
+                }
             });
 
-            server.routes.Add(new Route { matchRegex = new Regex(@"/"),
-                handler = (context, cluster, match) => HttpServiceProvider.Dashboard(context).Wait()
+            // 测速路由
+            server.routes.Add(new Route { MatchRegex = new Regex(@"/measure/\d"),
+                Handler = (context, cluster, match) => HttpServiceProvider.Measure(context, cluster).Wait()
             });
-            server.routes.Add(new Route { matchRegex = new Regex(@"/api/(.*)"),
-                handler = (context, cluster, match) => HttpServiceProvider.Api(context, match.Groups[0].Value, this).Wait()
+
+            // API 数据
+            server.routes.Add(new Route { MatchRegex = new Regex(@"/api/(.*)"),
+                Handler = (context, cluster, match) => HttpServiceProvider.Api(context, match.Groups[1].Value, this).Wait(),
+                Methods = "POST"
+            });
+
+            // JS 文件提供
+            server.routes.Add(new Route
+            {
+                MatchRegex = new Regex(@"/static/js/(.*)"),
+                Handler = (context, cluster, match) => HttpServiceProvider.Dashboard(context, $"static/js/{match.Groups[1].Value}").Wait()
+            });
+
+            // 面板
+            server.routes.Add(new Route
+            {
+                MatchRegex = new Regex(@"/"),
+                Handler = (context, cluster, match) => HttpServiceProvider.Dashboard(context).Wait()
             });
 
             server.Start();

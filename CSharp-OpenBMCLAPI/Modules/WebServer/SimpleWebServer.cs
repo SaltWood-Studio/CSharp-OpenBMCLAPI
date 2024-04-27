@@ -79,7 +79,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             }
             catch (Exception ex)
             {
-                Logger.Instance.LogError(ex.ExceptionToDetail());
+                //Logger.Instance.LogError(ex.ExceptionToDetail());
                 if (tcpClient.Connected) tcpClient.Close();
             }
         }
@@ -95,16 +95,23 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
 
             foreach (Route route in this.routes)
             {
-                if (route.matchRegex.Match(context.Request.Path).Success)
+                if (route.MatchRegex.Match(context.Request.Path).Success)
                 {
-                    foreach (var func in route.conditionExpressions)
+                    if (route.Methods.Contains(context.Request.Method))
+                    {
+                        context.Response.StatusCode = 405;
+                        await context.Response.WriteAsync("405 Method Not Allowed");
+                        context.Response.ResetStreamPosition();
+                        break;
+                    }
+                    foreach (var func in route.ConditionExpressions)
                     {
                         bool result = func.Invoke(context.Request.Path);
                         if (!result) goto NextOne;
                     }
                     // 已经判断符合所有条件
 
-                    route.handler?.Invoke(context, cluster, route.matchRegex.Match(context.Request.Path));
+                    route.Handler?.Invoke(context, cluster, route.MatchRegex.Match(context.Request.Path));
                     break;
                 }
                 NextOne: continue;
