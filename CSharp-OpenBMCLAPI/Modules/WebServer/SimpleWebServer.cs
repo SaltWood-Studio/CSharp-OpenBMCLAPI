@@ -97,7 +97,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             {
                 if (route.MatchRegex.Match(context.Request.Path).Success)
                 {
-                    if (route.Methods.Contains(context.Request.Method))
+                    if (!route.Methods.Contains(context.Request.Method))
                     {
                         context.Response.StatusCode = 405;
                         await context.Response.WriteAsync("405 Method Not Allowed");
