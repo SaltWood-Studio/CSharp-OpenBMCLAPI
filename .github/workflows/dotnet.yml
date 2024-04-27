@@ -5,9 +5,9 @@ name: .NET
 
 on:
   push:
-    branches: [ "master", "dev"]
+    branches: ["dev"]
   pull_request:
-    branches: [ "master", "dev"]
+    branches: ["dev"]
   workflow_dispatch:
 
 jobs:
@@ -38,5 +38,4 @@ jobs:
         with:
           name: app-debug
           path: |
-            CSharp-OpenBMCLAPI/bin/Debug
             CSharp-OpenBMCLAPI/bin/Release

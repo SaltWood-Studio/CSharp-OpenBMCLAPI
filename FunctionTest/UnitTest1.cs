@@ -8,16 +8,16 @@ namespace FunctionTest
     public class UnitTest1
     {
         [TestMethod]
-        public void TestMethod1()
+        public void TestHeaderParser()
         {
-            byte[] data = Encoding.UTF8.GetBytes("GET /1024 HTTP/1.1\r\nHost: localhost\r\n\r\n");
+            byte[] data = Encoding.UTF8.GetBytes("GET /1024 HTTP/1.1\r\nhost: localhost\r\n\r\n");
             var resp = new Request(null!, data);
             var str = resp.ToString();
             Assert.AreEqual(str, """
                 GET /1024 HTTP/1.1
 
                 Headers:
-                    Host: localhost
+                    host: localhost
 
                 Data:
 
