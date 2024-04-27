@@ -3,11 +3,13 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
 using SocketIOClient;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
+using System.Xml.Linq;
 using TeraIO.Runnable;
 using WindowsFirewallHelper;
 using static System.Net.Mime.MediaTypeNames;
@@ -85,7 +87,7 @@ namespace CSharpOpenBMCLAPI.Modules
         public static string GetRuntime()
         {
             var version = Environment.Version;
-            return $"CSharp/v{version}";
+            return $"Dotnet-CSharp/v{version}";
         }
 
         /// <summary>
@@ -93,14 +95,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// </summary>
         /// <param name="storage"></param>
         /// <returns></returns>
-        public static string GetStorageType(IStorage storage)
-        {
-            Type type = storage.GetType();
-            if (type == typeof(FileStorage))
-                return "file";
-            else
-                return "file";
-        }
+        public static string GetStorageType(IStorage storage) => "file";
 
         /// <summary>
         /// 将以 <seealso cref="long"/> 值存储的 bytes 数据输出为可读的字符串
@@ -326,6 +321,16 @@ namespace CSharpOpenBMCLAPI.Modules
                 T? e = serializer.Deserialize<T>(reader);
                 return e;
             }
+        }
+
+        public static Stream? GetEmbeddedFileStream(string file)
+        {
+            Type? type = MethodBase.GetCurrentMethod()?.DeclaringType;
+            string? _namespace = type?.Namespace;
+            Assembly _assembly = Assembly.GetExecutingAssembly();
+            string resourceName = $"{_namespace}.{file.Replace('/', '.')}";
+            Stream? stream = _assembly.GetManifestResourceStream(resourceName);
+            return stream;
         }
     }
 }

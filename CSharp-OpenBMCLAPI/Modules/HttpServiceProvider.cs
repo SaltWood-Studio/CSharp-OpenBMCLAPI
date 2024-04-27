@@ -188,10 +188,11 @@ namespace CSharpOpenBMCLAPI.Modules
             context.Response.ResetStreamPosition();
         }
 
-        public static async Task Dashboard(HttpContext context, string filePath = "index.html")
+        public static Task Dashboard(HttpContext context, string filePath = "index.html")
         {
             context.Response.StatusCode = 200;
-            await context.Response.SendFile(Path.Combine(Environment.CurrentDirectory, $"Dashboard/{filePath}"));
+            context.Response.Stream = Utils.GetEmbeddedFileStream($"Dashboard/{filePath}").ThrowIfNull();
+            return Task.CompletedTask;
         }
     }
 }
