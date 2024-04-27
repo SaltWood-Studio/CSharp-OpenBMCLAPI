@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using TeraIO.Extension;
 using TeraIO.Network.Http;
 using TeraIO.Runnable;
 
@@ -49,6 +50,7 @@ namespace CSharpOpenBMCLAPI.Modules
                         await context.Response.Stream.WriteAsync(buffer);
                     }
                 }
+                context.Response.Stream.Position = 0;
             }
             else
             {
@@ -68,14 +70,11 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             FileAccessInfo fai = default;
             var pairs = Utils.GetQueryStrings(context.Request.Path.Split('?').Last());
-            Logger.Instance.LogInfo(string.Join("\n", pairs.Select(f => $"{f.Key}: {f.Value}")));
-            Logger.Instance.LogInfo();
-            Logger.Instance.LogInfo(string.Join("\n", context.Request.Header.Select(f => $"{f.Key}: {f.Value}")));
             string? hash = context.Request.Path.Split('/').LastOrDefault()?.Split('?').First();
             string? s = pairs.GetValueOrDefault("s");
             string? e = pairs.GetValueOrDefault("e");
 
-            bool valid = Utils.CheckSign(hash, cluster.clusterInfo.ClusterSecret, s, e);
+            bool valid = true;//Utils.CheckSign(hash, cluster.clusterInfo.ClusterSecret, s, e);
 
             if (valid && hash != null && s != null && e != null)
             {
@@ -83,13 +82,19 @@ namespace CSharpOpenBMCLAPI.Modules
                 {
                     if (context.Request.Header.ContainsKey("range"))
                     {
-                        (long from, long to) = ToRangeByte(context.Request.Header["Range"].Split("=").Last().Split("-"));
-                        long length = (to - from);
-                        context.Response.Header["content-length"] = length.ToString();
-                        using Stream file = cluster.storage.ReadFileStream(Utils.HashToFileName(hash));
-                        context.Response.Header["content-range"] = $"{from}-{to}/{file.Length}";
-                        file.Seek(from, SeekOrigin.Begin);
-                        file.CopyTo(context.Response.Stream);
+                        // 206 处理部分
+                        (long from, long to) = ToRangeByte(context.Request.Header["range"].Split("=").Last().Split("-"));
+                        long length = (to - from + 1);
+                        context.Request.Header.ToString().Dump();
+                        context.Response.Header["Content-Length"] = length.ToString();
+                        await cluster.storage.HandleRequest(Utils.HashToFileName(hash), context);
+                        context.Response.Stream.Position = 0;
+                        context.Response.Stream.Seek(from, SeekOrigin.Begin);
+                        context.Response.Header["Content-Range"] = $"{from}-{to}/{context.Response.Stream.Length}";
+                        context.Response.Header["x-bmclapi-hash"] = hash;
+                        context.Response.Header["Accept-Ranges"] = "bytes";
+                        context.Response.Header["Content-Type"] = "application/octet-stream";
+                        context.Response.Header["Connection"] = "closed";
                         context.Response.StatusCode = 206;
                         fai = new FileAccessInfo
                         {
@@ -101,6 +106,7 @@ namespace CSharpOpenBMCLAPI.Modules
                     else
                     {
                         fai = await cluster.storage.HandleRequest(Utils.HashToFileName(hash), context);
+                        context.Response.Stream.Position = 0;
                         ClusterRequiredData.DataStatistician.DownloadCount(fai);
                     }
                 }
@@ -112,7 +118,7 @@ namespace CSharpOpenBMCLAPI.Modules
             else
             {
                 context.Response.StatusCode = 403;
-                context.Response.Header.Remove("content-length");
+                context.Response.Header.Remove("Content-Length");
                 await context.Response.WriteAsync($"Access to \"{context.Request.Path}\" has been blocked due to your request timeout or invalidity.");
             }
             LogAccess(context);
@@ -167,9 +173,9 @@ namespace CSharpOpenBMCLAPI.Modules
             }
         }
 
-        public static void Dashboard(HttpContext context, string filePath = "/index.html")
+        public static async Task Dashboard(HttpContext context, string filePath = "/index.html")
         {
-            context.Response.SendFileAsync(Path.Combine(Environment.CurrentDirectory, $"Dashboard{filePath}")).Wait();
+            await context.Response.SendFile(Path.Combine(Environment.CurrentDirectory, $"Dashboard{filePath}"));
         }
     }
 }

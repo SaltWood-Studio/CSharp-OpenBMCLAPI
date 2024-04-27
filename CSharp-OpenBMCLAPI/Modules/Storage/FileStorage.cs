@@ -96,7 +96,7 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
         public async Task<FileAccessInfo> HandleRequest(string hashPath, HttpContext context)
         {
             string filePath = GetAbsolutePath(hashPath);
-            await context.Response.SendFileAsync(filePath);
+            await context.Response.SendFile(filePath);
 
             FileInfo fileInfo = new FileInfo(filePath);
 

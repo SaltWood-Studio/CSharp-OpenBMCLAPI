@@ -54,15 +54,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
 
         public bool ContainsKey(string key) => tables.ContainsKey(key);
 
-        public override string ToString()
-        {
-            string header = "";
-            foreach (var key in tables.Keys)
-            {
-                header += key + ": " + tables[key] + "\r\n";
-            }
-            return header;
-        }
+        public override string ToString() => string.Join("\r\n", from kvp in this select $"{kvp.Key}: {kvp.Value}");
 
         // Auto generated.
 

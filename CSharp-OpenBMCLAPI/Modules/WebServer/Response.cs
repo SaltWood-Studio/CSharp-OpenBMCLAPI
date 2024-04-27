@@ -13,14 +13,15 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
         public Header Header { get; set; } = new Header();
         public Stream Stream { get; set; } = new MemoryStream();
 
-        public async Task Call(Client client, Request request, bool needCopy = true)
+        public async Task Call(Client client, Request request)
         {
-            if (!Header.ContainsKey("content-length")) Header.Set("content-length", Stream.Length);
-            Header.Set("server", "CSharp-SaltWood");
-            string responseHeader = $"HTTP/1.1 {StatusCode} {GetStatusMsg(StatusCode)}\r\n{Header}\r\n";
+            if (!Header.ContainsKey("Content-Length")) Header.Set("Content-Length", Stream.Length);
+            Header.Set("X-Powered-By", "CSharp-SaltWood");
+            string responseHeader = $"HTTP/1.1 {StatusCode} {GetStatusMsg(StatusCode)}\r\n{Header}\r\n\r\n";
             await client.Write(responseHeader.Encode());
-            Stream.Position = 0;
-            if (needCopy) Stream.CopyTo(client.Stream);
+            Stream.CopyTo(client.Stream);
+            client.Stream.Flush();
+            Stream.Close();
         }
 
         public static readonly Dictionary<int, string> STATUS_CODES = new Dictionary<int, string>
@@ -84,10 +85,10 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             return STATUS_CODES.ContainsKey(status) ? STATUS_CODES[status] : STATUS_CODES[status / 100 * 100];
         }
 
-        public Task SendFileAsync(string filePath)
+        public ValueTask SendFile(string filePath)
         {
             this.Stream = File.OpenRead(filePath);
-            return Task.CompletedTask;
+            return ValueTask.CompletedTask;
         }
 
         public Task WriteAsync(byte[] buffer, int offset, int count)
