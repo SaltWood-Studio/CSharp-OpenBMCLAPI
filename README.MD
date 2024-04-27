@@ -53,22 +53,21 @@
 
 # TODO
 
-- [ ] **[优先级高]** 弃用 ASP.NET，使用其他框架
-
-**(以下暂缓进行)**
-
 - [ ] 原生多实例运行
 - [ ] 继续优化插件功能
 - [ ] *[优先级低]* 高级控制台，在控制台中调整设置、查看监控信息而不只是看日志
-- [x] 仪表盘
-- [x] 插件功能，支持通过第三方插件做各种事情
-- [x] 内存优化，使得程序可用
-- [x] 上线节点，能够被主控登记为在线
-- [x] 提供服务
+- [ ] Actions 自动构建
+___
+- [x] ~~**[优先级高]** 弃用 ASP.NET，使用其他框架~~
+- [x] ~~仪表盘~~
+- [x] ~~插件功能，支持通过第三方插件做各种事情~~
+- [x] ~~内存优化，使得程序可用~~
+- [x] ~~上线节点，能够被主控登记为在线~~
+- [x] ~~提供服务~~
 
 # 已知问题
 - ~~当一次性下载文件太多时，有概率报 **NullReferenceException**~~
-- 未知原因导致查活失败有概率掉线
+- ~~未知原因导致查活失败有概率掉线~~
 
 # ❓ FAQ
 ## 关于版本号
@@ -83,9 +82,6 @@
 **Newtonsoft**
 - [Newtonsoft.Json](https://www.newtonsoft.com/json) - 使用 Newtonsoft.Json 解析 Json
 - [Newtonsoft.Json.Bson](https://www.newtonsoft.com/json) - 使用 Newtonsoft.Json.Bson 解析 Bson，用于统计数据的存储
-
-**Behzad Khosravifar**
-- [Downloader](https://github.com/bezzad/Downloader) - 使用 Downloader 下载文件
 
 **@doghappy**
 - [SocketIOCLient](https://github.com/doghappy/socket.io-client-csharp) - 使用 SocketIOClient 与主控通信
