@@ -88,17 +88,21 @@ namespace CSharpOpenBMCLAPI.Modules
                         (from, to) = ToRangeByte(context.Request.Header["range"].Split("=").Last().Split("-"));
                         if (to < from && to != -1) (from, to) = (to, from);
 
-                        //TODO: 尝试优化这坨屎
-                        Stream file = cluster.storage.ReadFileStream(Utils.HashToFileName(hash));
-                        if (to == -1) to = file.Length;
-
-                        long length = (to - from + 1);
-                        context.Response.Header["Content-Length"] = length.ToString();
-
-                        file.Seek(from, SeekOrigin.Begin);
-                        for (long i = from; i <= to; i++)
+                        using (Stream file = cluster.storage.ReadFileStream(Utils.HashToFileName(hash)))
                         {
-                            context.Response.Stream.WriteByte((byte)file.ReadByte());
+                            if (to == -1) to = file.Length;
+
+                            long length = (to - from + 1);
+                            context.Response.Header["Content-Length"] = length.ToString();
+
+                            file.Seek(from, SeekOrigin.Begin);
+                            byte[] buffer = new byte[4096];
+                            for (; file.Position <= to;)
+                            {
+                                int count = file.Read(buffer, 0, buffer.Length);
+                                if (count != buffer.Length) context.Response.Stream.Write(buffer[..count]);
+                                else context.Response.Stream.Write(buffer);
+                            }
                         }
                         context.Response.ResetStreamPosition();
 
