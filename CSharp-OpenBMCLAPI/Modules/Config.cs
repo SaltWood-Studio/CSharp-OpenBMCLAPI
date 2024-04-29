@@ -44,11 +44,14 @@ namespace CSharpOpenBMCLAPI.Modules
         public bool bringYourOwnCertficate;
 
 
-        [YamlMember(Description = "指示是否执行快速上线，若为 true 则每次都不执行", Order = 1)]
+        [YamlMember(Description = "[开发变量]\n指示是否执行快速上线，若为 true 则每次都不执行", Order = 10)]
         public bool noFastEnable;
 
         [YamlMember(Description = "指示是否禁用访问日志输出", Order = 1)]
         public bool disableAccessLog;
+
+        [YamlMember(Description = "[开发变量]\n指示是否进行节点上线", Order = 10)]
+        public bool noEnable;
 
         [YamlIgnore]
         public string cacheDirectory { get => Path.Combine(this.clusterFileDirectory, "cache"); }
@@ -68,6 +71,7 @@ namespace CSharpOpenBMCLAPI.Modules
             this.noFastEnable = false;
 
             this.disableAccessLog = false;
+            this.noEnable = false;
         }
     }
 }

@@ -115,19 +115,20 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             int returns = 0;
 
-            await GetConfiguration();
             // 检查文件
-            await CheckFiles();
+            if (!ClusterRequiredData.Config.noEnable) await CheckFiles();
             Logger.Instance.LogInfo();
-            Connect();
+            if (!ClusterRequiredData.Config.noEnable) Connect();
 
-            await RequestCertification();
+            if (!ClusterRequiredData.Config.noEnable) await GetConfiguration();
 
-            LoadAndConvertCert();
+            if (!ClusterRequiredData.Config.noEnable) await RequestCertification();
+
+            if (!ClusterRequiredData.Config.noEnable) LoadAndConvertCert();
 
             Logger.Instance.LogInfo($"{nameof(AsyncRun)} 正在等待证书请求……");
 
-            while (true)
+            while (!ClusterRequiredData.Config.noEnable)
             {
                 if (File.Exists(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/key.pem")) &&
                     File.Exists(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/cert.pem")))
@@ -139,7 +140,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
             InitializeService();
 
-            await Enable();
+            if (!ClusterRequiredData.Config.noEnable) await Enable();
 
             Logger.Instance.LogSystem($"工作进程 {guid} 在 <{ClusterRequiredData.Config.HOST}:{ClusterRequiredData.Config.PORT}> 提供服务");
 
