@@ -87,12 +87,13 @@ namespace CSharpOpenBMCLAPI.Modules
                         context.Response.StatusCode = 206;
                         (from, to) = ToRangeByte(context.Request.Header["range"].Split("=").Last().Split("-"));
                         if (to < from && to != -1) (from, to) = (to, from);
+                        long length = 0;
 
                         using (Stream file = cluster.storage.ReadFileStream(Utils.HashToFileName(hash)))
                         {
                             if (to == -1) to = file.Length;
 
-                            long length = (to - from + 1);
+                            length = (to - from + 1);
                             context.Response.Header["Content-Length"] = length.ToString();
 
                             file.Seek(from, SeekOrigin.Begin);
