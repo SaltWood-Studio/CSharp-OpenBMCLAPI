@@ -130,6 +130,8 @@ namespace CSharpOpenBMCLAPI.Modules
                 catch (Exception ex)
                 {
                     Logger.Instance.LogError(ex.ExceptionToDetail());
+                    Logger.Instance.LogError(context.RemoteIPAddress);
+                    Logger.Instance.LogError(context.Request.Path);
                     //Logger.Instance.LogError(ex.StackTrace);
                     context.Response.StatusCode = 404;
                 }

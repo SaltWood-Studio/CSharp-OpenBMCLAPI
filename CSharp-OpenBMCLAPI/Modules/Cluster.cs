@@ -58,7 +58,7 @@ namespace CSharpOpenBMCLAPI.Modules
             client = HttpRequest.client;
             client.DefaultRequestHeaders.Authorization = new("Bearer", requiredData.Token?.Token.token);
 
-            this.storage = new FileStorage(ClusterRequiredData.Config.clusterFileDirectory);
+            this.storage = new CachedStorage(new FileStorage(ClusterRequiredData.Config.clusterFileDirectory));
             this.files = new List<ApiFileInfo>();
             this.counter = new();
             InitializeSocket();

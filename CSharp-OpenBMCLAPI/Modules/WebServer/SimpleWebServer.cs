@@ -32,17 +32,20 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
 
         protected override int Run(string[] args)
         {
-            int result = -1;
-            try
+            while (true)
             {
-                result = AsyncRun().Result;
-                return result;
-            }
-            catch (Exception ex)
-            {
-                ex.GetType();
-                Logger.Instance.LogError(ex.ExceptionToDetail());
-                return result;
+                int result = -1;
+                try
+                {
+                    result = AsyncRun().Result;
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    ex.GetType();
+                    Logger.Instance.LogError(ex.ExceptionToDetail());
+                    return result;
+                }
             }
         }
 
