@@ -25,7 +25,7 @@ namespace CSharpOpenBMCLAPI.Modules
     /// <summary>
     /// Cluster 实例，进行最基本的节点服务
     /// </summary>
-    public class Cluster : RunnableBase
+    public class Cluster
     {
         internal ClusterInfo clusterInfo;
         private TokenManager token;
@@ -34,11 +34,12 @@ namespace CSharpOpenBMCLAPI.Modules
         private SocketIOClient.SocketIO socket;
         public bool IsEnabled { get; set; }
         public bool WantEnable { get; set; }
-        private Task? _keepAlive;
         internal IStorage storage;
         protected AccessCounter counter;
         public CancellationTokenSource cancellationSrc = new CancellationTokenSource();
         internal ClusterRequiredData requiredData;
+        internal List<ApiFileInfo> files;
+
         //List<Task> tasks = new List<Task>();
 
         /// <summary>
@@ -58,7 +59,7 @@ namespace CSharpOpenBMCLAPI.Modules
             client.DefaultRequestHeaders.Authorization = new("Bearer", requiredData.Token?.Token.token);
 
             this.storage = new FileStorage(ClusterRequiredData.Config.clusterFileDirectory);
-
+            this.files = new List<ApiFileInfo>();
             this.counter = new();
             InitializeSocket();
 
@@ -95,7 +96,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        protected override int Run(string[] args)
+        public int Start()
         {
             requiredData.PluginManager.TriggerEvent(this, ProgramEventType.ClusterStarted);
             // 工作进程启动
@@ -144,9 +145,18 @@ namespace CSharpOpenBMCLAPI.Modules
 
             Logger.Instance.LogSystem($"工作进程 {guid} 在 <{ClusterRequiredData.Config.HOST}:{ClusterRequiredData.Config.PORT}> 提供服务");
 
-            _keepAlive = Task.Run(_KeepAlive, cancellationSrc.Token);
+            Tasks.CheckFile = Task.Run(() =>
+            {
+                while (true)
+                {
+                    CheckFiles().Wait();
+                    Thread.Sleep(10 * 60 * 1000);
+                }
+            });
 
-            _keepAlive.Wait();
+            Tasks.KeepAlive = Task.Run(_KeepAlive, cancellationSrc.Token);
+
+            Tasks.KeepAlive.Wait();
 
             return returns;
         }
@@ -412,31 +422,15 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 return;
             }
-            var resp = await this.client.GetAsync("openbmclapi/files");
             Logger.Instance.LogDebug($"文件检查策略：{ClusterRequiredData.Config.startupCheckMode}");
-            byte[] bytes = await resp.Content.ReadAsByteArrayAsync();
-
-            UnpackBytes(ref bytes);
-
-            AvroParser avro = new AvroParser(bytes);
-            List<ApiFileInfo> files;
-
-            files = avro.Parse();
+            var updatedFiles = await GetFileList(this.files);
+            if (updatedFiles != null && updatedFiles.Count != 0)
+            {
+                this.files = updatedFiles;
+            }
 
             object countLock = new();
             int count = 0;
-
-            CancellationTokenSource t = new();
-
-            _ = Task.Run(() =>
-            {
-                while (true)
-                {
-                    GC.Collect();
-                    Thread.Sleep(1000);
-                    t.Token.ThrowIfCancellationRequested();
-                }
-            }, t.Token);
 
             Parallel.ForEach(files, file =>
             //foreach (var file in files)
@@ -449,11 +443,57 @@ namespace CSharpOpenBMCLAPI.Modules
                 Logger.Instance.LogInfoNoNewLine($"\r{count}/{files.Count}");
             });
 
-            t.Cancel();
-
             files = null!;
             countLock = null!;
-            bytes = null!;
+        }
+
+        /// <summary>
+        /// 获取完整的文件列表
+        /// </summary>
+        /// <returns></returns>
+        public async Task<List<ApiFileInfo>> GetFileList()
+        {
+            var resp = await this.client.GetAsync("openbmclapi/files");
+            Logger.Instance.LogDebug($"检查文件结果：{resp}");
+
+            List<ApiFileInfo> files;
+
+            byte[] bytes = await resp.Content.ReadAsByteArrayAsync();
+            UnpackBytes(ref bytes);
+
+            AvroParser avro = new AvroParser(bytes);
+
+            files = avro.Parse();
+            return files;
+        }
+
+        public async Task<List<ApiFileInfo>> GetFileList(List<ApiFileInfo>? files)
+        {
+            if (files == null) return await GetFileList();
+
+            List<ApiFileInfo> updatedFiles;
+
+            if ((files == null) || (files.Count == 0))
+            {
+                return await GetFileList();
+            }
+            long lastModified = files.Select(f => f.mtime).Max();
+
+            var resp = await this.client.GetAsync($"openbmclapi/files?lastModified={lastModified}");
+            Logger.Instance.LogDebug($"检查文件结果：{resp}");
+            if (resp.StatusCode == HttpStatusCode.NotModified)
+            {
+                updatedFiles = new List<ApiFileInfo>();
+                return updatedFiles;
+            }
+
+            byte[] bytes = await resp.Content.ReadAsByteArrayAsync();
+            UnpackBytes(ref bytes);
+
+            AvroParser avro = new AvroParser(bytes);
+
+            updatedFiles = avro.Parse();
+            return updatedFiles;
         }
 
         void CheckSingleFile(ApiFileInfo file)

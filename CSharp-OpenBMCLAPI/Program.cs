@@ -137,7 +137,6 @@ namespace CSharpOpenBMCLAPI
                 Console.CancelKeyPress += (sender, e) => Utils.ExitCluster(cluster).Wait();
 
                 cluster.Start();
-                cluster.WaitForStop();
 
                 requiredData.PluginManager.TriggerEvent(this, ProgramEventType.ProgramStopped);
                 return returns;

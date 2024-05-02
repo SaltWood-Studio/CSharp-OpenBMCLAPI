@@ -77,7 +77,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
                     tcpClient.Close();
                 }
             }
-            catch (Exception ex)
+            catch
             {
                 //Logger.Instance.LogError(ex.ExceptionToDetail());
                 if (tcpClient.Connected) tcpClient.Close();
