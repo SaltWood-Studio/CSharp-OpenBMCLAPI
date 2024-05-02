@@ -98,10 +98,11 @@ namespace CSharpOpenBMCLAPI.Modules
 
                             file.Seek(from, SeekOrigin.Begin);
                             byte[] buffer = new byte[4096];
-                            for (; file.Position <= to;)
+                            for (; file.Position < to;)
                             {
                                 int count = file.Read(buffer, 0, buffer.Length);
-                                if (count != buffer.Length) context.Response.Stream.Write(buffer[..count]);
+                                if (file.Position > to && file.Position - count < to) context.Response.Stream.Write(buffer[..(int)(count - file.Position + to + 1)]);
+                                else if (count != buffer.Length) context.Response.Stream.Write(buffer[..(count)]);
                                 else context.Response.Stream.Write(buffer);
                             }
                         }

@@ -149,8 +149,8 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 while (true)
                 {
-                    CheckFiles().Wait();
                     Thread.Sleep(10 * 60 * 1000);
+                    CheckFiles().Wait();
                 }
             });
 
@@ -574,8 +574,8 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         public async Task RequestCertification()
         {
-            File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/cert.pem"));
-            File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/key.pem"));
+            // File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/cert.pem"));
+            // File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/key.pem"));
             if (ClusterRequiredData.Config.bringYourOwnCertficate)
             {
                 Logger.Instance.LogDebug($"{nameof(ClusterRequiredData.Config.bringYourOwnCertficate)} 为 true，跳过请求证书……");
