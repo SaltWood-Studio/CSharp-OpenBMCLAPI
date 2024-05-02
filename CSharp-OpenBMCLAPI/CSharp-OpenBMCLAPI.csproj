@@ -9,30 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Modules\Dashboard\index.html" />
-    <None Remove="Modules\Dashboard\static\js\echarts.min.js" />
-    <None Remove="Modules\Dashboard\static\js\index.min.js" />
-    <None Remove="Modules\Dashboard\static\js\ttb.min.js" />
-    <None Remove="Modules\Dashboard\关于面板部分的说明.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Modules\Dashboard\index.html">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Modules\Dashboard\static\js\echarts.min.js">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Modules\Dashboard\static\js\index.min.js">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Modules\Dashboard\static\js\ttb.min.js">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Modules\Dashboard\关于面板部分的说明.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="log4net" Version="2.0.17" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Newtonsoft.Json.Bson" Version="1.0.2" />

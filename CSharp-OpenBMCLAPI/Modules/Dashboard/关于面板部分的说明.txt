@@ -1,1 +1,0 @@
-此部分由 @tianxiu2b2t 适配并提供给 CSharp-OpenBMCLAPI 作为简易面板。不是我 @SALTWOOD 直接抄的哈（
