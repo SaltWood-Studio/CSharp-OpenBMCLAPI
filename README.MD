@@ -37,7 +37,6 @@
 # 特性
 
 - 基于 .NET 的跨平台使用
-- 内置仪表盘（感谢 **@tianxiu2b2t** 提供）
 - 得益于 .NET 优秀的内存管理机制、垃圾回收机制，本程序内存占用低（约 150MB，极限情况下甚至能到 30 MB）
 - 插件系统，对你的节点做一些自定义！
 
@@ -47,12 +46,15 @@
 
 # TODO
 
+- [ ] **[优先级高]** 仪表盘
+
+**(以下暂缓进行)**
+
 - [ ] 原生多实例运行
 - [ ] 继续优化插件功能
 - [ ] *[优先级低]* 高级控制台，在控制台中调整设置、查看监控信息而不只是看日志
 ___
-- [x] ~~**[优先级高]** 弃用 ASP.NET，使用其他框架~~
-- [x] ~~仪表盘~~
+- [x] ~~弃用 ASP.NET，使用其他框架~~
 - [x] ~~插件功能，支持通过第三方插件做各种事情~~
 - [x] ~~内存优化，使得程序可用~~
 - [x] ~~上线节点，能够被主控登记为在线~~
@@ -88,9 +90,6 @@ ___
 
 **SALTWOOD**
 - [TeraIO](https://github.com/SALTWOOD/TeraIO) - 其实也没用到多少（目前是废物一个），以后会抽空把一些 utils 丢进去的
-
-**tianxiu2b2t**
-- [Avro-Minifiy](https://github.com/TTB-Network/python-openbmclapi) - 减少了Avro的代码量，保留主要代码
 
 **@aaubry (Antoine Aubry)**
 - [YamlDotNet](https://github.com/aaubry/YamlDotNet) - 用于配置文件的读写
