@@ -68,6 +68,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         public static async Task<FileAccessInfo> DownloadHash(HttpContext context, Cluster cluster)
         {
+            // 处理用户下载
             FileAccessInfo fai = default;
             var pairs = Utils.GetQueryStrings(context.Request.Path.Split('?').Last());
             string? hash = context.Request.Path.Split('/').LastOrDefault()?.Split('?').First();

@@ -58,32 +58,36 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
 
             while (true)
             {
-                TcpClient tcpClient = await listener.AcceptTcpClientAsync();
-                _ = Task.Run(() => HandleRequest(tcpClient));
+                TcpClient? tcpClient = null;
+                try
+                {
+                    tcpClient = await listener.AcceptTcpClientAsync();
+                    _ = Task.Run(() => HandleRequest(tcpClient));
+                }
+                catch (Exception ex)
+                {
+                    Logger.Instance.LogError(ex.ExceptionToDetail());
+                    if (tcpClient != null && tcpClient.Connected)
+                    {
+                        tcpClient?.Close();
+                    }
+                }
             }
         }
 
         protected void HandleRequest(TcpClient tcpClient)
         {
-            try
+            Stream stream = tcpClient.GetStream();
+            if (_certificate != null)
             {
-                Stream stream = tcpClient.GetStream();
-                if (_certificate != null)
-                {
-                    SslStream sslStream = new SslStream(stream, false, ValidateServerCertificate, null);
-                    sslStream.AuthenticateAsServer(this._certificate, false, false);
-                    stream = sslStream;
-                }
-                if (Handle(new Client(tcpClient, stream)).Result && tcpClient.Connected)
-                {
-                    stream.Close();
-                    tcpClient.Close();
-                }
+                SslStream sslStream = new SslStream(stream, false, ValidateServerCertificate, null);
+                sslStream.AuthenticateAsServer(this._certificate, false, false);
+                stream = sslStream;
             }
-            catch
+            if (Handle(new Client(tcpClient, stream)).Result && tcpClient.Connected)
             {
-                //Logger.Instance.LogError(ex.ExceptionToDetail());
-                if (tcpClient.Connected) tcpClient.Close();
+                stream.Close();
+                tcpClient.Close();
             }
         }
 
@@ -117,7 +121,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
                     route.Handler?.Invoke(context, cluster, route.MatchRegex.Match(context.Request.Path));
                     break;
                 }
-                NextOne: continue;
+            NextOne: continue;
             }
 
             await response.Call(client, request); // 可以多次调用Response

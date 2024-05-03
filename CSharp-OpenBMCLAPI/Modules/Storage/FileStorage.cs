@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace CSharpOpenBMCLAPI.Modules.Storage
@@ -14,10 +15,16 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
     {
         protected string workingDirectory;
         public string CacheDirectory { get => Path.Combine(workingDirectory, "cache"); }
+        private SambaConnection? connection;
 
         public FileStorage(string workingDirectory)
         {
             this.workingDirectory = workingDirectory;
+            if (workingDirectory.StartsWith(@"\\"))
+            {
+                StorageUser user = ClusterRequiredData.Config.storageUser;
+                this.connection = new SambaConnection(user.UserName, user.Password, Regex.Match(workingDirectory, @"\\\\(.*?)\\").Groups[1].Value);
+            }
         }
 
         public bool Exists(string hashPath)

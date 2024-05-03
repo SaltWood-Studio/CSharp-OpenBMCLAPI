@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using CSharpOpenBMCLAPI.Modules.Storage;
+using Newtonsoft.Json;
 using System.ComponentModel;
 using YamlDotNet.Serialization;
 
@@ -18,11 +19,11 @@ namespace CSharpOpenBMCLAPI.Modules
         public FileVerificationMode startupCheckMode;
 
         [YamlMember(Description = """
-        跳过启动前检查
+        跳过检查
         这会导致无法发现文件错误，但是能够将内存占用压缩到很低！
         [注] 当此项启用时，"startupCheckMode"无效
         """, Order = 2)]
-        public bool skipStartupCheck;
+        public bool skipCheck;
 
         [YamlMember(Description = "指示 token 应当在距离其失效前的多少毫秒进行刷新", Order = 1)]
         public int refreshTokenTime;
@@ -56,10 +57,13 @@ namespace CSharpOpenBMCLAPI.Modules
         [YamlIgnore]
         public string cacheDirectory { get => Path.Combine(this.clusterFileDirectory, "cache"); }
 
+        [YamlMember(Description = "指示登录存储池需要的凭据，如果存储池不需要则可以忽略", Order = 1)]
+        public StorageUser storageUser { get; internal set; }
+
         public Config()
         {
             this.startupCheckMode = FileVerificationMode.SizeOnly;
-            this.skipStartupCheck = false;
+            this.skipCheck = false;
 
             this.refreshTokenTime = 1800000;
             this.clusterFileDirectory = "./";
@@ -72,6 +76,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
             this.disableAccessLog = false;
             this.noEnable = false;
+            this.storageUser = new StorageUser();
         }
     }
 }

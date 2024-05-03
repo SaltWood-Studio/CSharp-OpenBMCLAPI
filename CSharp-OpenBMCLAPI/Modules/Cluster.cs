@@ -117,7 +117,8 @@ namespace CSharpOpenBMCLAPI.Modules
             int returns = 0;
 
             // 检查文件
-            if (!ClusterRequiredData.Config.noEnable) await CheckFiles();
+            // if (!ClusterRequiredData.Config.noEnable)
+            await CheckFiles();
             Logger.Instance.LogInfo();
             if (!ClusterRequiredData.Config.noEnable) Connect();
 
@@ -183,7 +184,10 @@ namespace CSharpOpenBMCLAPI.Modules
             SimpleWebServer server = new(ClusterRequiredData.Config.PORT, cert, this);//cert);
 
             // 下载路由
-            server.routes.Add(new Route { MatchRegex = new Regex(@"/download/[0-9a-fA-F]{32,40}?.*"), ConditionExpressions =
+            server.routes.Add(new Route
+            {
+                MatchRegex = new Regex(@"/download/[0-9a-fA-F]{32,40}?.*"),
+                ConditionExpressions =
                 {
                     (path) => path.Contains("s=") && path.Contains("e=")
                 },
@@ -195,12 +199,16 @@ namespace CSharpOpenBMCLAPI.Modules
             });
 
             // 测速路由
-            server.routes.Add(new Route { MatchRegex = new Regex(@"/measure/\d"),
+            server.routes.Add(new Route
+            {
+                MatchRegex = new Regex(@"/measure/\d"),
                 Handler = (context, cluster, match) => HttpServiceProvider.Measure(context, cluster).Wait()
             });
 
             // API 数据
-            server.routes.Add(new Route { MatchRegex = new Regex(@"/api/(.*)"),
+            server.routes.Add(new Route
+            {
+                MatchRegex = new Regex(@"/api/(.*)"),
                 Handler = (context, cluster, match) => HttpServiceProvider.Api(context, match.Groups[1].Value, this).Wait(),
                 Methods = "POST"
             });
@@ -413,16 +421,22 @@ namespace CSharpOpenBMCLAPI.Modules
         }
 
         /// <summary>
+        /// 默认的检查文件行为
+        /// </summary>
+        /// <returns></returns>
+        protected async Task CheckFiles() => await CheckFiles(ClusterRequiredData.Config.skipCheck, ClusterRequiredData.Config.startupCheckMode);
+
+        /// <summary>
         /// 获取文件列表、检查文件、下载文件部分
         /// </summary>
         /// <returns></returns>
-        protected async Task CheckFiles()
+        protected async Task CheckFiles(bool skipCheck, FileVerificationMode mode)
         {
-            if (ClusterRequiredData.Config.skipStartupCheck || ClusterRequiredData.Config.startupCheckMode == FileVerificationMode.None)
+            if (skipCheck || mode == FileVerificationMode.None)
             {
                 return;
             }
-            Logger.Instance.LogDebug($"文件检查策略：{ClusterRequiredData.Config.startupCheckMode}");
+            Logger.Instance.LogDebug($"文件检查策略：{mode}");
             var updatedFiles = await GetFileList(this.files);
             if (updatedFiles != null && updatedFiles.Count != 0)
             {
@@ -453,7 +467,8 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         public async Task<List<ApiFileInfo>> GetFileList()
         {
-            var resp = await this.client.GetAsync("openbmclapi/files");
+            HttpResponseMessage resp;
+            resp = await this.client.GetAsync("openbmclapi/files");
             Logger.Instance.LogDebug($"检查文件结果：{resp}");
 
             List<ApiFileInfo> files;
@@ -496,13 +511,15 @@ namespace CSharpOpenBMCLAPI.Modules
             return updatedFiles;
         }
 
-        void CheckSingleFile(ApiFileInfo file)
+        void CheckSingleFile(ApiFileInfo file) => CheckSingleFile(file, ClusterRequiredData.Config.startupCheckMode);
+
+        void CheckSingleFile(ApiFileInfo file, FileVerificationMode mode)
         {
             string path = file.path;
             string hash = file.hash;
             long size = file.size;
             DownloadFile(hash, path).Wait();
-            bool valid = VerifyFile(hash, size, ClusterRequiredData.Config.startupCheckMode);
+            bool valid = VerifyFile(hash, size, mode);
             if (!valid)
             {
                 Logger.Instance.LogWarn($"文件 {path} 损坏！期望哈希值为 {hash}");
