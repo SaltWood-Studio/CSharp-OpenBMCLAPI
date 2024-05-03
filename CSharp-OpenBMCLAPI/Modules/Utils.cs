@@ -128,20 +128,20 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <summary>
         /// 检验文件
         /// </summary>
-        /// <param name="buffer"></param>
+        /// <param name="stream"></param>
         /// <param name="hash"></param>
         /// <returns></returns>
-        public static bool ValidateFile(byte[] buffer, string hash)
+        public static bool ValidateFile(Stream stream, string hash)
         {
             string checkSum;
 
             if (hash.Length == 32)
             {
-                checkSum = Convert.ToHexString(MD5.HashData(buffer)).ToLower();
+                checkSum = Convert.ToHexString(MD5.HashData(stream)).ToLower();
             }
             else
             {
-                checkSum = Convert.ToHexString(SHA1.HashData(buffer)).ToLower();
+                checkSum = Convert.ToHexString(SHA1.HashData(stream)).ToLower();
             }
             return checkSum == hash;
         }

@@ -540,7 +540,7 @@ namespace CSharpOpenBMCLAPI.Modules
                     return size == this.storage.GetFileSize(path);
                 case FileVerificationMode.Hash:
                     if (!VerifyFile(hash, size, FileVerificationMode.SizeOnly)) return false;
-                    var file = this.storage.ReadFile(path);
+                    var file = this.storage.ReadFileStream(path);
                     return Utils.ValidateFile(file, hash);
                 default:
                     return true;
