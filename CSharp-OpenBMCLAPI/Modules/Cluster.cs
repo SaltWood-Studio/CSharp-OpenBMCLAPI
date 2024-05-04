@@ -522,12 +522,11 @@ namespace CSharpOpenBMCLAPI.Modules
         /// 解压从主控下发的文件列表
         /// </summary>
         /// <param name="bytes"></param>
-        protected void UnpackBytes(ref byte[] bytes)
+        protected static void UnpackBytes(ref byte[] bytes)
         {
             Decompressor decompressor = new Decompressor();
             bytes = decompressor.Unwrap(bytes).ToArray();
             decompressor.Dispose();
-            decompressor = null!;
         }
 
         /// <summary>
