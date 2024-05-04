@@ -47,6 +47,7 @@
 # TODO
 
 - [ ] **[优先级高]** 仪表盘
+- [ ] ~~**[优先级高]** 统一 API~~（等待第三方）
 
 **(以下暂缓进行)**
 
@@ -60,10 +61,6 @@ ___
 - [x] ~~上线节点，能够被主控登记为在线~~
 - [x] ~~提供服务~~
 - [ ] ~~Actions 自动构建~~
-
-# 已知问题
-- ~~当一次性下载文件太多时，有概率报 **NullReferenceException**~~
-- ~~未知原因导致查活失败有概率掉线~~
 
 # ❓ FAQ
 ## 关于版本号
@@ -93,6 +90,9 @@ ___
 
 **@aaubry (Antoine Aubry)**
 - [YamlDotNet](https://github.com/aaubry/YamlDotNet) - 用于配置文件的读写
+
+**@2b2ttianxiu**
+- 帮忙写了 **SimpleWebServer**，代替了 ASP.NET 提供文件分发
 
 # 友情链接
 
