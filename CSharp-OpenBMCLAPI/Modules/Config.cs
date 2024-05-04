@@ -45,7 +45,7 @@ namespace CSharpOpenBMCLAPI.Modules
         public bool bringYourOwnCertficate;
 
 
-        [YamlMember(Description = "[开发变量]\n指示是否执行快速上线，若为 true 则每次都不执行", Order = 10)]
+        [YamlMember(Description = "[开发变量]\n指示是否不执行快速上线，若为 true 则每次都不执行", Order = 10)]
         public bool noFastEnable;
 
         [YamlMember(Description = "指示是否禁用访问日志输出", Order = 1)]
@@ -54,11 +54,14 @@ namespace CSharpOpenBMCLAPI.Modules
         [YamlMember(Description = "[开发变量]\n指示是否进行节点上线", Order = 10)]
         public bool noEnable;
 
+        [YamlMember(Description ="指示缓存存储最大占用内存（MB 为单位）\n-1 为不限制，0 为禁用缓存存储", Order = 1)]
+        internal double maxCachedMemory;
+
         [YamlIgnore]
         public string cacheDirectory { get => Path.Combine(this.clusterFileDirectory, "cache"); }
 
         [YamlMember(Description = "指示登录存储池需要的凭据，如果存储池不需要则可以忽略", Order = 1)]
-        public StorageUser storageUser { get; internal set; }
+        public StorageUser storageUser;
 
         public Config()
         {
@@ -77,6 +80,7 @@ namespace CSharpOpenBMCLAPI.Modules
             this.disableAccessLog = false;
             this.noEnable = false;
             this.storageUser = new StorageUser();
+            this.maxCachedMemory = 1024;
         }
     }
 }

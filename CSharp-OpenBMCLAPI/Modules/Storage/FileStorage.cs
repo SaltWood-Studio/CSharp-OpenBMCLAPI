@@ -88,6 +88,13 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
             file.Write(buffer);
         }
 
+        public void WriteFileStream(string hashPath, Stream stream)
+        {
+            Directory.CreateDirectory(GetAbsolutePath(Path.GetDirectoryName(hashPath).ThrowIfNull()));
+            using var file = File.Create(GetAbsolutePath(hashPath));
+            stream.CopyTo(file);
+        }
+
         public byte[] ReadFile(string hashPath)
         {
             var file = File.ReadAllBytes(GetAbsolutePath(hashPath));

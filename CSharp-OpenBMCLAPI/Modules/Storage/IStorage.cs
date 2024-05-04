@@ -27,6 +27,13 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
         public void WriteFile(string hashPath, byte[] buffer);
 
         /// <summary>
+        /// 写文件，但是需要一个 Stream
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public void WriteFileStream(string hashPath, Stream stream);
+
+        /// <summary>
         /// 读文件，将文件从存储读取并返回
         /// </summary>
         /// <param name="path"></param>

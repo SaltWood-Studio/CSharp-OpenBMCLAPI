@@ -14,6 +14,9 @@ namespace CSharpOpenBMCLAPI.Modules.Plugin
         private static PluginManager _instance = new PluginManager();
         public static PluginManager Instance { get => _instance; }
 
+        /// <summary>
+        /// 私有构造器，保证只有一个实例
+        /// </summary>
         private PluginManager()
         {
 
