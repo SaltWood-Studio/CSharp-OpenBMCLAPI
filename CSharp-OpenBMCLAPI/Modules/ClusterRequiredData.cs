@@ -11,6 +11,7 @@ namespace CSharpOpenBMCLAPI.Modules
         public TokenManager Token { get; set; }
         public PluginManager PluginManager { get => PluginManager.Instance; }
         public static DataStatistician DataStatistician { get; set; } = new DataStatistician();
+        public SemaphoreSlim SemaphoreSlim { get; set; } = new SemaphoreSlim(0);
 
         public ClusterRequiredData(ClusterInfo info)
         {

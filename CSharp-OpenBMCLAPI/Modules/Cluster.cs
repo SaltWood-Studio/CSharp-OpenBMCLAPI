@@ -394,6 +394,7 @@ namespace CSharpOpenBMCLAPI.Modules
             var content = await resp.Content.ReadAsStringAsync();
             this.Configuration = JsonConvert.DeserializeObject<Configuration>(content);
             Logger.Instance.LogDebug($"同步策略：{this.Configuration.Sync.Source}，线程数：{this.Configuration.Sync.Concurrency}");
+            this.requiredData.SemaphoreSlim = new SemaphoreSlim(Math.Max(ClusterRequiredData.Config.downloadFileThreads, this.Configuration.Sync.Concurrency));
         }
 
         /// <summary>
@@ -573,10 +574,21 @@ namespace CSharpOpenBMCLAPI.Modules
                 return;
             }
 
-            var resp = await this.client.GetAsync($"openbmclapi/download/{hash}");
-
-            this.storage.WriteFile(Utils.HashToFileName(hash), await resp.Content.ReadAsByteArrayAsync());
-            Logger.Instance.LogDebug($"文件 {path} 下载成功");
+            this.requiredData.SemaphoreSlim.Wait();
+            try
+            {
+                var resp = await this.client.GetAsync($"openbmclapi/download/{hash}");
+                this.storage.WriteFile(Utils.HashToFileName(hash), await resp.Content.ReadAsByteArrayAsync());
+                Logger.Instance.LogDebug($"文件 {path} 下载成功");
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.LogError($"文件 {path} 下载失败：{ex.ExceptionToDetail()}");
+            }
+            finally
+            {
+                this.requiredData.SemaphoreSlim.Release();
+            }
         }
 
         /// <summary>

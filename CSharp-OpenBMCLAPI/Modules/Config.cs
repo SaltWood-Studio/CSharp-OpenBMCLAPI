@@ -63,6 +63,9 @@ namespace CSharpOpenBMCLAPI.Modules
         [YamlMember(Description = "指示登录存储池需要的凭据，如果存储池不需要则可以忽略", Order = 1)]
         public StorageUser storageUser;
 
+        [YamlMember(Description = "指示从主控下载文件的线程数，设置为 0 则使用主控要求的线程数")]
+        public int downloadFileThreads;
+
         public Config()
         {
             this.startupCheckMode = FileVerificationMode.SizeOnly;
@@ -81,6 +84,7 @@ namespace CSharpOpenBMCLAPI.Modules
             this.noEnable = false;
             this.storageUser = new StorageUser();
             this.maxCachedMemory = 1024;
+            this.downloadFileThreads = 0;
         }
     }
 }

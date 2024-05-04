@@ -45,7 +45,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             { 226, "IM Used" }, // 服务器已经完成了对资源的GET请求，并且响应是对当前实例应用的一个或多个实例操作结果的表示
             { 300, "Multiple Choices" }, // 不知道你要哪个，干脆全部丢给你，让你自己选
             { 301, "Moved Pemanently" }, // 资源永久迁移啦
-            { 302, "Found" }, // 暂时搬走了，去这里找；以后有啥更改，还是在这里通知
+            { 302, "Found" }, // 暂时搬走了，去这里找；以后有啥更改，还是在老地方通知
             { 303, "See Other" }, // 用 GET 方法去这个地方找资源，别来我这儿
             { 304, "Not Modified" }, // 改都没改
             { 305, "Use Proxy" }, // 你还是开个代理吧
