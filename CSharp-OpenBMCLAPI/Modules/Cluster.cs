@@ -1,6 +1,7 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Plugin;
 using CSharpOpenBMCLAPI.Modules.Storage;
 using CSharpOpenBMCLAPI.Modules.WebServer;
+using Newtonsoft.Json;
 using SocketIOClient;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
@@ -34,6 +35,8 @@ namespace CSharpOpenBMCLAPI.Modules
         private SocketIOClient.SocketIO socket;
         public bool IsEnabled { get; set; }
         public bool WantEnable { get; set; }
+        public Configuration Configuration { get; protected set; }
+
         internal IStorage storage;
         protected AccessCounter counter;
         public CancellationTokenSource cancellationSrc = new CancellationTokenSource();
@@ -118,15 +121,16 @@ namespace CSharpOpenBMCLAPI.Modules
 
             // 检查文件
             // if (!ClusterRequiredData.Config.noEnable)
+            Connect();
+
+            await GetConfiguration();
+
             await CheckFiles();
             Logger.Instance.LogInfo();
-            if (!ClusterRequiredData.Config.noEnable) Connect();
 
-            if (!ClusterRequiredData.Config.noEnable) await GetConfiguration();
+            await RequestCertification();
 
-            if (!ClusterRequiredData.Config.noEnable) await RequestCertification();
-
-            if (!ClusterRequiredData.Config.noEnable) LoadAndConvertCert();
+            LoadAndConvertCert();
 
             Logger.Instance.LogInfo($"{nameof(AsyncRun)} 正在等待证书请求……");
 
@@ -148,12 +152,24 @@ namespace CSharpOpenBMCLAPI.Modules
 
             Tasks.CheckFile = Task.Run(() =>
             {
+                // 定时检查文件的 Task
+                const int time = 10 * 60 * 1000; // 10 分钟
+                bool skipCheck = ClusterRequiredData.Config.skipCheck;
                 while (true)
                 {
-                    Thread.Sleep(10 * 60 * 1000);
-                    CheckFiles().Wait();
+                    for (int i = 0; i < 36; i++)
+                    {
+                        cancellationSrc.Token.ThrowIfCancellationRequested();
+                        Thread.Sleep(time);
+                        cancellationSrc.Token.ThrowIfCancellationRequested();
+                        CheckFiles(skipCheck, FileVerificationMode.SizeOnly).Wait();
+                    }
+                    cancellationSrc.Token.ThrowIfCancellationRequested();
+                    Thread.Sleep(time);
+                    cancellationSrc.Token.ThrowIfCancellationRequested();
+                    CheckFiles(skipCheck, FileVerificationMode.Hash).Wait();
                 }
-            });
+            }, cancellationSrc.Token);
 
             Tasks.KeepAlive = Task.Run(_KeepAlive, cancellationSrc.Token);
 
@@ -179,7 +195,6 @@ namespace CSharpOpenBMCLAPI.Modules
         /// </summary>
         private void InitializeService()
         {
-            //var builder = WebApplication.CreateBuilder();
             X509Certificate2 cert = LoadAndConvertCert();
             SimpleWebServer server = new(ClusterRequiredData.Config.PORT, cert, this);//cert);
 
@@ -213,64 +228,23 @@ namespace CSharpOpenBMCLAPI.Modules
                 Methods = "POST"
             });
 
+            // 因为暂时禁用面板而注释掉
+
             // JS 文件提供
-            server.routes.Add(new Route
-            {
-                MatchRegex = new Regex(@"/static/js/(.*)"),
-                Handler = (context, cluster, match) => HttpServiceProvider.Dashboard(context, $"static/js/{match.Groups[1].Value}").Wait()
-            });
+            // server.routes.Add(new Route
+            // {
+            //     MatchRegex = new Regex(@"/static/js/(.*)"),
+            //     Handler = (context, cluster, match) => HttpServiceProvider.Dashboard(context, $"static/js/{match.Groups[1].Value}").Wait()
+            // });
 
             // 面板
-            server.routes.Add(new Route
-            {
-                MatchRegex = new Regex(@"/"),
-                Handler = (context, cluster, match) => HttpServiceProvider.Dashboard(context).Wait()
-            });
+            // server.routes.Add(new Route
+            // {
+            //     MatchRegex = new Regex(@"/"),
+            //     Handler = (context, cluster, match) => HttpServiceProvider.Dashboard(context).Wait()
+            // });
 
             server.Start();
-            /*
-            builder.WebHost.UseKestrel(options =>
-            {
-                options.ListenAnyIP(SharedData.Config.PORT, listenOptions =>
-                {
-                    listenOptions.UseHttps(cert);
-                });
-            });
-            application = builder.Build();
-            application.UseHttpsRedirection();
-            var path = Path.Combine(SharedData.Config.clusterFileDirectory, $"cache");
-            // application.UseStaticFiles();
-            application.MapGet("/download/{hash}", (context) => HttpServiceProvider.LogAndRun(context, () =>
-            {
-                FileAccessInfo fai = HttpServiceProvider.DownloadHash(context, this.storage).Result;
-                this.counter.Add(fai);
-            }));
-            application.MapGet("/measure/{size}", (context) => HttpServiceProvider.LogAndRun(context,
-                () => HttpServiceProvider.Measure(context).Wait()
-            ));
-            application.MapPost("/api/{name}", (HttpContext context, string name) => HttpServiceProvider.Api(context, name, this).Wait());
-            application.MapGet("/", (context) =>
-            {
-                context.Response.StatusCode = 302;
-                context.Response.Headers.Append("Location", "/dashboard");
-                return Task.CompletedTask;
-            });
-            application.MapGet("/dashboard", (context) =>
-            {
-                HttpServiceProvider.Dashboard(context);
-                return Task.CompletedTask;
-            });
-            application.MapGet("/static/js/{file}", (HttpContext context, string file) => HttpServiceProvider.Dashboard(context, $"/static/js/{file}"));
-
-            Task task = application.RunAsync();
-            Task.Run(async () =>
-            {
-                Thread.Sleep(1000);
-                if (task.IsCompleted || task.IsFaulted || task.IsCanceled)
-                {
-                    await this.Disable();
-                }
-            });*/
         }
 
         /// <summary>
@@ -418,6 +392,8 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             var resp = await this.client.GetAsync("openbmclapi/configuration");
             var content = await resp.Content.ReadAsStringAsync();
+            this.Configuration = JsonConvert.DeserializeObject<Configuration>(content);
+            Logger.Instance.LogDebug($"同步策略：{this.Configuration.Sync.Source}，线程数：{this.Configuration.Sync.Concurrency}");
         }
 
         /// <summary>
@@ -482,6 +458,11 @@ namespace CSharpOpenBMCLAPI.Modules
             return files;
         }
 
+        /// <summary>
+        /// 增量更新文件列表
+        /// </summary>
+        /// <param name="files"></param>
+        /// <returns></returns>
         public async Task<List<ApiFileInfo>> GetFileList(List<ApiFileInfo>? files)
         {
             if (files == null) return await GetFileList();
@@ -511,8 +492,17 @@ namespace CSharpOpenBMCLAPI.Modules
             return updatedFiles;
         }
 
+        /// <summary>
+        /// 检查单个文件
+        /// </summary>
+        /// <param name="file"></param>
         void CheckSingleFile(ApiFileInfo file) => CheckSingleFile(file, ClusterRequiredData.Config.startupCheckMode);
 
+        /// <summary>
+        /// 检查单个文件，并且额外指定检查模式
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="mode"></param>
         void CheckSingleFile(ApiFileInfo file, FileVerificationMode mode)
         {
             string path = file.path;
@@ -527,6 +517,10 @@ namespace CSharpOpenBMCLAPI.Modules
             }
         }
 
+        /// <summary>
+        /// 解压从主控下发的文件列表
+        /// </summary>
+        /// <param name="bytes"></param>
         protected void UnpackBytes(ref byte[] bytes)
         {
             Decompressor decompressor = new Decompressor();
