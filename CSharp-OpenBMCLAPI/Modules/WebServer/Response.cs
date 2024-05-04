@@ -51,7 +51,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             { 305, "Use Proxy" }, // 你还是开个代理吧
             { 306, "Unused" }, // 鬼知道有什么用
             { 307, "Temporary Redirect" }, // 跟 302 一样，但你用的什么方法原来是什么，现在也必须也用什么
-            { 308, "308 Permanent Redirect" }, // 跟3011样，但你用的是方法原来是什么，现在也必须也用什么
+            { 308, "308 Permanent Redirect" }, // 跟 301 一样，但你用的是方法原来是什么，现在也必须也用什么
             { 400, "Bad Request" }, // 你的锅，给我整不会了
             { 401, "Unauthorized" }, // 你谁啊？
             { 402, "Payment Required" }, // V 我 50
