@@ -65,7 +65,7 @@ namespace CSharpOpenBMCLAPI.Modules.WebServer
             { 410, "Gone" }, // 资 源 死 了 ， 删 了 吧
             { 411, "Length Required" }, // 你要多长，你不告诉我，我咋知道
             { 412, "Precondition Failed" }, // 不是不报，条件未满足
-            { 413, "Content Too Large" }, // 请 求 实 体 太 大
+            { 413, "Payload Too Large" }, // 请 求 实 体 太 大
             { 414, "URI Too Long" }, // 链 接 太 长
             { 415, "Unsupported Media Type" }, // 请求数据的媒体格式不支持
             { 416, "Range Not Satisfiable" }, // 你范围太大了
