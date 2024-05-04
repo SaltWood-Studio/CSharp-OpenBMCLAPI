@@ -27,6 +27,8 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
 
         public SambaConnection(string username, string password, string address)
         {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) throw new PlatformNotSupportedException($"{nameof(SambaConnection)} 在你的系统环境（当前为 {Environment.OSVersion.Platform}, {RuntimeInformation.OSArchitecture}）不受支持。");
+
             nint existingTokenHandle = new nint(0);
             nint duplicateTokenHandle = new nint(0);
 
