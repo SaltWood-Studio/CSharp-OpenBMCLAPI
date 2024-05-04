@@ -495,7 +495,7 @@ namespace CSharpOpenBMCLAPI.Modules
             long lastModified = files.Select(f => f.mtime).Max();
 
             var resp = await this.client.GetAsync($"openbmclapi/files?lastModified={lastModified}");
-            Logger.Instance.LogDebug($"检查文件结果：{resp}");
+            Logger.Instance.LogDebug($"检查文件结果：{resp.StatusCode}");
             if (resp.StatusCode == HttpStatusCode.NotModified)
             {
                 updatedFiles = new List<ApiFileInfo>();
