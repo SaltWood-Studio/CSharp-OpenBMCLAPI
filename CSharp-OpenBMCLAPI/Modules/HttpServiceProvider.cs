@@ -1,4 +1,5 @@
-﻿using CSharpOpenBMCLAPI.Modules.Storage;
+﻿using CSharpOpenBMCLAPI.Modules.Statistician;
+using CSharpOpenBMCLAPI.Modules.Storage;
 using CSharpOpenBMCLAPI.Modules.WebServer;
 using Newtonsoft.Json;
 using System.Diagnostics;
@@ -167,31 +168,67 @@ namespace CSharpOpenBMCLAPI.Modules
             context.Response.StatusCode = 200;
             switch (query)
             {
-                case "qps":
-                    await context.Response.WriteAsync(JsonConvert.SerializeObject(ClusterRequiredData.DataStatistician.Qps));
+                case "cluster/type":
+                    await context.Response.WriteAsync(JsonConvert.SerializeObject(new 
+                    {
+                        code = 200,
+                        msg = "success",
+                        type = "csharp-openbmclapi",
+                        version = ClusterRequiredData.Config.clusterVersion
+                    }));
                     break;
-                case "dashboard":
-                    // SharedData.Logger.LogDebug(JsonConvert.SerializeObject(SharedData.DataStatistician.Dashboard));
-                    await context.Response.WriteAsync(JsonConvert.SerializeObject(ClusterRequiredData.DataStatistician.Dashboard));
-                    break;
-                case "system":
+                case "cluster/status":
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(new
                     {
-                        memory = ClusterRequiredData.DataStatistician.Memory,
-                        connections = ClusterRequiredData.DataStatistician.Connections,
-                        cpu = ClusterRequiredData.DataStatistician.Cpu,
-                        cache = new
+                        code = 200,
+                        msg = "success",
+                        data = new
                         {
-                            total = (cluster.storage as ICachedStorage != null) ? ((ICachedStorage)cluster.storage).GetCachedFiles() : 0,
-                            bytes = (cluster.storage as ICachedStorage != null) ? ((ICachedStorage)cluster.storage).GetCachedMemory() : 0
+                            isEnabled = cluster.IsEnabled,
+                            isSynchronized = true, //
+                            isTrusted = true,
+                            uptime = ClusterRequiredData.DataStatistician.Uptime
                         }
                     }));
                     break;
-                case "status":
-                    await context.Response.WriteAsync(cluster.IsEnabled ? "好闲啊o(*￣▽￣*)ブ" : "似了w(ﾟДﾟ)w");
+                case "cluster/info":
+                    await context.Response.WriteAsync(JsonConvert.SerializeObject(new
+                    {
+                        code = 200,
+                        msg = "success",
+                        data = new
+                        {
+                            name = "undefined",
+                            clusterId = cluster.requiredData.ClusterInfo.ClusterID,
+                            fullsize = true,
+                            trust = -1, // 根据 API 规范，已弃用
+                            noFastEnable = ClusterRequiredData.Config.noFastEnable
+                        }
+                    }));
                     break;
-                case "uptime":
-                    await context.Response.WriteAsync(ClusterRequiredData.DataStatistician.Uptime.ToString("0.00"));
+                case "cluster/requests":
+                    await context.Response.WriteAsync(JsonConvert.SerializeObject(new
+                    {
+                        code = 200,
+                        msg = "success",
+                        data = new
+                        {
+                            hours = ClusterRequiredData.DataStatistician.HourAccessData,
+                            days = ClusterRequiredData.DataStatistician.DayAccessData,
+                            months = ClusterRequiredData.DataStatistician.MonthAccessData
+                        }
+                    }));
+                    break;
+                case "cluster/commonua":
+                    await context.Response.WriteAsync(JsonConvert.SerializeObject(new
+                    {
+                        code = 200,
+                        msg = "failed",
+                        data = "null"
+                    }));
+                    break;
+                default:
+                    context.Response.StatusCode = 404;
                     break;
             }
             context.Response.ResetStreamPosition();

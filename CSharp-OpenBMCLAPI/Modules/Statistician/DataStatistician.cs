@@ -19,14 +19,6 @@ namespace CSharpOpenBMCLAPI.Modules.Statistician
         public DataStatistician()
         {
             this._started = false;
-            for (int i = 0; i < this.Dashboard.Hours.Length; i++)
-            {
-                this.Dashboard.Hours[i]._hour = i;
-            }
-            for (int i = 0; i < this.Dashboard.Days.Length; i++)
-            {
-                this.Dashboard.Days[i]._day = i;
-            }
             this._updateTask = Task.Run(() =>
             {
                 FileAccessInfo fai = new()
@@ -82,14 +74,12 @@ namespace CSharpOpenBMCLAPI.Modules.Statistician
                 }
                 last.Value += (int)fileAccessInfo.hits;
                 qps[0] = last;
-                Dashboard.Hours[DateTime.Now.Hour].bytes += fileAccessInfo.bytes;
-                Dashboard.Hours[DateTime.Now.Hour].hits += fileAccessInfo.hits;
-                Dashboard.Hours[DateTime.Now.Hour].last_bytes += fileAccessInfo.bytes;
-                Dashboard.Hours[DateTime.Now.Hour].last_hits += fileAccessInfo.hits;
-                Dashboard.Days[DateTime.Now.Day - 1].bytes += fileAccessInfo.bytes;
-                Dashboard.Days[DateTime.Now.Day - 1].hits += fileAccessInfo.hits;
-                Dashboard.Days[DateTime.Now.Day - 1].last_bytes += fileAccessInfo.bytes;
-                Dashboard.Days[DateTime.Now.Day - 1].last_hits += fileAccessInfo.hits;
+                HourAccessData[DateTime.Now.Hour].bytes += fileAccessInfo.bytes;
+                HourAccessData[DateTime.Now.Hour].hits += fileAccessInfo.hits;
+                DayAccessData[DateTime.Now.Day - 1].bytes += fileAccessInfo.bytes;
+                DayAccessData[DateTime.Now.Day - 1].hits += fileAccessInfo.hits;
+                MonthAccessData[DateTime.Now.Month - 1].bytes += fileAccessInfo.bytes;
+                MonthAccessData[DateTime.Now.Month - 1].hits += fileAccessInfo.hits;
             }
         }
 
@@ -123,7 +113,9 @@ namespace CSharpOpenBMCLAPI.Modules.Statistician
             }
         }
 
-        public DashboardInformation Dashboard { get; set; } = new();
+        public AccessData[] HourAccessData { get; set; } = new AccessData[24];
+        public AccessData[] DayAccessData { get; set; } = new AccessData[31];
+        public AccessData[] MonthAccessData { get; set; } = new AccessData[12];
 
         [Browsable(false)]
         public int Connections
