@@ -29,7 +29,7 @@ namespace CSharpOpenBMCLAPI
 
         protected void LoadPlugins()
         {
-            string path = Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, "plugins");
+            string path = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, "plugins");
 
             Directory.CreateDirectory(path);
 

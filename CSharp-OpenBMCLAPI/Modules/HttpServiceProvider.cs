@@ -3,6 +3,7 @@ using CSharpOpenBMCLAPI.Modules.Storage;
 using CSharpOpenBMCLAPI.Modules.WebServer;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using TeraIO.Extension;
@@ -77,6 +78,12 @@ namespace CSharpOpenBMCLAPI.Modules
             string? e = pairs.GetValueOrDefault("e");
 
             bool valid = Utils.CheckSign(hash, cluster.clusterInfo.ClusterSecret, s, e);
+
+            if (!context.Request.Header["user-agent"].Contains("got") && !context.Request.Header["user-agent"].Contains("bmclapi"))
+            {
+                context.Response.StatusCode = 500;
+                return new FileAccessInfo { hits = 0, bytes = 0 };
+            }
 
             if (valid && hash != null && s != null && e != null)
             {

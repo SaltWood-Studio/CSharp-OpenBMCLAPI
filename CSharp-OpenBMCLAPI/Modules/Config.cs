@@ -31,6 +31,9 @@ namespace CSharpOpenBMCLAPI.Modules
         [YamlMember(Description = "指示应该将要服务的文件放在哪里（服务路径）", Order = 1)]
         public string clusterFileDirectory;
 
+        [YamlMember(Description = "指示节点的工作路径", Order = 1)]
+        public string clusterWorkingDirectory;
+
         [YamlIgnore]
         [YamlMember(Description = "指示节点端的版本，不应由用户更改")]
         public string clusterVersion;
@@ -58,7 +61,7 @@ namespace CSharpOpenBMCLAPI.Modules
         internal double maxCachedMemory;
 
         [YamlIgnore]
-        public string cacheDirectory { get => Path.Combine(this.clusterFileDirectory, "cache"); }
+        public string cacheDirectory { get => Path.Combine(this.clusterWorkingDirectory, "cache"); }
 
         [YamlMember(Description = "指示登录存储池需要的凭据，如果存储池不需要则可以忽略", Order = 1)]
         public StorageUser storageUser;
@@ -72,7 +75,8 @@ namespace CSharpOpenBMCLAPI.Modules
             this.skipCheck = false;
 
             this.refreshTokenTime = 1800000;
-            this.clusterFileDirectory = "./";
+            this.clusterWorkingDirectory = "./";
+            this.clusterWorkingDirectory = "./";
             this.clusterVersion = "1.10.4";
 
             this.HOST = "";

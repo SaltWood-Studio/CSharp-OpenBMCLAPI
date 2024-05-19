@@ -61,7 +61,7 @@ namespace CSharpOpenBMCLAPI.Modules
             client = HttpRequest.client;
             client.DefaultRequestHeaders.Authorization = new("Bearer", requiredData.Token?.Token.token);
 
-            this.storage = new CachedStorage(new FileStorage(ClusterRequiredData.Config.clusterFileDirectory));
+            this.storage = new WebDavStorage();//new CachedStorage(new FileStorage(ClusterRequiredData.Config.clusterFileDirectory));
             this.files = new List<ApiFileInfo>();
             this.counter = new();
             InitializeSocket();
@@ -119,6 +119,8 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             int returns = 0;
 
+            this.storage.Initialize();
+
             // 检查文件
             // if (!ClusterRequiredData.Config.noEnable)
             Connect();
@@ -136,8 +138,8 @@ namespace CSharpOpenBMCLAPI.Modules
 
             while (!ClusterRequiredData.Config.noEnable)
             {
-                if (File.Exists(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/key.pem")) &&
-                    File.Exists(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/cert.pem")))
+                if (File.Exists(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/key.pem")) &&
+                    File.Exists(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pem")))
                 {
                     break;
                 }
@@ -255,12 +257,12 @@ namespace CSharpOpenBMCLAPI.Modules
         /// </returns>
         protected X509Certificate2 LoadAndConvertCert()
         {
-            X509Certificate2 cert = X509Certificate2.CreateFromPemFile(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/cert.pem"),
-                Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/key.pem"));
+            X509Certificate2 cert = X509Certificate2.CreateFromPemFile(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pem"),
+                Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/key.pem"));
             //return cert;
             byte[] pfxCert = cert.Export(X509ContentType.Pfx);
             Logger.Instance.LogDebug($"将 PEM 格式的证书转换为 PFX 格式");
-            using (var file = File.Create(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/cert.pfx")))
+            using (var file = File.Create(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pfx")))
             {
                 file.Write(pfxCert);
             }
@@ -423,8 +425,8 @@ namespace CSharpOpenBMCLAPI.Modules
             object countLock = new();
             int count = 0;
 
-            Parallel.ForEach(files, file =>
-            //foreach (var file in files)
+            //Parallel.ForEach(files, file =>
+            foreach (var file in files)
             {
                 CheckSingleFile(file);
                 lock (countLock)
@@ -432,7 +434,7 @@ namespace CSharpOpenBMCLAPI.Modules
                     count++;
                 }
                 Logger.Instance.LogInfoNoNewLine($"\r{count}/{files.Count}");
-            });
+            }//);
 
             files = null!;
             countLock = null!;
@@ -614,10 +616,10 @@ namespace CSharpOpenBMCLAPI.Modules
                 string? certString = cert.GetString();
                 string? keyString = key.GetString();
 
-                string certPath = Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/cert.pem");
-                string keyPath = Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/key.pem");
+                string certPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pem");
+                string keyPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/key.pem");
 
-                Directory.CreateDirectory(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications"));
+                Directory.CreateDirectory(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications"));
 
                 using (var file = File.Create(certPath))
                 {
