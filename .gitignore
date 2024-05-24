@@ -362,5 +362,9 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
+# .env 之类的文件
 .env.*
 .lh
+
+# docker 镜像的 working 文件夹
+/working

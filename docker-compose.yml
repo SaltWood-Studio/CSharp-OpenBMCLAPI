@@ -1,0 +1,7 @@
+services:
+  csharp-openbmclapi:
+    build: .
+    image: csharp-openbmclapi:latest
+    container_name: csharp-openbmclapi
+    volumes:
+      - ./working:/app
