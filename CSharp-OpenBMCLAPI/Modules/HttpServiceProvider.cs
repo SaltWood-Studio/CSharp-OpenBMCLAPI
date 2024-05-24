@@ -79,12 +79,6 @@ namespace CSharpOpenBMCLAPI.Modules
 
             bool valid = Utils.CheckSign(hash, cluster.clusterInfo.ClusterSecret, s, e);
 
-            if (!context.Request.Header["user-agent"].Contains("got") && !context.Request.Header["user-agent"].Contains("bmclapi"))
-            {
-                context.Response.StatusCode = 500;
-                return new FileAccessInfo { hits = 0, bytes = 0 };
-            }
-
             if (valid && hash != null && s != null && e != null)
             {
                 long from, to;
