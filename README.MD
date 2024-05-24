@@ -36,13 +36,6 @@
 4. 自己的代码，自己先测试，别一堆 bug 没修就想丢上来（尤其是想丢到 master 分支的，你丢 dev 分支还好说，只要不是编译都没法通过的那种），真的想请开 draft pull request
 5. 请统一贡献到 **dev** 分支，master 分支**不接受** pull request，collaborator 们也**不要直接向 master 分支 commit！**
 
-
-# 特性
-
-- 基于 .NET 的跨平台使用
-- 得益于 .NET 优秀的内存管理机制、垃圾回收机制，本程序内存占用低（约 150MB，极限情况下甚至能到 30 MB）
-- 插件系统，对你的节点做一些自定义！
-
 # 使用
 
 详见 [Wiki](https://github.com/SALTWOOD/CSharp-OpenBMCLAPI/wiki)
