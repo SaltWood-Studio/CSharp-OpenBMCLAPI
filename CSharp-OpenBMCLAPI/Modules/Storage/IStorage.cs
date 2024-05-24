@@ -82,6 +82,11 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
         /// <returns></returns>
         public Task<FileAccessInfo> HandleRequest(string hashPath, HttpContext context);
 
+        /// <summary>
+        /// 获取文件大小
+        /// </summary>
+        /// <param name="hashPath"></param>
+        /// <returns></returns>
         public long GetFileSize(string hashPath);
     }
 }
