@@ -387,7 +387,7 @@ namespace CSharpOpenBMCLAPI.Modules
         }
 
         /// <summary>
-        /// 获取 Configuration，对于 C# 版本的节点端没啥用
+        /// 获取 Configuration
         /// </summary>
         /// <returns></returns>
         public async Task GetConfiguration()
