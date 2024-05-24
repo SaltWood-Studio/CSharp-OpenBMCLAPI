@@ -75,7 +75,7 @@ ___
 - [Newtonsoft.Json.Bson](https://www.newtonsoft.com/json) - 使用 Newtonsoft.Json.Bson 解析 Bson，用于统计数据的存储
 
 **@doghappy**
-- [SocketIOCLient](https://github.com/doghappy/socket.io-client-csharp) - 使用 SocketIOClient 与主控通信
+- [SocketIOClient](https://github.com/doghappy/socket.io-client-csharp) - 使用 SocketIOClient 与主控通信
 
 **Apache**
 - [log4net](https://logging.apache.org/log4net/) - 使用 log4net 记录日志（虽然目前没用到）
