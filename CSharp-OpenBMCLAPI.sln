@@ -8,10 +8,21 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "解决方案项", "解决方案项", "{09EEA2BF-7069-4835-95CE-2BFAC2F2B8D0}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
-		docker-compose.yml = docker-compose.yml
 		Dockerfile = Dockerfile
-		.github\workflows\dotnet.yml = .github\workflows\dotnet.yml
 		README.MD = README.MD
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Workflows", "Workflows", "{433AB2A0-5CC0-403B-B03C-2CFFB4E3C201}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\on-dev.yml = .github\workflows\on-dev.yml
+		.github\workflows\on-release.yml = .github\workflows\on-release.yml
+		.github\workflows\on-tag.yml = .github\workflows\on-tag.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docker compose", "Docker compose", "{82765CF6-BDF4-4297-9237-AACA413FA049}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.dev.yml = docker-compose.dev.yml
+		docker-compose.yml = docker-compose.yml
 	EndProjectSection
 EndProject
 Global
@@ -27,6 +38,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{433AB2A0-5CC0-403B-B03C-2CFFB4E3C201} = {09EEA2BF-7069-4835-95CE-2BFAC2F2B8D0}
+		{82765CF6-BDF4-4297-9237-AACA413FA049} = {09EEA2BF-7069-4835-95CE-2BFAC2F2B8D0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C1A5C6C9-0F70-4622-BC44-2F32090D8A03}
