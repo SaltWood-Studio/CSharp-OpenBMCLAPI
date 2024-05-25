@@ -4,9 +4,6 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 # 设置工作目录
 WORKDIR /app
 
-# 复制项目文件到工作目录
-COPY . .
-
 # 恢复项目依赖项
 RUN dotnet restore
 

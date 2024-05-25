@@ -5,4 +5,5 @@ services:
     ports:
       - 4000:4000
     volumes:
-      - ./working:/app
+      - ./working:/app/working
+      - ./cache:/app/cache

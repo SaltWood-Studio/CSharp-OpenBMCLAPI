@@ -75,8 +75,8 @@ namespace CSharpOpenBMCLAPI.Modules
             this.skipCheck = false;
 
             this.refreshTokenTime = 1800000;
-            this.clusterWorkingDirectory = "./";
-            this.clusterFileDirectory = "./";
+            this.clusterWorkingDirectory = "./working";
+            this.clusterFileDirectory = "./cache";
             this.clusterVersion = "1.10.8";
 
             this.HOST = "";

@@ -14,7 +14,7 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
     public class FileStorage : IStorage
     {
         protected string workingDirectory;
-        public string CacheDirectory { get => Path.Combine(workingDirectory, "cache"); }
+        public string CacheDirectory { get => workingDirectory; }
         private SambaConnection? connection;
 
         public FileStorage(string workingDirectory)

@@ -366,5 +366,6 @@ FodyWeavers.xsd
 .env.*
 .lh
 
-# docker 镜像的 working 文件夹
+# docker 镜像的文件夹
 /working
+/cache
