@@ -13,7 +13,6 @@ jobs:
     permissions:
       packages: write
       contents: read
-      attestations: write
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4

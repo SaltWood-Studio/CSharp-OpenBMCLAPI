@@ -2,7 +2,7 @@ name: Push image on master
 
 on:
   push:
-    branches: ["master"]
+    branches: [master]
   workflow_dispatch:
 
 jobs:
@@ -12,7 +12,6 @@ jobs:
     permissions:
       packages: write
       contents: read
-      attestations: write
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
