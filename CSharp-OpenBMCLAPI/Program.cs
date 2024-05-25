@@ -66,7 +66,8 @@ namespace CSharpOpenBMCLAPI
 
         protected Config GetConfig()
         {
-            const string configPath = "config.yml";
+            const string configFileName = "config.yml";
+            string configPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, configFileName);
             if (!File.Exists(configPath))
             {
                 Config config = new Config();
@@ -98,20 +99,21 @@ namespace CSharpOpenBMCLAPI
         {
             try
             {
+                const string bsonFile = "totals.bson";
+                string bsonFilePath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, bsonFile);
                 ClusterRequiredData.Config = GetConfig();
                 LoadPlugins();
                 PluginManager.Instance.TriggerEvent(this, ProgramEventType.ProgramStarted);
 
                 int returns = 0;
 
-                if (File.Exists("totals.bson"))
+                if (File.Exists(bsonFilePath))
                 {
-                    DataStatistician t = Utils.BsonDeserializeObject<DataStatistician>(File.ReadAllBytes("totals.bson")).ThrowIfNull();
+                    DataStatistician t = Utils.BsonDeserializeObject<DataStatistician>(File.ReadAllBytes(bsonFilePath)).ThrowIfNull();
                     ClusterRequiredData.DataStatistician = t;
                 }
                 else
                 {
-                    const string bsonFilePath = "totals.bson";
                     using (var file = File.Create(bsonFilePath))
                     {
                         file.Write(Utils.BsonSerializeObject(ClusterRequiredData.DataStatistician));
@@ -119,11 +121,12 @@ namespace CSharpOpenBMCLAPI
                 }
 
                 const string environment = ".env.json";
+                string environmentFile = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, environment);
 
-                if (!File.Exists(environment)) throw new FileNotFoundException($"请在程序目录下新建 {environment} 文件，然后填入 \"ClusterId\" 和 \"ClusterSecret\"以启动集群！");
+                if (!File.Exists(environment)) throw new FileNotFoundException($"请在程序目录下新建 {environmentFile} 文件，然后填入 \"ClusterId\" 和 \"ClusterSecret\"以启动集群！");
 
                 // 从 .env.json 读取密钥然后 FetchToken
-                ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(File.ReadAllTextAsync(environment).Result);
+                ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(File.ReadAllTextAsync(environmentFile).Result);
                 ClusterRequiredData requiredData = new(info);
                 Logger.Instance.LogSystem($"Cluster id: {info.ClusterID}");
                 TokenManager token = new TokenManager(info);
