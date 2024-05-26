@@ -227,7 +227,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 case "cluster/commonua":
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(new
                     {
-                        code = 200,
+                        code = 501,
                         msg = "failed",
                         data = "null"
                     }));

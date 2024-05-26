@@ -390,10 +390,31 @@ namespace CSharpOpenBMCLAPI.Modules
 
         private void _keepAliveMessageParser(SocketIOResponse resp)
         {
-            Task.Run(() =>
+            try
             {
-                var res = resp;
-            });
+                var returns = resp.GetValue<List<object?>>(0);
+                string? message = returns.First() as string;
+                bool? enabled = returns.Last() as bool?;
+                if (message == null)
+                {
+                    string? time = returns.Last() as string;
+                    Logger.Instance.LogSystem($"保活成功 at {time}，served {Utils.GetLength(this.counter.bytes)}({this.counter.bytes} bytes)/{this.counter.hits} hits");
+                }
+                else
+                {
+                    this.IsEnabled = false;
+                    if (this.WantEnable)
+                    {
+                        Logger.Instance.LogError($"保活失败：{returns}，将在 10 分钟后重新上线");
+                        Thread.Sleep(10 * 60 * 1000);
+                        this.Enable().Wait();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.LogError($"未知原因导致打印 {nameof(KeepAlive)} 信息错误：{ex.GetType().Name}");
+            }
         }
 
         /// <summary>
