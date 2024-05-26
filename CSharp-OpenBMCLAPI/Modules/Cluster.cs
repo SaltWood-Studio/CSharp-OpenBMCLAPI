@@ -444,7 +444,7 @@ namespace CSharpOpenBMCLAPI.Modules
             var downloadMessage = Window.OpenBox("File download message", Console.WindowWidth, 10, new BoxStyle()
             {
                 ThickNess = LineThickNess.Double,
-                Title = new Colors(ConsoleColor.Blue, ConsoleColor.Yellow)
+                Title = new Colors(ConsoleColor.White, ConsoleColor.Blue)
             });
 
             CancellationTokenSource source = new CancellationTokenSource();
@@ -457,9 +457,19 @@ namespace CSharpOpenBMCLAPI.Modules
                     int threadsTotal = this.requiredData.maxThreadCount;
                     int threadsUsed = threadsTotal - this.requiredData.SemaphoreSlim.CurrentCount;
                     downloadProgress.Clear();
-                    downloadProgress.Tick("Progress", count, files.Count, ConsoleColor.Blue);
-                    downloadProgress.Tick("Threads", threadsUsed, threadsTotal, ConsoleColor.Blue);
+                    downloadProgress.Tick("Progress", count, files.Count, ConsoleColor.Green);
+                    downloadProgress.Tick("Threads", threadsUsed, threadsTotal, ConsoleColor.Red);
                     Thread.Sleep(100);
+                }
+            }, source.Token);
+
+            _ = Task.Run(() =>
+            {
+                while (true)
+                {
+                    source.Token.ThrowIfCancellationRequested();
+                    GC.Collect();
+                    Thread.Sleep(10000);
                 }
             }, source.Token);
 

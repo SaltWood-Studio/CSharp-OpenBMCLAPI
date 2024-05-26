@@ -14,7 +14,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             console.Write(ConsoleColor.White, $"{symbol,-10}");
             //console.WriteLine(color, $"{value}");
-            console.WriteLine(color, $"  ({value}/{total}, {value * 100 / total:0.00}%)");
+            console.WriteLine(color, $"  ({value}/{total}, {value * 100.0 / total:0.00}%)");
         }
 
         /// <summary>
