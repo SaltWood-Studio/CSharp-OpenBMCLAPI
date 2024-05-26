@@ -369,7 +369,7 @@ namespace CSharpOpenBMCLAPI.Modules
             await socket.EmitAsync("keep-alive",
                 (SocketIOResponse resp) =>
                 {
-                    _KeepAliveMessageParser(resp);
+                    _keepAliveMessageParser(resp);
                     //Utils.PrintResponseMessage(resp);
                     //Logger.Instance.LogSystem($"保活成功 at {time}，served {Utils.GetLength(this.counter.bytes)}({this.counter.bytes} bytes)/{this.counter.hits} hits");
                     this.counter.Reset();
@@ -390,9 +390,10 @@ namespace CSharpOpenBMCLAPI.Modules
             }
         }
 
-        private void _KeepAliveMessageParser(SocketIOResponse resp)
+        private void _keepAliveMessageParser(SocketIOResponse resp)
         {
             Debugger.Break();
+            //Dictionary<string, string>? message = resp.
         }
 
         /// <summary>
@@ -482,9 +483,6 @@ namespace CSharpOpenBMCLAPI.Modules
                     count++;
                 }
             });
-
-            downloadProgress.Clear();
-            downloadMessage.Clear();
 
             source.Cancel();
 
