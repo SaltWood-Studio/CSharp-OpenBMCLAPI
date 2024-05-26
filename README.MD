@@ -47,7 +47,6 @@
 
 **(以下暂缓进行)**
 
-- [ ] 原生多实例运行
 - [ ] 继续优化插件功能
 - [ ] *[优先级低]* 高级控制台，在控制台中调整设置、查看监控信息而不只是看日志
 ___
@@ -78,7 +77,7 @@ ___
 - [SocketIOClient](https://github.com/doghappy/socket.io-client-csharp) - 使用 SocketIOClient 与主控通信
 
 **Apache**
-- [log4net](https://logging.apache.org/log4net/) - 使用 log4net 记录日志（虽然目前没用到）
+- [log4net](https://logging.apache.org/log4net) - 使用 log4net 记录日志（虽然目前没用到）
 
 **@oleg-st (Oleg Stepanischev)**
 - [ZstdSharp.Port](https://github.com/oleg-st/ZstdSharp) - 使用 ZstdSharp.Port 解压主控下发的压缩过的文件列表
@@ -91,6 +90,9 @@ ___
 
 **@2b2ttianxiu**
 - 帮忙写了 **SimpleWebServer**，代替了 ASP.NET 提供文件分发
+
+**@goblinfactory (Alan Hemmings)**
+- [Goblinfactory.Konsole](https://github.com/goblinfactory/konsole) 使用 Goblinfactory.Konsole 显示进度条
 
 # 友情链接
 
