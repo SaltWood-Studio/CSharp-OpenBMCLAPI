@@ -2,6 +2,7 @@
 using CSharpOpenBMCLAPI.Modules.Storage;
 using CSharpOpenBMCLAPI.Modules.WebServer;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using SocketIOClient;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
@@ -51,7 +52,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <param name="info"></param>
         /// <param name="token"></param>
         /// <exception cref="Exception"></exception>
-        public Cluster(ClusterRequiredData requiredData) : base()
+        public Cluster(ClusterRequiredData requiredData)
         {
             this.requiredData = requiredData;
             this.clusterInfo = requiredData.ClusterInfo;
@@ -366,8 +367,9 @@ namespace CSharpOpenBMCLAPI.Modules
             await socket.EmitAsync("keep-alive",
                 (SocketIOResponse resp) =>
                 {
-                    Utils.PrintResponseMessage(resp);
-                    Logger.Instance.LogSystem($"保活成功 at {time}，served {Utils.GetLength(this.counter.bytes)}({this.counter.bytes} bytes)/{this.counter.hits} hits");
+                    _KeepAliveMessageParser(resp);
+                    //Utils.PrintResponseMessage(resp);
+                    //Logger.Instance.LogSystem($"保活成功 at {time}，served {Utils.GetLength(this.counter.bytes)}({this.counter.bytes} bytes)/{this.counter.hits} hits");
                     this.counter.Reset();
                 },
                 new
@@ -384,6 +386,11 @@ namespace CSharpOpenBMCLAPI.Modules
                     file.Write(Utils.BsonSerializeObject(ClusterRequiredData.DataStatistician));
                 }
             }
+        }
+
+        private void _KeepAliveMessageParser(SocketIOResponse resp)
+        {
+            Debugger.Break();
         }
 
         /// <summary>
@@ -425,16 +432,22 @@ namespace CSharpOpenBMCLAPI.Modules
             object countLock = new();
             int count = 0;
 
-            //Parallel.ForEach(files, file =>
-            foreach (var file in files)
+            int progressBarWidth = Math.Abs(Console.WindowWidth - 50);
+
+            Parallel.ForEach(files, file =>
+            //foreach (var file in files)
             {
                 CheckSingleFile(file);
                 lock (countLock)
                 {
                     count++;
                 }
-                Logger.Instance.LogInfoNoNewLine($"\r{count}/{files.Count}");
-            }//);
+                Logger.Instance.LogInfoNoNewLine(
+                    $"\r[{new string('=', (progressBarWidth * (count * 100 / files.Count) / 100)).PadRight(progressBarWidth, ' ')}]" +
+                    $"{count}/{files.Count}, Threads: " +
+                    $"{ClusterRequiredData.Config.downloadFileThreads - this.requiredData.SemaphoreSlim.CurrentCount}/" +
+                    $"{ClusterRequiredData.Config.downloadFileThreads}");
+            });
 
             files = null!;
             countLock = null!;

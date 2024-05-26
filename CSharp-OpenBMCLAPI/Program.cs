@@ -99,6 +99,7 @@ namespace CSharpOpenBMCLAPI
         {
             try
             {
+                Directory.CreateDirectory(ClusterRequiredData.Config.clusterWorkingDirectory);
                 const string bsonFile = "totals.bson";
                 string bsonFilePath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, bsonFile);
                 ClusterRequiredData.Config = GetConfig();
