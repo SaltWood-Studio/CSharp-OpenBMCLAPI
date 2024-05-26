@@ -1,4 +1,5 @@
-﻿using CSharpOpenBMCLAPI.Modules.Statistician;
+﻿using CSharpOpenBMCLAPI.Modules.Plugin;
+using CSharpOpenBMCLAPI.Modules.Statistician;
 using CSharpOpenBMCLAPI.Modules.Storage;
 using CSharpOpenBMCLAPI.Modules.WebServer;
 using Newtonsoft.Json;
@@ -35,6 +36,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         public static async Task Measure(HttpContext context, Cluster cluster)
         {
+            PluginManager.Instance.TriggerClientEvent();
             var pairs = Utils.GetQueryStrings(context.Request.Path.Split('?').Last());
             bool valid = Utils.CheckSign(context.Request.Path.Split('?').First()
                 , cluster.requiredData.ClusterInfo.ClusterSecret

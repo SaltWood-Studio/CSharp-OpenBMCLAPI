@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CSharpOpenBMCLAPI.Modules.Plugin
 {
-    public enum ClientEventType
+    public enum HttpEventType
     {
         ClientDownload,
         ClientMeasure,
