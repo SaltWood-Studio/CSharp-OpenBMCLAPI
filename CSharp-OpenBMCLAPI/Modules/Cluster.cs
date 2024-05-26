@@ -3,7 +3,6 @@ using CSharpOpenBMCLAPI.Modules.Storage;
 using CSharpOpenBMCLAPI.Modules.WebServer;
 using Konsole;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using SocketIOClient;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -392,12 +391,12 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             try
             {
-                var returns = resp.GetValue<List<object?>>(0);
-                string? message = returns.First() as string;
-                bool? enabled = returns.Last() as bool?;
-                if (message == null)
+                var returns = resp.GetValue<List<JsonElement>>(0);
+                string? message = returns.First().GetString();
+                bool enabled = !(returns.Last().ValueKind == JsonValueKind.False);
+                if (enabled)
                 {
-                    string? time = returns.Last() as string;
+                    string? time = returns.Last().GetString();
                     Logger.Instance.LogSystem($"保活成功 at {time}，served {Utils.GetLength(this.counter.bytes)}({this.counter.bytes} bytes)/{this.counter.hits} hits");
                 }
                 else
@@ -406,8 +405,11 @@ namespace CSharpOpenBMCLAPI.Modules
                     if (this.WantEnable)
                     {
                         Logger.Instance.LogError($"保活失败：{returns}，将在 10 分钟后重新上线");
-                        Thread.Sleep(10 * 60 * 1000);
-                        this.Enable().Wait();
+                        Task.Run(() =>
+                        {
+                            Thread.Sleep(10 * 60 * 1000);
+                            this.Enable().Wait();
+                        });
                     }
                 }
             }
