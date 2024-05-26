@@ -390,7 +390,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
         private void _keepAliveMessageParser(SocketIOResponse resp)
         {
-            Debugger.Break();
+
         }
 
         /// <summary>
@@ -655,6 +655,8 @@ namespace CSharpOpenBMCLAPI.Modules
             }
             string certPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pem");
             string keyPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/key.pem");
+            string pfxPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pfx");
+            if (File.Exists(pfxPath)) File.Delete(pfxPath);
             Directory.CreateDirectory(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications"));
             await socket.EmitAsync("request-cert", (SocketIOResponse resp) =>
             {

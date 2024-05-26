@@ -153,9 +153,9 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
         public void MemoryWatchdog()
         {
             double memory = GetCachedMemory();
-            if (memory > 0 && memory > ClusterRequiredData.Config.maxCachedMemory)
+            if (memory > 0 && memory > ClusterRequiredData.Config.maxCachedMemory * 1048576)
             {
-                Logger.Instance.LogWarn($"缓存存储已大于 {ClusterRequiredData.Config.maxCachedMemory}（当前 {memory}），已开始清理缓存");
+                Logger.Instance.LogWarn($"缓存存储已大于 {ClusterRequiredData.Config.maxCachedMemory}（当前 {memory / 1048576}），已开始清理缓存");
                 int count = 0;
                 do
                 {
