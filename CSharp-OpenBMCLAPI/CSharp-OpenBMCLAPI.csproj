@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Goblinfactory.Konsole" Version="6.2.2" />
     <PackageReference Include="log4net" Version="2.0.17" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Newtonsoft.Json.Bson" Version="1.0.2" />
@@ -16,8 +17,8 @@
     <PackageReference Include="SocketIOClient" Version="3.1.1" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
     <PackageReference Include="WindowsFirewallHelper" Version="2.2.0.86" />
-    <PackageReference Include="YamlDotNet" Version="15.1.2" />
-    <PackageReference Include="ZstdSharp.Port" Version="0.7.6" />
+    <PackageReference Include="YamlDotNet" Version="15.1.4" />
+    <PackageReference Include="ZstdSharp.Port" Version="0.8.1" />
   </ItemGroup>
 
   <ItemGroup>

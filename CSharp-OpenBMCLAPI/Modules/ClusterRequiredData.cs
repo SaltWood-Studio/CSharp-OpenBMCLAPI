@@ -13,6 +13,8 @@ namespace CSharpOpenBMCLAPI.Modules
         public static DataStatistician DataStatistician { get; set; } = new DataStatistician();
         public SemaphoreSlim SemaphoreSlim { get; set; } = new SemaphoreSlim(0);
 
+        internal int maxThreadCount;
+
         public ClusterRequiredData(ClusterInfo info)
         {
             this.ClusterInfo = info;

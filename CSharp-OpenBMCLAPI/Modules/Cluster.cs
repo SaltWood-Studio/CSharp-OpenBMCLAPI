@@ -1,9 +1,11 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Plugin;
 using CSharpOpenBMCLAPI.Modules.Storage;
 using CSharpOpenBMCLAPI.Modules.WebServer;
+using Konsole;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using SocketIOClient;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Drawing;
@@ -403,7 +405,8 @@ namespace CSharpOpenBMCLAPI.Modules
             var content = await resp.Content.ReadAsStringAsync();
             this.Configuration = JsonConvert.DeserializeObject<Configuration>(content);
             Logger.Instance.LogDebug($"同步策略：{this.Configuration.Sync.Source}，线程数：{this.Configuration.Sync.Concurrency}");
-            this.requiredData.SemaphoreSlim = new SemaphoreSlim(Math.Max(ClusterRequiredData.Config.downloadFileThreads, this.Configuration.Sync.Concurrency));
+            this.requiredData.maxThreadCount = Math.Max(ClusterRequiredData.Config.downloadFileThreads, this.Configuration.Sync.Concurrency);
+            this.requiredData.SemaphoreSlim = new SemaphoreSlim(this.requiredData.maxThreadCount);
         }
 
         /// <summary>
@@ -432,22 +435,51 @@ namespace CSharpOpenBMCLAPI.Modules
             object countLock = new();
             int count = 0;
 
-            int progressBarWidth = Math.Abs(Console.WindowWidth - 50);
+            var downloadProgress = Window.OpenBox("File download progress", Console.WindowWidth, 5, new BoxStyle()
+            {
+                ThickNess = LineThickNess.Single,
+                Title = new Colors(ConsoleColor.White, ConsoleColor.Red)
+            });
+
+            var downloadMessage = Window.OpenBox("File download message", Console.WindowWidth, 10, new BoxStyle()
+            {
+                ThickNess = LineThickNess.Double,
+                Title = new Colors(ConsoleColor.Blue, ConsoleColor.Yellow)
+            });
+
+            CancellationTokenSource source = new CancellationTokenSource();
+
+            _ = Task.Run(() =>
+            {
+                while (true)
+                {
+                    int threadsTotal = this.requiredData.maxThreadCount;
+                    int threadsUsed = threadsTotal - this.requiredData.SemaphoreSlim.CurrentCount;
+                    source.Token.ThrowIfCancellationRequested();
+                    downloadProgress.Clear();
+                    downloadProgress.Tick("Progress", count, files.Count, ConsoleColor.Blue);
+                    downloadProgress.Tick("Threads", threadsUsed, threadsTotal, ConsoleColor.Blue);
+                    Thread.Sleep(100);
+                }
+            }, source.Token);
 
             Parallel.ForEach(files, file =>
             //foreach (var file in files)
             {
-                CheckSingleFile(file);
+                CheckSingleFile(file, downloadMessage);
                 lock (countLock)
                 {
                     count++;
                 }
-                Logger.Instance.LogInfoNoNewLine(
-                    $"\r[{new string('=', (progressBarWidth * (count * 100 / files.Count) / 100)).PadRight(progressBarWidth, ' ')}]" +
-                    $"{count}/{files.Count}, Threads: " +
-                    $"{ClusterRequiredData.Config.downloadFileThreads - this.requiredData.SemaphoreSlim.CurrentCount}/" +
-                    $"{ClusterRequiredData.Config.downloadFileThreads}");
+
+                //Logger.Instance.LogInfoNoNewLine(
+                //    $"\r[{new string('=', (progressBarWidth * (count * 100 / files.Count) / 100)).PadRight(progressBarWidth, ' ')}]" +
+                //    $"{count}/{files.Count}, Threads: " +
+                //    $"{ClusterRequiredData.Config.downloadFileThreads - this.requiredData.SemaphoreSlim.CurrentCount}/" +
+                //    $"{ClusterRequiredData.Config.downloadFileThreads}");
             });
+
+            source.Cancel();
 
             files = null!;
             countLock = null!;
@@ -512,23 +544,23 @@ namespace CSharpOpenBMCLAPI.Modules
         /// 检查单个文件
         /// </summary>
         /// <param name="file"></param>
-        void CheckSingleFile(ApiFileInfo file) => CheckSingleFile(file, ClusterRequiredData.Config.startupCheckMode);
+        void CheckSingleFile(ApiFileInfo file, IConsole? console = null) => CheckSingleFile(file, ClusterRequiredData.Config.startupCheckMode, console);
 
         /// <summary>
         /// 检查单个文件，并且额外指定检查模式
         /// </summary>
         /// <param name="file"></param>
         /// <param name="mode"></param>
-        void CheckSingleFile(ApiFileInfo file, FileVerificationMode mode)
+        void CheckSingleFile(ApiFileInfo file, FileVerificationMode mode, IConsole? console = null)
         {
             string path = file.path;
             string hash = file.hash;
             long size = file.size;
-            DownloadFile(hash, path).Wait();
+            DownloadFile(hash, path, false, console).Wait();
             bool valid = VerifyFile(hash, size, mode);
             if (!valid)
             {
-                Logger.Instance.LogWarn($"文件 {path} 损坏！期望哈希值为 {hash}");
+                console?.WriteLine($"文件 {path} 损坏！期望哈希值为 {hash}");
                 DownloadFile(hash, path, true).Wait();
             }
         }
@@ -580,7 +612,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <param name="path"></param>
         /// <param name="force"></param>
         /// <returns></returns>
-        private async Task DownloadFile(string hash, string path, bool force = false)
+        private async Task DownloadFile(string hash, string path, bool force = false, IConsole? console = null)
         {
             string filePath = Utils.HashToFileName(hash);
             if (this.storage.Exists(filePath) && !force)
@@ -593,11 +625,11 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 var resp = await this.client.GetAsync($"openbmclapi/download/{hash}");
                 this.storage.WriteFile(Utils.HashToFileName(hash), await resp.Content.ReadAsByteArrayAsync());
-                Logger.Instance.LogDebug($"文件 {path} 下载成功");
+                console?.WriteLine($"文件 {path} 下载成功");
             }
             catch (Exception ex)
             {
-                Logger.Instance.LogError($"文件 {path} 下载失败：{ex.ExceptionToDetail()}");
+                console?.WriteLine(ConsoleColor.Red, $"文件 {path} 下载失败：{ex.ExceptionToDetail()}");
             }
             finally
             {

@@ -4,11 +4,20 @@ using System.Runtime.ConstrainedExecution;
 using YamlDotNet.Core.Tokens;
 using System.Linq;
 using System.Text;
+using Konsole;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
     public static class ExtensionMethods
     {
+        public static void Tick(this IConsole console, string symbol, int value, int total, ConsoleColor color)
+        {
+            console.Write(ConsoleColor.White, $"{symbol,-10}");
+            //console.WriteLine(color, $"{value}");
+            console.WriteLine(color, $"  ({value}/{total}, {value * 100 / total:0.00}%)");
+        }
+
+
         /// <summary>
         /// 最便捷的方式，保证 null 值不会被使用
         /// </summary>
