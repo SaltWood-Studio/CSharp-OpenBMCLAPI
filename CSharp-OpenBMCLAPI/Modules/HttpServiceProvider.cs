@@ -176,8 +176,6 @@ namespace CSharpOpenBMCLAPI.Modules
                 case "cluster/type":
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(new
                     {
-                        code = 200,
-                        msg = "success",
                         type = "csharp-openbmclapi",
                         version = ClusterRequiredData.Config.clusterVersion
                     }));
@@ -185,37 +183,25 @@ namespace CSharpOpenBMCLAPI.Modules
                 case "cluster/status":
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(new
                     {
-                        code = 200,
-                        msg = "success",
-                        data = new
-                        {
-                            isEnabled = cluster.IsEnabled,
-                            isSynchronized = true, //
-                            isTrusted = true,
-                            uptime = ClusterRequiredData.DataStatistician.Uptime
-                        }
+                        isEnabled = cluster.IsEnabled,
+                        isSynchronized = true, // TODO
+                        isTrusted = true, // NOT PLANNED
+                        uptime = ClusterRequiredData.DataStatistician.Uptime
                     }));
                     break;
                 case "cluster/info":
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(new
                     {
-                        code = 200,
-                        msg = "success",
-                        data = new
-                        {
-                            name = "undefined",
-                            clusterId = cluster.requiredData.ClusterInfo.ClusterID,
-                            fullsize = true,
-                            trust = -1, // 根据 API 规范，已弃用
-                            noFastEnable = ClusterRequiredData.Config.noFastEnable
-                        }
+                        name = "undefined",
+                        clusterId = cluster.requiredData.ClusterInfo.ClusterID,
+                        fullsize = true,
+                        trust = -1, // 根据 API 规范，已弃用
+                        noFastEnable = ClusterRequiredData.Config.noFastEnable
                     }));
                     break;
                 case "cluster/requests":
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(new
                     {
-                        code = 200,
-                        msg = "success",
                         data = new
                         {
                             hours = ClusterRequiredData.DataStatistician.HourAccessData,
@@ -227,8 +213,6 @@ namespace CSharpOpenBMCLAPI.Modules
                 case "cluster/commonua":
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(new
                     {
-                        code = 501,
-                        msg = "failed",
                         data = "null"
                     }));
                     break;
