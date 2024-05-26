@@ -135,8 +135,6 @@ namespace CSharpOpenBMCLAPI.Modules
 
             await RequestCertification();
 
-            LoadAndConvertCert();
-
             Logger.Instance.LogInfo($"{nameof(AsyncRun)} 正在等待证书请求……");
 
             while (!ClusterRequiredData.Config.noEnable)
@@ -393,7 +391,6 @@ namespace CSharpOpenBMCLAPI.Modules
         private void _keepAliveMessageParser(SocketIOResponse resp)
         {
             Debugger.Break();
-            //Dictionary<string, string>? message = resp.
         }
 
         /// <summary>
@@ -656,10 +653,12 @@ namespace CSharpOpenBMCLAPI.Modules
                 Logger.Instance.LogDebug($"{nameof(ClusterRequiredData.Config.bringYourOwnCertficate)} 为 true，跳过请求证书……");
                 return;
             }
+            string certPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pem");
+            string keyPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/key.pem");
+            Directory.CreateDirectory(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications"));
             await socket.EmitAsync("request-cert", (SocketIOResponse resp) =>
             {
                 var data = resp;
-                //Debugger.Break();
                 var json = data.GetValue<JsonElement>(0)[1];
                 JsonElement cert; json.TryGetProperty("cert", out cert);
                 JsonElement key; json.TryGetProperty("key", out key);
@@ -667,10 +666,8 @@ namespace CSharpOpenBMCLAPI.Modules
                 string? certString = cert.GetString();
                 string? keyString = key.GetString();
 
-                string certPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pem");
-                string keyPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/key.pem");
-
-                Directory.CreateDirectory(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications"));
+                File.Delete(certPath);
+                File.Delete(keyPath);
 
                 using (var file = File.Create(certPath))
                 {
@@ -681,6 +678,8 @@ namespace CSharpOpenBMCLAPI.Modules
                 {
                     if (keyString != null) file.Write(Encoding.UTF8.GetBytes(keyString));
                 }
+
+                Logger.Instance.LogDebug($"获取证书成功！");
             });
         }
     }

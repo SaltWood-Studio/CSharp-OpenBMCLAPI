@@ -36,7 +36,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         public static async Task Measure(HttpContext context, Cluster cluster)
         {
-            PluginManager.Instance.TriggerClientEvent();
+            PluginManager.Instance.TriggerHttpEvent(context, HttpEventType.ClientMeasure);
             var pairs = Utils.GetQueryStrings(context.Request.Path.Split('?').Last());
             bool valid = Utils.CheckSign(context.Request.Path.Split('?').First()
                 , cluster.requiredData.ClusterInfo.ClusterSecret
@@ -72,6 +72,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         public static async Task<FileAccessInfo> DownloadHash(HttpContext context, Cluster cluster)
         {
+            PluginManager.Instance.TriggerHttpEvent(context, HttpEventType.ClientDownload);
             // 处理用户下载
             FileAccessInfo fai = default;
             var pairs = Utils.GetQueryStrings(context.Request.Path.Split('?').Last());
@@ -167,12 +168,13 @@ namespace CSharpOpenBMCLAPI.Modules
 
         public static async Task Api(HttpContext context, string query, Cluster cluster)
         {
+            PluginManager.Instance.TriggerHttpEvent(context, HttpEventType.ClientOtherRequest);
             context.Response.Header.Set("content-type", "application/json");
             context.Response.StatusCode = 200;
             switch (query)
             {
                 case "cluster/type":
-                    await context.Response.WriteAsync(JsonConvert.SerializeObject(new 
+                    await context.Response.WriteAsync(JsonConvert.SerializeObject(new
                     {
                         code = 200,
                         msg = "success",
@@ -239,6 +241,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
         public static Task Dashboard(HttpContext context, string filePath = "index.html")
         {
+            PluginManager.Instance.TriggerHttpEvent(context, HttpEventType.ClientOtherRequest);
             context.Response.StatusCode = 200;
             context.Response.Stream = Utils.GetEmbeddedFileStream($"Dashboard/{filePath}").ThrowIfNull();
             return Task.CompletedTask;
