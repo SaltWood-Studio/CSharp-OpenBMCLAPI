@@ -228,7 +228,7 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 MatchRegex = new Regex(@"/api/(.*)"),
                 Handler = (context, cluster, match) => HttpServiceProvider.Api(context, match.Groups[1].Value, this).Wait(),
-                Methods = "POST"
+                Methods = "GET"
             });
 
             // 因为暂时禁用面板而注释掉
@@ -390,7 +390,10 @@ namespace CSharpOpenBMCLAPI.Modules
 
         private void _keepAliveMessageParser(SocketIOResponse resp)
         {
-
+            Task.Run(() =>
+            {
+                var res = resp;
+            });
         }
 
         /// <summary>
