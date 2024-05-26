@@ -17,7 +17,6 @@ namespace CSharpOpenBMCLAPI.Modules
             console.WriteLine(color, $"  ({value}/{total}, {value * 100 / total:0.00}%)");
         }
 
-
         /// <summary>
         /// 最便捷的方式，保证 null 值不会被使用
         /// </summary>

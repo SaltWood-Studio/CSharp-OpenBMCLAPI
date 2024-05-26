@@ -453,13 +453,23 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 while (true)
                 {
+                    source.Token.ThrowIfCancellationRequested();
                     int threadsTotal = this.requiredData.maxThreadCount;
                     int threadsUsed = threadsTotal - this.requiredData.SemaphoreSlim.CurrentCount;
-                    source.Token.ThrowIfCancellationRequested();
                     downloadProgress.Clear();
                     downloadProgress.Tick("Progress", count, files.Count, ConsoleColor.Blue);
                     downloadProgress.Tick("Threads", threadsUsed, threadsTotal, ConsoleColor.Blue);
                     Thread.Sleep(100);
+                }
+            }, source.Token);
+
+            _ = Task.Run(() =>
+            {
+                while (true)
+                {
+                    downloadMessage.Clear();
+                    source.Token.ThrowIfCancellationRequested();
+                    Thread.Sleep(10000);
                 }
             }, source.Token);
 
@@ -471,12 +481,6 @@ namespace CSharpOpenBMCLAPI.Modules
                 {
                     count++;
                 }
-
-                //Logger.Instance.LogInfoNoNewLine(
-                //    $"\r[{new string('=', (progressBarWidth * (count * 100 / files.Count) / 100)).PadRight(progressBarWidth, ' ')}]" +
-                //    $"{count}/{files.Count}, Threads: " +
-                //    $"{ClusterRequiredData.Config.downloadFileThreads - this.requiredData.SemaphoreSlim.CurrentCount}/" +
-                //    $"{ClusterRequiredData.Config.downloadFileThreads}");
             });
 
             source.Cancel();
@@ -493,7 +497,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             HttpResponseMessage resp;
             resp = await this.client.GetAsync("openbmclapi/files");
-            Logger.Instance.LogDebug($"检查文件结果：{resp}");
+            Logger.Instance.LogDebug($"检查文件结果：{resp.StatusCode}");
 
             List<ApiFileInfo> files;
 
@@ -624,12 +628,13 @@ namespace CSharpOpenBMCLAPI.Modules
             try
             {
                 var resp = await this.client.GetAsync($"openbmclapi/download/{hash}");
-                this.storage.WriteFile(Utils.HashToFileName(hash), await resp.Content.ReadAsByteArrayAsync());
+                this.storage.WriteFileStream(Utils.HashToFileName(hash), await resp.Content.ReadAsStreamAsync());
+                resp = null!;
                 console?.WriteLine($"文件 {path} 下载成功");
             }
             catch (Exception ex)
             {
-                console?.WriteLine(ConsoleColor.Red, $"文件 {path} 下载失败：{ex.ExceptionToDetail()}");
+                Logger.Instance.LogError($"文件 {path} 下载失败：{ex.ExceptionToDetail()}");
             }
             finally
             {
