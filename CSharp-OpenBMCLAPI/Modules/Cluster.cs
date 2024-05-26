@@ -160,7 +160,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 // 定时检查文件的 Task
                 const int time = 10 * 60 * 1000; // 10 分钟
                 bool skipCheck = ClusterRequiredData.Config.skipCheck;
-                while (true)
+                while (!skipCheck)
                 {
                     for (int i = 0; i < 36; i++)
                     {
