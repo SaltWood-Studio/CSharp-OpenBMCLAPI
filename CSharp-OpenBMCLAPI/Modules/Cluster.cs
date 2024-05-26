@@ -463,16 +463,6 @@ namespace CSharpOpenBMCLAPI.Modules
                 }
             }, source.Token);
 
-            _ = Task.Run(() =>
-            {
-                while (true)
-                {
-                    downloadMessage.Clear();
-                    source.Token.ThrowIfCancellationRequested();
-                    Thread.Sleep(10000);
-                }
-            }, source.Token);
-
             Parallel.ForEach(files, file =>
             //foreach (var file in files)
             {
@@ -482,6 +472,9 @@ namespace CSharpOpenBMCLAPI.Modules
                     count++;
                 }
             });
+
+            downloadProgress.Clear();
+            downloadMessage.Clear();
 
             source.Cancel();
 
