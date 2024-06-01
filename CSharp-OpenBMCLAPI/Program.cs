@@ -121,13 +121,12 @@ namespace CSharpOpenBMCLAPI
                     }
                 }
 
-                const string environment = ".env.json";
-                string environmentFile = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, environment);
+                const string environment = "working/.env.json";
 
-                if (!File.Exists(environment)) throw new FileNotFoundException($"请在程序目录下新建 {environmentFile} 文件，然后填入 \"ClusterId\" 和 \"ClusterSecret\"以启动集群！");
+                if (!File.Exists(environment)) throw new FileNotFoundException($"请在程序目录下新建 {environment} 文件，然后填入 \"ClusterId\" 和 \"ClusterSecret\"以启动集群！");
 
                 // 从 .env.json 读取密钥然后 FetchToken
-                ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(File.ReadAllTextAsync(environmentFile).Result);
+                ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(File.ReadAllTextAsync(environment).Result);
                 ClusterRequiredData requiredData = new(info);
                 Logger.Instance.LogSystem($"Cluster id: {info.ClusterID}");
                 TokenManager token = new TokenManager(info);
