@@ -177,7 +177,8 @@ namespace CSharpOpenBMCLAPI.Modules
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(new
                     {
                         type = "csharp-openbmclapi",
-                        version = ClusterRequiredData.Config.clusterVersion
+                        openbmclapiVersion = ClusterRequiredData.Config.clusterVersion,
+                        version = "beta"
                     }));
                     break;
                 case "cluster/status":
@@ -186,16 +187,19 @@ namespace CSharpOpenBMCLAPI.Modules
                         isEnabled = cluster.IsEnabled,
                         isSynchronized = true, // TODO
                         isTrusted = true, // NOT PLANNED
-                        uptime = ClusterRequiredData.DataStatistician.Uptime
+                        uptime = ClusterRequiredData.DataStatistician.Uptime,
+                        systemOccupancy = new
+                        {
+                            memoryUsage = ClusterRequiredData.DataStatistician.Memory,
+                            loadAverage = ClusterRequiredData.DataStatistician.Cpu
+                        }
                     }));
                     break;
                 case "cluster/info":
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(new
                     {
-                        name = "undefined",
                         clusterId = cluster.requiredData.ClusterInfo.ClusterID,
                         fullsize = true,
-                        trust = -1, // 根据 API 规范，已弃用
                         noFastEnable = ClusterRequiredData.Config.noFastEnable
                     }));
                     break;
@@ -213,8 +217,14 @@ namespace CSharpOpenBMCLAPI.Modules
                 case "cluster/commonua":
                     await context.Response.WriteAsync(JsonConvert.SerializeObject(new
                     {
-                        data = "null"
-                    }));
+                        data = new
+                        {
+                            commonUA = new Dictionary<string, int>()
+                            {
+
+                            }
+                        }
+                    }));// TODO
                     break;
                 default:
                     context.Response.StatusCode = 404;
