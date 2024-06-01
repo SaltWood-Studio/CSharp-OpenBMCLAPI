@@ -170,6 +170,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             PluginManager.Instance.TriggerHttpEvent(context, HttpEventType.ClientOtherRequest);
             context.Response.Header.Set("content-type", "application/json");
+            context.Response.Header.Set("access-control-allow-origin", "*");
             context.Response.StatusCode = 200;
             switch (query)
             {
