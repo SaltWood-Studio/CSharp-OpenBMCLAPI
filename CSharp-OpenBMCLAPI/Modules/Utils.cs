@@ -9,9 +9,7 @@ using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
-using System.Xml.Linq;
 using TeraIO.Runnable;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace CSharpOpenBMCLAPI.Modules
 {

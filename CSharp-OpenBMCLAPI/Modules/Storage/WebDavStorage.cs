@@ -1,6 +1,4 @@
 ﻿using CSharpOpenBMCLAPI.Modules.WebServer;
-using Newtonsoft.Json;
-using System;
 using TeraIO.Network.WebDav;
 
 namespace CSharpOpenBMCLAPI.Modules.Storage

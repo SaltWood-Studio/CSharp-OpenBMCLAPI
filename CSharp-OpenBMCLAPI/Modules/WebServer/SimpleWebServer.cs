@@ -1,17 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
-using System.Net;
-using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Threading.Tasks;
 using TeraIO.Runnable;
-using System.Text.RegularExpressions;
-using TeraIO.Extension;
-using System.Diagnostics;
 
 namespace CSharpOpenBMCLAPI.Modules.WebServer
 {

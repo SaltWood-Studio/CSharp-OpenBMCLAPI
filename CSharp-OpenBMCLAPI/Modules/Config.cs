@@ -1,6 +1,4 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Storage;
-using Newtonsoft.Json;
-using System.ComponentModel;
 using YamlDotNet.Serialization;
 
 namespace CSharpOpenBMCLAPI.Modules
@@ -57,7 +55,7 @@ namespace CSharpOpenBMCLAPI.Modules
         [YamlMember(Description = "[开发变量]\n指示是否进行节点上线", Order = 10)]
         public bool noEnable;
 
-        [YamlMember(Description ="指示缓存存储最大占用内存（MB 为单位）\n-1 为不限制，0 为禁用缓存存储", Order = 1)]
+        [YamlMember(Description = "指示缓存存储最大占用内存（MB 为单位）\n-1 为不限制，0 为禁用缓存存储", Order = 1)]
         public double maxCachedMemory;
 
         [YamlIgnore]

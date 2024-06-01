@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace CSharpOpenBMCLAPI.Modules.Statistician
+﻿namespace CSharpOpenBMCLAPI.Modules.Statistician
 {
     public struct AccessData
     {
