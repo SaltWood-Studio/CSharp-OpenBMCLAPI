@@ -404,7 +404,7 @@ namespace CSharpOpenBMCLAPI.Modules
                     this.IsEnabled = false;
                     if (this.WantEnable)
                     {
-                        Logger.Instance.LogError($"保活失败：{returns}，将在 10 分钟后重新上线");
+                        Logger.Instance.LogError($"保活失败：{resp}，将在 10 分钟后重新上线");
                         Task.Run(() =>
                         {
                             Thread.Sleep(10 * 60 * 1000);
