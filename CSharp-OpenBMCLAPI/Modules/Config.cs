@@ -58,7 +58,7 @@ namespace CSharpOpenBMCLAPI.Modules
         public bool noEnable;
 
         [YamlMember(Description ="指示缓存存储最大占用内存（MB 为单位）\n-1 为不限制，0 为禁用缓存存储", Order = 1)]
-        internal double maxCachedMemory;
+        public double maxCachedMemory;
 
         [YamlIgnore]
         public string cacheDirectory { get => Path.Combine(this.clusterWorkingDirectory, "cache"); }
