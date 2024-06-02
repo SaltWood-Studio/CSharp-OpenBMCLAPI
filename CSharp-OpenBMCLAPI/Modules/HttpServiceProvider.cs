@@ -17,7 +17,7 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             if (!ClusterRequiredData.Config.disableAccessLog)
             {
-                Logger.Instance.LogInfo($"{context.Request.Method} {context.Request.Path.Split('?').First()} <{context.Response.StatusCode}> - [{context.RemoteIPAddress}] {context.Request.Header.TryGetValue("user-agent")}");
+                Logger.Instance.LogInfo($"{context.Request.Method} {context.Request.Path.Split('?').First()} <{context.Response.StatusCode}> - [{context.RemoteIPAddress}] {context.Request.Headers.TryGetValue("user-agent")}");
             }
         }
 
@@ -79,11 +79,11 @@ namespace CSharpOpenBMCLAPI.Modules
                 long from, to;
                 try
                 {
-                    if (context.Request.Header.ContainsKey("range"))
+                    if (context.Request.Headers.ContainsKey("range"))
                     {
                         // 206 处理部分
                         context.Response.StatusCode = 206;
-                        (from, to) = ToRangeByte(context.Request.Header["range"].Split("=").Last().Split("-"));
+                        (from, to) = ToRangeByte(context.Request.Headers["range"].Split("=").Last().Split("-"));
                         if (to < from && to != -1) (from, to) = (to, from);
                         long length = 0;
 
