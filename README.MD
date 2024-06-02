@@ -91,8 +91,8 @@ ___
 **@2b2ttianxiu**
 - 帮忙写了 **SimpleWebServer**，代替了 ASP.NET 提供文件分发
 
-**@goblinfactory (Alan Hemmings)**
-- [Goblinfactory.Konsole](https://github.com/goblinfactory/konsole) 使用 Goblinfactory.Konsole 显示进度条
+**@Mpdreamz (Martijn Laarman)**
+- [shellprogressbar](https://github.com/Mpdreamz/shellprogressbar) 使用 shell progress bar 显示进度条
 
 # 友情链接
 

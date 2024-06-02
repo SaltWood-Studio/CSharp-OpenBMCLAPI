@@ -1,8 +1,8 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Plugin;
 using CSharpOpenBMCLAPI.Modules.Storage;
 using CSharpOpenBMCLAPI.Modules.WebServer;
-using Konsole;
 using Newtonsoft.Json;
+using ShellProgressBar;
 using SocketIOClient;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
@@ -357,8 +357,6 @@ namespace CSharpOpenBMCLAPI.Modules
                 (SocketIOResponse resp) =>
                 {
                     _keepAliveMessageParser(resp);
-                    //Utils.PrintResponseMessage(resp);
-                    //Logger.Instance.LogSystem($"保活成功 at {time}，served {Utils.GetLength(this.counter.bytes)}({this.counter.bytes} bytes)/{this.counter.hits} hits");
                     this.counter.Reset();
                 },
                 new
@@ -447,57 +445,24 @@ namespace CSharpOpenBMCLAPI.Modules
             }
 
             object countLock = new();
-            int count = 0;
 
-            var downloadProgress = Window.OpenBox("File download progress", Console.WindowWidth, 5, new BoxStyle()
+            var options = new ProgressBarOptions
             {
-                ThickNess = LineThickNess.Single,
-                Title = new Colors(ConsoleColor.White, ConsoleColor.Red)
-            });
-
-            var downloadMessage = Window.OpenBox("File download message", Console.WindowWidth, 10, new BoxStyle()
-            {
-                ThickNess = LineThickNess.Double,
-                Title = new Colors(ConsoleColor.White, ConsoleColor.Blue)
-            });
-
-            CancellationTokenSource source = new CancellationTokenSource();
-
-            _ = Task.Run(() =>
-            {
-                while (true)
-                {
-                    source.Token.ThrowIfCancellationRequested();
-                    int threadsTotal = this.requiredData.maxThreadCount;
-                    int threadsUsed = threadsTotal - this.requiredData.SemaphoreSlim.CurrentCount;
-                    downloadProgress.Clear();
-                    downloadProgress.Tick("Progress", count, files.Count, ConsoleColor.Green);
-                    downloadProgress.Tick("Threads", threadsUsed, threadsTotal, ConsoleColor.Red);
-                    Thread.Sleep(100);
-                }
-            }, source.Token);
-
-            _ = Task.Run(() =>
-            {
-                while (true)
-                {
-                    source.Token.ThrowIfCancellationRequested();
-                    GC.Collect();
-                    Thread.Sleep(10000);
-                }
-            }, source.Token);
+                ProgressCharacter = '─',
+                ProgressBarOnBottom = true,
+                ShowEstimatedDuration = true
+            };
+            using var pbar = new ProgressBar(files.Count, "Check files", options);
 
             Parallel.ForEach(files, file =>
             //foreach (var file in files)
             {
-                CheckSingleFile(file, downloadMessage);
+                CheckSingleFile(file);
                 lock (countLock)
                 {
-                    count++;
+                    pbar.Tick($"Threads: {requiredData.maxThreadCount - requiredData.SemaphoreSlim.CurrentCount}/{requiredData.maxThreadCount}");
                 }
             });
-
-            source.Cancel();
 
             files = null!;
             countLock = null!;
@@ -562,23 +527,22 @@ namespace CSharpOpenBMCLAPI.Modules
         /// 检查单个文件
         /// </summary>
         /// <param name="file"></param>
-        void CheckSingleFile(ApiFileInfo file, IConsole? console = null) => CheckSingleFile(file, ClusterRequiredData.Config.startupCheckMode, console);
+        void CheckSingleFile(ApiFileInfo file) => CheckSingleFile(file, ClusterRequiredData.Config.startupCheckMode);
 
         /// <summary>
         /// 检查单个文件，并且额外指定检查模式
         /// </summary>
         /// <param name="file"></param>
         /// <param name="mode"></param>
-        void CheckSingleFile(ApiFileInfo file, FileVerificationMode mode, IConsole? console = null)
+        void CheckSingleFile(ApiFileInfo file, FileVerificationMode mode)
         {
             string path = file.path;
             string hash = file.hash;
             long size = file.size;
-            DownloadFile(hash, path, false, console).Wait();
+            DownloadFile(hash, path, false).Wait();
             bool valid = VerifyFile(hash, size, mode);
             if (!valid)
             {
-                console?.WriteLine($"文件 {path} 损坏！期望哈希值为 {hash}");
                 DownloadFile(hash, path, true).Wait();
             }
         }
@@ -630,7 +594,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <param name="path"></param>
         /// <param name="force"></param>
         /// <returns></returns>
-        private async Task DownloadFile(string hash, string path, bool force = false, IConsole? console = null)
+        private async Task DownloadFile(string hash, string path, bool force = false)
         {
             string filePath = Utils.HashToFileName(hash);
             if (this.storage.Exists(filePath) && !force)
@@ -644,7 +608,6 @@ namespace CSharpOpenBMCLAPI.Modules
                 var resp = await this.client.GetAsync($"openbmclapi/download/{hash}");
                 this.storage.WriteFileStream(Utils.HashToFileName(hash), await resp.Content.ReadAsStreamAsync());
                 resp = null!;
-                console?.WriteLine($"文件 {path} 下载成功");
             }
             catch (Exception ex)
             {
