@@ -1,18 +1,18 @@
 ﻿<div align="center">
 
-![CSharp-OpenBMCLAPI](https://github.com/SALTWOOD/CSharp-OpenBMCLAPI/assets/105980161/20b4b593-4ab9-445b-8a4b-6e329aa041c2)
+![CSharp-OpenBMCLAPI](https://github.com/SaltWood-Studio/CSharp-OpenBMCLAPI/assets/105980161/20b4b593-4ab9-445b-8a4b-6e329aa041c2)
 
 # CSharp-OpenBMCLAPI
 🎉 [OpenBMCLAPI](https://github.com/bangbang93/openbmclapi) 的 C# 版本实现 🎉
 
-  <a href="https://raw.githubusercontent.com/Mrs4s/go-cqhttp/master/LICENSE">
-    <img src="https://img.shields.io/github/license/SALTWOOD/CSharp-OpenBMCLAPI" alt="license">
+  <a href="https://raw.githubusercontent.com/SaltWood-Studio/CSharp-OpenBMCLAPI/master/LICENSE">
+    <img src="https://img.shields.io/github/license/SaltWood-Studio/CSharp-OpenBMCLAPI" alt="license">
   </a>
-  <a href="https://github.com/Mrs4s/go-cqhttp/releases">
-    <img src="https://img.shields.io/github/v/release/SALTWOOD/CSharp-OpenBMCLAPI?color=blueviolet&include_prereleases" alt="release">
+  <a href="https://github.com/SaltWood-Studio/CSharp-OpenBMCLAPI/releases">
+    <img src="https://img.shields.io/github/v/release/SaltWood-Studio/CSharp-OpenBMCLAPI?color=blueviolet&include_prereleases" alt="release">
   </a>
-  <a href="https://github.com/SALTWOOD/CSharp-OpenBMCLAPI/actions">
-    <img src="https://github.com/SALTWOOD/CSharp-OpenBMCLAPI/workflows/.NET/badge.svg" alt="action">
+  <a href="https://github.com/SaltWood-Studio/CSharp-OpenBMCLAPI/actions">
+    <img src="https://github.com/SaltWood-Studio/CSharp-OpenBMCLAPI/workflows/.NET/badge.svg" alt="action">
   </a>
 </div>
 
@@ -25,7 +25,7 @@
 
 本项目是 [OpenBMCLAPI](https://github.com/bangbang93/openbmclapi) 的 C# 版本，OpenBMCLAPI 是通过分布式集群帮助 [BMCLAPI](https://bmclapidoc.bangbang93.com/) 进行文件分发、加速中国大陆 Minecraft 下载的公益项目。
 
-如果你想加入 OpenBMCLAPI，可以向 [bangbang93](https://github.com/bangbang93) 索取 `CLUSTER_ID` 和 `CLUSTER_SECRET`
+如果你想加入 OpenBMCLAPI，可以在 [OpenBMCLAPI-Dashboard](https://bd.bangbang93.com) 申请集群节点以获取 `CLUSTER_ID` 和 `CLUSTER_SECRET`
 
 # 贡献说明
 
@@ -47,6 +47,7 @@
 
 **(以下暂缓进行)**
 
+- [ ] 原生多实例运行
 - [ ] 继续优化插件功能
 - [ ] *[优先级低]* 高级控制台，在控制台中调整设置、查看监控信息而不只是看日志
 ___
@@ -77,7 +78,7 @@ ___
 - [SocketIOClient](https://github.com/doghappy/socket.io-client-csharp) - 使用 SocketIOClient 与主控通信
 
 **Apache**
-- [log4net](https://logging.apache.org/log4net) - 使用 log4net 记录日志（虽然目前没用到）
+- [log4net](https://logging.apache.org/log4net/) - 使用 log4net 记录日志（虽然目前没用到）
 
 **@oleg-st (Oleg Stepanischev)**
 - [ZstdSharp.Port](https://github.com/oleg-st/ZstdSharp) - 使用 ZstdSharp.Port 解压主控下发的压缩过的文件列表
@@ -90,9 +91,6 @@ ___
 
 **@2b2ttianxiu**
 - 帮忙写了 **SimpleWebServer**，代替了 ASP.NET 提供文件分发
-
-**@Mpdreamz (Martijn Laarman)**
-- [shellprogressbar](https://github.com/Mpdreamz/shellprogressbar) 使用 shell progress bar 显示进度条
 
 # 友情链接
 
