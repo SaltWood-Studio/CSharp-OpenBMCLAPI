@@ -48,6 +48,9 @@ namespace CSharpOpenBMCLAPI.Modules
 
         [YamlMember(Description = "[开发变量]\n指示是否不执行快速上线，若为 true 则每次都不执行", Order = 10)]
         public bool noFastEnable;
+        
+        [YamlMember(Description = "[开发变量]\n是否使用开发环境（需要自己模拟用户请求）", Order = 10)]
+        public bool StagingMode;
 
         [YamlMember(Description = "指示是否禁用访问日志输出", Order = 1)]
         public bool disableAccessLog;
@@ -84,6 +87,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
             this.disableAccessLog = false;
             this.noEnable = false;
+            this.StagingMode = false;
             this.storageUser = new StorageUser();
             this.maxCachedMemory = 1024;
             this.downloadFileThreads = 0;
