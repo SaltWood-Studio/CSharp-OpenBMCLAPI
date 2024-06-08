@@ -76,6 +76,11 @@ namespace CSharpOpenBMCLAPI.Modules
 
             if (valid && hash != null && s != null && e != null)
             {
+                if (!cluster.storage.Exists(Utils.HashToFileName(hash)))
+                {
+                    await cluster.FetchFileFromCenter(hash, force: true);
+                }
+
                 long from, to;
                 try
                 {

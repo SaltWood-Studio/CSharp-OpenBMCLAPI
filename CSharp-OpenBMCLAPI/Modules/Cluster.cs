@@ -154,12 +154,12 @@ namespace CSharpOpenBMCLAPI.Modules
                         cancellationSrc.Token.ThrowIfCancellationRequested();
                         Thread.Sleep(time);
                         cancellationSrc.Token.ThrowIfCancellationRequested();
-                        CheckFiles(skipCheck, FileVerificationMode.SizeOnly).Wait();
+                        FetchFiles(skipCheck, FileVerificationMode.SizeOnly).Wait();
                     }
                     cancellationSrc.Token.ThrowIfCancellationRequested();
                     Thread.Sleep(time);
                     cancellationSrc.Token.ThrowIfCancellationRequested();
-                    CheckFiles(skipCheck, FileVerificationMode.Hash).Wait();
+                    FetchFiles(skipCheck, FileVerificationMode.Hash).Wait();
                 }
             }, cancellationSrc.Token);
 
@@ -460,7 +460,48 @@ namespace CSharpOpenBMCLAPI.Modules
                 CheckSingleFile(file);
                 lock (countLock)
                 {
-                    pbar.Tick($"Threads: {requiredData.maxThreadCount - requiredData.SemaphoreSlim.CurrentCount}/{requiredData.maxThreadCount}");
+                    pbar.Tick($"Threads: {requiredData.maxThreadCount - requiredData.SemaphoreSlim.CurrentCount}/{requiredData.maxThreadCount}, Files: {pbar.CurrentTick}/{files.Count}");
+                }
+            });
+
+            files = null!;
+            countLock = null!;
+        }
+
+        /// <summary>
+        /// 获取文件列表、检查文件、下载文件部分
+        /// </summary>
+        /// <returns></returns>
+        protected async Task FetchFiles(bool skipCheck, FileVerificationMode mode)
+        {
+            if (skipCheck || mode == FileVerificationMode.None)
+            {
+                return;
+            }
+            Logger.Instance.LogDebug($"文件检查策略：{mode}");
+            var updatedFiles = await GetFileList(this.files);
+            if (updatedFiles != null && updatedFiles.Count != 0)
+            {
+                this.files = updatedFiles;
+            }
+
+            object countLock = new();
+
+            var options = new ProgressBarOptions
+            {
+                ProgressCharacter = '─',
+                ProgressBarOnBottom = true,
+                ShowEstimatedDuration = true
+            };
+            using var pbar = new ProgressBar(files.Count, "Fetch files", options);
+
+            Parallel.ForEach(files, file =>
+            //foreach (var file in files)
+            {
+                FetchFileFromCenter(file.hash).Wait();
+                lock (countLock)
+                {
+                    pbar.Tick($"Threads: {requiredData.maxThreadCount - requiredData.SemaphoreSlim.CurrentCount}/{requiredData.maxThreadCount}, Files: {pbar.CurrentTick}/{files.Count}");
                 }
             });
 
@@ -539,7 +580,6 @@ namespace CSharpOpenBMCLAPI.Modules
             string path = file.path;
             string hash = file.hash;
             long size = file.size;
-            DownloadFile(hash, path, false).Wait();
             bool valid = VerifyFile(hash, size, mode);
             if (!valid)
             {
@@ -594,7 +634,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <param name="path"></param>
         /// <param name="force"></param>
         /// <returns></returns>
-        private async Task DownloadFile(string hash, string path, bool force = false)
+        internal async Task FetchFileFromCenter(string hash, bool force = false)
         {
             string filePath = Utils.HashToFileName(hash);
             if (this.storage.Exists(filePath) && !force)
@@ -609,10 +649,36 @@ namespace CSharpOpenBMCLAPI.Modules
                 this.storage.WriteFileStream(Utils.HashToFileName(hash), await resp.Content.ReadAsStreamAsync());
                 resp = null!;
             }
-            catch (Exception ex)
+            catch (Exception) { }
+            finally
             {
-                Logger.Instance.LogError($"文件 {path} 下载失败：{ex.ExceptionToDetail()}");
+                this.requiredData.SemaphoreSlim.Release();
             }
+        }
+
+        /// <summary>
+        /// 根据哈希值从主控拉取文件
+        /// </summary>
+        /// <param name="hash"></param>
+        /// <param name="force"></param>
+        /// <returns></returns>
+        internal async Task DownloadFile(string hash, string path, bool force = false)
+        {
+            string filePath = Utils.HashToFileName(hash);
+            if (this.storage.Exists(filePath) && !force)
+            {
+                return;
+            }
+
+            this.requiredData.SemaphoreSlim.Wait();
+            try
+            {
+                HttpClient client = new HttpClient();
+                var resp = await client.GetAsync($"https://bmclapi2.bangbang93.com{path}");
+                this.storage.WriteFileStream(Utils.HashToFileName(hash), await resp.Content.ReadAsStreamAsync());
+                resp = null!;
+            }
+            catch (Exception) { }
             finally
             {
                 this.requiredData.SemaphoreSlim.Release();
