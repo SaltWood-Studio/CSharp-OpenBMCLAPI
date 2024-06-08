@@ -124,18 +124,6 @@ namespace CSharpOpenBMCLAPI.Modules
 
             await RequestCertification();
 
-            Logger.Instance.LogInfo($"{nameof(AsyncRun)} 正在等待证书请求……");
-
-            while (!ClusterRequiredData.Config.noEnable)
-            {
-                if (File.Exists(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/key.pem")) &&
-                    File.Exists(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pem")))
-                {
-                    break;
-                }
-                Thread.Sleep(200);
-            }
-
             InitializeService();
 
             if (!ClusterRequiredData.Config.noEnable) await Enable();
@@ -700,8 +688,7 @@ namespace CSharpOpenBMCLAPI.Modules
             }
             string certPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pem");
             string keyPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/key.pem");
-            string pfxPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pfx");
-            if (File.Exists(pfxPath)) File.Delete(pfxPath);
+
             Directory.CreateDirectory(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications"));
             await socket.EmitAsync("request-cert", (SocketIOResponse resp) =>
             {
@@ -712,9 +699,6 @@ namespace CSharpOpenBMCLAPI.Modules
 
                 string? certString = cert.GetString();
                 string? keyString = key.GetString();
-
-                File.Delete(certPath);
-                File.Delete(keyPath);
 
                 using (var file = File.Create(certPath))
                 {
