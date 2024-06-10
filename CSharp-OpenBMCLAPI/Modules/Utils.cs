@@ -68,12 +68,15 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         public static async Task ExitCluster(Cluster cluster)
         {
+            await cluster.Disable();
+            await cluster.KeepAlive();
             cluster.WantEnable = false;
             cluster.cancellationSrc.Cancel();
-            await cluster.KeepAlive();
-            Thread.Sleep(1000);
-            await cluster.Disable();
-            cluster.IsEnabled = false;
+            while (true)
+            {
+                if (!cluster.IsEnabled) return;
+                Thread.Sleep(100);
+            }
         }
 
         /// <summary>
