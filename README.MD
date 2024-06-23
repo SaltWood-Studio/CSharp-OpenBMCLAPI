@@ -1,6 +1,6 @@
 ﻿<div align="center">
 
-![CSharp-OpenBMCLAPI](https://github.com/SaltWood-Studio/CSharp-OpenBMCLAPI/assets/105980161/20b4b593-4ab9-445b-8a4b-6e329aa041c2)
+![CSharp-OpenBMCLAPI](https://github.com/SaltWood-Studio/CSharp-OpenBMCLAPI/assets/113306265/03b4f2b6-37cc-4b20-bad6-fef0e1c0add4)
 
 # CSharp-OpenBMCLAPI
 🎉 [OpenBMCLAPI](https://github.com/bangbang93/openbmclapi) 的 C# 版本实现 🎉
