@@ -717,7 +717,11 @@ namespace CSharpOpenBMCLAPI.Modules
                     await this.client.PostAsJsonAsync("openbmclapi/report", new
                     {
                         urls = urls,
-                        error = ex.ExceptionToDetail()
+                        error = JsonConvert.SerializeObject(new
+                        {
+                            message = ex.Message,
+                            type = ex.GetType().FullName
+                        })
                     });
                 }
                 catch { }
