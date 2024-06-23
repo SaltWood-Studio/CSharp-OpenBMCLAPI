@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using ShellProgressBar;
 using SocketIOClient;
 using System.Net;
+using System.Net.Http.Json;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
@@ -644,6 +645,50 @@ namespace CSharpOpenBMCLAPI.Modules
             }
         }
 
+        internal (HttpResponseMessage?, List<string>) GetRedirectUrls(string url)
+        {
+            var redirectUrls = new List<string>();
+            HttpResponseMessage? response = null;
+            HttpClient requestClient = new HttpClient(new HttpClientHandler
+            {
+                AllowAutoRedirect = false
+            });
+
+            try
+            {
+                string currentUrl = url;
+                while (true)
+                {
+                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, currentUrl);
+
+                    response = requestClient.Send(request);
+
+                    // 检查响应状态码
+                    if ((int)response.StatusCode >= 300 && (int)response.StatusCode < 400)
+                    {
+                        // 获取重定向的URL
+                        response.Headers.TryGetValues("Location", out IEnumerable<string>? _values);
+                        string? redirectUrl = _values?.FirstOrDefault();
+                        if (string.IsNullOrEmpty(redirectUrl))
+                        {
+                            break;
+                        }
+
+                        redirectUrls.Add(redirectUrl);
+                        currentUrl = redirectUrl; // 更新URL以继续跟踪重定向
+                    }
+                    else
+                    {
+                        // 如果不是3xx状态码，返回最终的响应
+                        break;
+                    }
+                }
+                return (response, redirectUrls);
+            }
+            catch { }
+            return (response, redirectUrls);
+        }
+
         /// <summary>
         /// 根据哈希值从主控拉取文件
         /// </summary>
@@ -659,14 +704,24 @@ namespace CSharpOpenBMCLAPI.Modules
             }
 
             this.requiredData.SemaphoreSlim.Wait();
+            HttpResponseMessage? resp = null;
+            List<string> urls = new List<string>();
             try
             {
-                HttpClient client = new HttpClient();
-                var resp = await client.GetAsync($"https://bmclapi2.bangbang93.com{path}");
-                this.storage.WriteFileStream(Utils.HashToFileName(hash), await resp.Content.ReadAsStreamAsync());
-                resp = null!;
+                (resp, urls) = GetRedirectUrls($"https://bmclapi2.bangbang93.com{path}");
             }
-            catch (Exception) { }
+            catch (Exception ex)
+            {
+                try
+                {
+                    await this.client.PostAsJsonAsync("openbmclapi/report", new
+                    {
+                        urls = urls,
+                        error = ex.ExceptionToDetail()
+                    });
+                }
+                catch { }
+            }
             finally
             {
                 this.requiredData.SemaphoreSlim.Release();
