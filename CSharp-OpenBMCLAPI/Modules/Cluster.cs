@@ -57,21 +57,15 @@ namespace CSharpOpenBMCLAPI.Modules
             this.storage = new FileStorage(ClusterRequiredData.Config.clusterFileDirectory);
             this.files = new List<ApiFileInfo>();
             this.counter = new();
-            InitializeSocket();
-
-            // 用来规避构造函数退出时巴拉巴拉的提示
-            if (this.socket == null)
-            {
-                throw new Exception("Impossible! \"socket\" field is still null.");
-            }
+            this.socket = InitializeSocket();
         }
 
         /// <summary>
         /// 初始化连接到主控用的 Socket
         /// </summary>
-        protected void InitializeSocket()
+        protected SocketIOClient.SocketIO InitializeSocket()
         {
-            this.socket = new(HttpRequest.client.BaseAddress?.ToString(), new SocketIOOptions()
+            return new(HttpRequest.client.BaseAddress?.ToString(), new SocketIOOptions()
             {
                 Transport = SocketIOClient.Transport.TransportProtocol.WebSocket,
                 Auth = new
