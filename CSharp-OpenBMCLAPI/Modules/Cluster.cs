@@ -67,7 +67,6 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             return new(HttpRequest.client.BaseAddress?.ToString(), new SocketIOOptions()
             {
-                Transport = SocketIOClient.Transport.TransportProtocol.WebSocket,
                 Auth = new
                 {
                     token = this.token.Token.token
