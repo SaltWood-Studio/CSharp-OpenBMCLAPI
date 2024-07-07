@@ -120,7 +120,7 @@ namespace CSharpOpenBMCLAPI.Modules.Statistician
                 IPGlobalProperties properti = IPGlobalProperties.GetIPGlobalProperties();
                 var tcps = properti.GetActiveTcpConnections();
 
-                var list = tcps.Where(f => f.LocalEndPoint.Port == ClusterRequiredData.Config.PORT);
+                var list = tcps.Where(f => f.LocalEndPoint.Port == ClusterRequiredData.Config.PORT && f.State == TcpState.Established);
 
                 var iplist = list.GroupBy(f => f.RemoteEndPoint.Address);
                 return iplist.Count();
