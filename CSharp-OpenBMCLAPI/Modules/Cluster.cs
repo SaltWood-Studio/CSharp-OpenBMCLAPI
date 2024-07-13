@@ -446,7 +446,6 @@ namespace CSharpOpenBMCLAPI.Modules
                 }
             });
 
-            files = null!;
             countLock = null!;
         }
 
@@ -702,6 +701,8 @@ namespace CSharpOpenBMCLAPI.Modules
             try
             {
                 (resp, urls) = GetRedirectUrls($"https://bmclapi2.bangbang93.com{path}");
+                if (resp == null) throw new Exception("Response is null.");
+                this.storage.WriteFileStream(Utils.HashToFileName(hash), await resp.Content.ReadAsStreamAsync());
             }
             catch (Exception ex)
             {
