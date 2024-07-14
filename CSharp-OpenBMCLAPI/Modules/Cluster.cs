@@ -106,6 +106,7 @@ namespace CSharpOpenBMCLAPI.Modules
             int returns = 0;
 
             this.storage.Initialize();
+            InitializeService();
 
             // 检查文件
             // if (!ClusterRequiredData.Config.noEnable)
@@ -118,7 +119,6 @@ namespace CSharpOpenBMCLAPI.Modules
 
             await RequestCertification();
 
-            InitializeService();
 
             if (!ClusterRequiredData.Config.noEnable) await Enable();
 

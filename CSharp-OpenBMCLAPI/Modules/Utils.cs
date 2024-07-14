@@ -216,8 +216,8 @@ namespace CSharpOpenBMCLAPI.Modules
             var sha1 = SHA1.Create();
             var sign = ToUrlSafeBase64String(sha1.ComputeHash(Encoding.UTF8.GetBytes($"{secret}{hash}{e}")));
             var timestamp = DateTimeOffset.Now.ToUnixTimeSeconds();
-            var a = timestamp < (ToDecimal(e) / 100);
-            return sign == s && timestamp < (ToDecimal(e) / 100);
+            var a = timestamp < (ToDecimal(e) / 1000);
+            return sign == s && timestamp < (ToDecimal(e) / 1000);
         }
 
         public static bool IsAdministrator()
