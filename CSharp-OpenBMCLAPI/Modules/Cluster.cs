@@ -1,6 +1,8 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Plugin;
 using CSharpOpenBMCLAPI.Modules.Storage;
-using CSharpOpenBMCLAPI.Modules.WebServer;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using ShellProgressBar;
 using SocketIOClient;
@@ -12,6 +14,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using TeraIO.Runnable;
 using ZstdSharp;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
@@ -35,6 +38,7 @@ namespace CSharpOpenBMCLAPI.Modules
         public CancellationTokenSource cancellationSrc = new CancellationTokenSource();
         internal ClusterRequiredData requiredData;
         internal List<ApiFileInfo> files;
+        protected WebApplication? application;
 
         //List<Task> tasks = new List<Task>();
 
@@ -169,38 +173,28 @@ namespace CSharpOpenBMCLAPI.Modules
         /// </summary>
         private void InitializeService()
         {
-            X509Certificate2 cert = LoadAndConvertCert();
-            SimpleWebServer server = new(ClusterRequiredData.Config.PORT, cert, this);//cert);
+            X509Certificate2? cert = LoadAndConvertCert();
+            WebApplicationBuilder builder = WebApplication.CreateBuilder();
+            builder.WebHost.UseKestrel(options =>
+            {
+                options.ListenAnyIP(9388, cert != null ? configure =>
+                {
+                    configure.UseHttps(cert);
+                }
+                : configure => { });
+            });
+            application = builder.Build();
 
             // 下载路由
-            server.routes.Add(new Route
+            application.MapGet("/download/{hash}", (HttpContext context, string hash) =>
             {
-                MatchRegex = new Regex(@"/download/[0-9a-fA-F]{32,40}?.*"),
-                ConditionExpressions =
-                {
-                    (path) => path.Contains("s=") && path.Contains("e=")
-                },
-                Handler = (context, cluster, Match) =>
-                {
-                    FileAccessInfo fai = HttpServiceProvider.DownloadHash(context, cluster).Result;
-                    this.counter.Add(fai);
-                }
+                FileAccessInfo fai = HttpServiceProvider.DownloadHash(context, this).Result;
+                this.counter.Add(fai);
+                return Task.CompletedTask;
             });
 
             // 测速路由
-            server.routes.Add(new Route
-            {
-                MatchRegex = new Regex(@"/measure/\d"),
-                Handler = (context, cluster, match) => HttpServiceProvider.Measure(context, cluster).Wait()
-            });
-
-            // API 数据
-            server.routes.Add(new Route
-            {
-                MatchRegex = new Regex(@"/api/(.*)"),
-                Handler = (context, cluster, match) => HttpServiceProvider.Api(context, match.Groups[1].Value, this).Wait(),
-                Methods = "GET"
-            });
+            application.MapGet("/measure", (context) => HttpServiceProvider.Measure(context, this));
 
             // 因为暂时禁用面板而注释掉
 
@@ -218,7 +212,7 @@ namespace CSharpOpenBMCLAPI.Modules
             //     Handler = (context, cluster, match) => HttpServiceProvider.Dashboard(context).Wait()
             // });
 
-            server.Start();
+            application.RunAsync();
         }
 
         /// <summary>

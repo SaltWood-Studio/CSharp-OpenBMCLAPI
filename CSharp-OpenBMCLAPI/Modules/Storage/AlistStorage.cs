@@ -1,4 +1,4 @@
-﻿using CSharpOpenBMCLAPI.Modules.WebServer;
+﻿using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using System.Net.Http.Json;
 
@@ -91,8 +91,8 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
         {
             string url = GetAbsolutePath(hashPath);
             context.Response.StatusCode = 302;
-            context.Response.Header["Location"] = url;
-            await context.Response.WriteAsync(Array.Empty<byte>());
+            context.Response.Headers["Location"] = url;
+            await context.Response.Body.WriteAsync(Array.Empty<byte>());
             return new FileAccessInfo
             {
                 hits = 1,

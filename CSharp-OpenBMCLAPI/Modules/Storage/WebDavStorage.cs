@@ -1,4 +1,4 @@
-﻿using CSharpOpenBMCLAPI.Modules.WebServer;
+﻿using Microsoft.AspNetCore.Http;
 using TeraIO.Network.WebDav;
 
 namespace CSharpOpenBMCLAPI.Modules.Storage
@@ -63,8 +63,8 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
         {
             string file = GetAbsolutePath(hashPath);
             context.Response.StatusCode = 302;
-            context.Response.Header["Location"] = this.client.GetFileDownloadLink(file);
-            await context.Response.WriteAsync(Array.Empty<byte>());
+            context.Response.Headers["Location"] = this.client.GetFileDownloadLink(file);
+            await context.Response.Body.WriteAsync(Array.Empty<byte>());
             return new FileAccessInfo
             {
                 hits = 1,

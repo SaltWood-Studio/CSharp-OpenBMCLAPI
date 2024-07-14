@@ -14,9 +14,9 @@
                 BaseAddress = ClusterRequiredData.Config.StagingMode ?
                     new Uri("https://openbmclapi.staging.bangbang93.com/") :
                     new Uri("https://openbmclapi.bangbang93.com/"),
-                
 
-        };
+
+            };
             // 添加UserAgent，用于标识请求来源
             client.DefaultRequestHeaders.UserAgent.Add(new("openbmclapi-cluster", ClusterRequiredData.Config.clusterVersion));
         }

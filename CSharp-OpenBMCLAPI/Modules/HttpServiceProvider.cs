@@ -1,6 +1,7 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Plugin;
 using CSharpOpenBMCLAPI.Modules.Storage;
-using CSharpOpenBMCLAPI.Modules.WebServer;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 
 namespace CSharpOpenBMCLAPI.Modules
@@ -17,7 +18,8 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             if (!ClusterRequiredData.Config.disableAccessLog)
             {
-                Logger.Instance.LogInfo($"{context.Request.Method} {context.Request.Path.Split('?').First()} <{context.Response.StatusCode}> - [{context.RemoteIPAddress}] {context.Request.Headers.TryGetValue("user-agent")}");
+                context.Request.Headers.TryGetValue("user-agent", out StringValues value);
+                Logger.Instance.LogInfo($"{context.Request.Method} {context.Request.Path.Value} <{context.Response.StatusCode}> - [{context.Connection.RemoteIpAddress}] {value.FirstOrDefault()}");
             }
         }
 
@@ -29,8 +31,8 @@ namespace CSharpOpenBMCLAPI.Modules
         public static async Task Measure(HttpContext context, Cluster cluster)
         {
             PluginManager.Instance.TriggerHttpEvent(context, HttpEventType.ClientMeasure);
-            var pairs = Utils.GetQueryStrings(context.Request.Path.Split('?').Last());
-            bool valid = Utils.CheckSign(context.Request.Path.Split('?').First()
+            var pairs = Utils.GetQueryStrings(context.Request.Path.Value?.Split('?').Last());
+            bool valid = Utils.CheckSign(context.Request.Path.Value?.Split('?').First()
                 , cluster.requiredData.ClusterInfo.ClusterSecret
                 , pairs.GetValueOrDefault("s")
                 , pairs.GetValueOrDefault("e")
@@ -39,14 +41,13 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 context.Response.StatusCode = 200;
                 byte[] buffer = new byte[1024];
-                for (int i = 0; i < Convert.ToInt32(context.Request.Path.Split('/').Last().Split('?').First()); i++)
+                for (int i = 0; i < Convert.ToInt32(context.Request.Path.Value?.Split('/').Last().Split('?').First()); i++)
                 {
                     for (int j = 0; j < 1024; j++)
                     {
-                        await context.Response.Stream.WriteAsync(buffer);
+                        await context.Response.Body.WriteAsync(buffer);
                     }
                 }
-                context.Response.ResetStreamPosition();
             }
             else
             {
@@ -67,8 +68,8 @@ namespace CSharpOpenBMCLAPI.Modules
             PluginManager.Instance.TriggerHttpEvent(context, HttpEventType.ClientDownload);
             // 处理用户下载
             FileAccessInfo fai = default;
-            var pairs = Utils.GetQueryStrings(context.Request.Path.Split('?').Last());
-            string? hash = context.Request.Path.Split('/').LastOrDefault()?.Split('?').First();
+            var pairs = Utils.GetQueryStrings(context.Request.Path.Value?.Split('?').Last());
+            string? hash = context.Request.Path.Value?.Split('/').LastOrDefault()?.Split('?').First();
             string? s = pairs.GetValueOrDefault("s");
             string? e = pairs.GetValueOrDefault("e");
 
@@ -88,7 +89,7 @@ namespace CSharpOpenBMCLAPI.Modules
                     {
                         // 206 处理部分
                         context.Response.StatusCode = 206;
-                        (from, to) = ToRangeByte(context.Request.Headers["range"].Split("=").Last().Split("-"));
+                        (from, to) = ToRangeByte(context.Request.Headers["range"].FirstOrDefault()?.Split("=").Last().Split("-"));
                         if (to < from && to != -1) (from, to) = (to, from);
                         long length = 0;
 
@@ -97,25 +98,25 @@ namespace CSharpOpenBMCLAPI.Modules
                             if (to == -1) to = file.Length;
 
                             length = (to - from + 1);
-                            context.Response.Header["Content-Length"] = length.ToString();
+                            context.Response.Headers["Content-Length"] = length.ToString();
 
                             file.Seek(from, SeekOrigin.Begin);
                             byte[] buffer = new byte[4096];
                             for (; file.Position < to;)
                             {
                                 int count = file.Read(buffer, 0, buffer.Length);
-                                if (file.Position > to && file.Position - count < to) context.Response.Stream.Write(buffer[..(int)(count - file.Position + to + 1)]);
-                                else if (count != buffer.Length) context.Response.Stream.Write(buffer[..(count)]);
-                                else context.Response.Stream.Write(buffer);
+                                if (file.Position > to && file.Position - count < to) await context.Response.Body.WriteAsync(buffer[..(int)(count - file.Position + to + 1)]);
+                                else if (count != buffer.Length) await context.Response.Body.WriteAsync(buffer[..(count)]);
+                                else await context.Response.Body.WriteAsync(buffer);
                             }
+                            context.Response.Headers["Content-Range"] = $"{from}-{to}/{file.Length}";
                         }
-                        context.Response.ResetStreamPosition();
 
-                        context.Response.Header["Content-Range"] = $"{from}-{to}/{context.Response.Stream.Length}";
-                        context.Response.Header["x-bmclapi-hash"] = hash;
-                        context.Response.Header["Accept-Ranges"] = "bytes";
-                        context.Response.Header["Content-Type"] = "application/octet-stream";
-                        context.Response.Header["Connection"] = "closed";
+
+                        context.Response.Headers["x-bmclapi-hash"] = hash;
+                        context.Response.Headers["Accept-Ranges"] = "bytes";
+                        context.Response.Headers["Content-Type"] = "application/octet-stream";
+                        context.Response.Headers["Connection"] = "closed";
                         fai = new FileAccessInfo
                         {
                             hits = 1,
@@ -126,14 +127,12 @@ namespace CSharpOpenBMCLAPI.Modules
                     else
                     {
                         fai = await cluster.storage.HandleRequest(Utils.HashToFileName(hash), context);
-                        context.Response.ResetStreamPosition();
                         ClusterRequiredData.DataStatistician.DownloadCount(fai);
                     }
                 }
                 catch (Exception ex)
                 {
                     Logger.Instance.LogError(ex.ExceptionToDetail());
-                    Logger.Instance.LogError(context.RemoteIPAddress);
                     Logger.Instance.LogError(context.Request.Path);
                     //Logger.Instance.LogError(ex.StackTrace);
                     context.Response.StatusCode = 404;
@@ -142,7 +141,7 @@ namespace CSharpOpenBMCLAPI.Modules
             else
             {
                 context.Response.StatusCode = 403;
-                context.Response.Header.Remove("Content-Length");
+                context.Response.Headers.Remove("Content-Length");
                 await context.Response.WriteAsync($"Access to \"{context.Request.Path}\" has been blocked due to your request timeout or invalidity.");
             }
             LogAccess(context);
@@ -166,8 +165,8 @@ namespace CSharpOpenBMCLAPI.Modules
         public static async Task Api(HttpContext context, string query, Cluster cluster)
         {
             PluginManager.Instance.TriggerHttpEvent(context, HttpEventType.ClientOtherRequest);
-            context.Response.Header.Set("content-type", "application/json");
-            context.Response.Header.Set("access-control-allow-origin", "*");
+            context.Response.Headers["content-type"] = "application/json";
+            context.Response.Headers["access-control-allow-origin"] = "*";
             context.Response.StatusCode = 200;
             switch (query)
             {
@@ -228,15 +227,6 @@ namespace CSharpOpenBMCLAPI.Modules
                     context.Response.StatusCode = 404;
                     break;
             }
-            context.Response.ResetStreamPosition();
-        }
-
-        public static Task Dashboard(HttpContext context, string filePath = "index.html")
-        {
-            PluginManager.Instance.TriggerHttpEvent(context, HttpEventType.ClientOtherRequest);
-            context.Response.StatusCode = 200;
-            context.Response.Stream = Utils.GetEmbeddedFileStream($"Dashboard/{filePath}").ThrowIfNull();
-            return Task.CompletedTask;
         }
     }
 }

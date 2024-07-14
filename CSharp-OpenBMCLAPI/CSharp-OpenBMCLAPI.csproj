@@ -21,6 +21,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\BangbangAsp\BangbangAsp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update=".env.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

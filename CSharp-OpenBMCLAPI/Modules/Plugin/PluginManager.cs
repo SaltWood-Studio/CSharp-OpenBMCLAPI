@@ -1,4 +1,4 @@
-﻿using CSharpOpenBMCLAPI.Modules.WebServer;
+﻿using Microsoft.AspNetCore.Http;
 using System.Diagnostics;
 
 namespace CSharpOpenBMCLAPI.Modules.Plugin

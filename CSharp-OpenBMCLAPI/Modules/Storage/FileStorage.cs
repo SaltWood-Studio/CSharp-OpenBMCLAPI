@@ -1,4 +1,4 @@
-﻿using CSharpOpenBMCLAPI.Modules.WebServer;
+﻿using Microsoft.AspNetCore.Http;
 using System.Text.RegularExpressions;
 
 namespace CSharpOpenBMCLAPI.Modules.Storage
@@ -105,7 +105,7 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
         public async Task<FileAccessInfo> HandleRequest(string hashPath, HttpContext context)
         {
             string filePath = GetAbsolutePath(hashPath);
-            await context.Response.SendFile(filePath);
+            await context.Response.SendFileAsync(filePath);
 
             FileInfo fileInfo = new FileInfo(filePath);
 
