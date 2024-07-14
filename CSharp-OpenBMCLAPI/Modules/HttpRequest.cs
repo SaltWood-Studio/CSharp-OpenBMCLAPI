@@ -10,6 +10,7 @@
         {
             client = new HttpClient()
             {
+                // BaseAddress = new Uri("http://saltwood.top:9393")
                 // 设置基础地址，根据配置文件中的StagingMode属性判断使用哪个地址
                 BaseAddress = ClusterRequiredData.Config.StagingMode ?
                     new Uri("https://openbmclapi.staging.bangbang93.com/") :

@@ -1,5 +1,4 @@
-﻿using CSharpOpenBMCLAPI.Modules.Plugin;
-using CSharpOpenBMCLAPI.Modules.Storage;
+﻿using CSharpOpenBMCLAPI.Modules.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -91,12 +90,10 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         public int Start()
         {
-            requiredData.PluginManager.TriggerEvent(this, ProgramEventType.ClusterStarted);
             // 工作进程启动
             Logger.Instance.LogSystem($"工作进程 {guid} 已启动");
             Task<int> task = AsyncRun();
             task.Wait();
-            requiredData.PluginManager.TriggerEvent(this, ProgramEventType.ClusterStopped);
             return task.Result;
         }
 
@@ -177,7 +174,7 @@ namespace CSharpOpenBMCLAPI.Modules
             WebApplicationBuilder builder = WebApplication.CreateBuilder();
             builder.WebHost.UseKestrel(options =>
             {
-                options.ListenAnyIP(9388, cert != null ? configure =>
+                options.ListenAnyIP(ClusterRequiredData.Config.PORT, cert != null ? configure =>
                 {
                     configure.UseHttps(cert);
                 }
@@ -186,15 +183,16 @@ namespace CSharpOpenBMCLAPI.Modules
             application = builder.Build();
 
             // 下载路由
-            application.MapGet("/download/{hash}", (HttpContext context, string hash) =>
+            application.MapGet("/download/{hash}", async (HttpContext context, string hash) =>
             {
-                FileAccessInfo fai = HttpServiceProvider.DownloadHash(context, this).Result;
+                FileAccessInfo fai = await HttpServiceProvider.DownloadHash(context, this, hash);
                 this.counter.Add(fai);
-                return Task.CompletedTask;
             });
 
             // 测速路由
-            application.MapGet("/measure", (context) => HttpServiceProvider.Measure(context, this));
+            application.MapGet("/measure/{size}", async (HttpContext context, int size) => await HttpServiceProvider.Measure(context, this, size));
+
+            application.MapGet("/api/{name}", async (HttpContext context, string name) => await HttpServiceProvider.Api(context, name, this));
 
             // 因为暂时禁用面板而注释掉
 

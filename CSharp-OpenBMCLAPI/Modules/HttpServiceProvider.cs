@@ -1,8 +1,8 @@
-﻿using CSharpOpenBMCLAPI.Modules.Plugin;
-using CSharpOpenBMCLAPI.Modules.Storage;
+﻿using CSharpOpenBMCLAPI.Modules.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
+using System;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
@@ -28,20 +28,20 @@ namespace CSharpOpenBMCLAPI.Modules
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        public static async Task Measure(HttpContext context, Cluster cluster)
+        public static async Task Measure(HttpContext context, Cluster cluster, int size)
         {
-            PluginManager.Instance.TriggerHttpEvent(context, HttpEventType.ClientMeasure);
-            var pairs = Utils.GetQueryStrings(context.Request.Path.Value?.Split('?').Last());
+            context.Request.Query.TryGetValue("s", out StringValues s);
+            context.Request.Query.TryGetValue("e", out StringValues e);
             bool valid = Utils.CheckSign(context.Request.Path.Value?.Split('?').First()
                 , cluster.requiredData.ClusterInfo.ClusterSecret
-                , pairs.GetValueOrDefault("s")
-                , pairs.GetValueOrDefault("e")
+                , s.FirstOrDefault()
+                , e.FirstOrDefault()
             );
             if (valid)
             {
                 context.Response.StatusCode = 200;
                 byte[] buffer = new byte[1024];
-                for (int i = 0; i < Convert.ToInt32(context.Request.Path.Value?.Split('/').Last().Split('?').First()); i++)
+                for (int i = 0; i < size; i++)
                 {
                     for (int j = 0; j < 1024; j++)
                     {
@@ -63,108 +63,96 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <param name="context"></param>
         /// <param name="storage"></param>
         /// <returns></returns>
-        public static async Task<FileAccessInfo> DownloadHash(HttpContext context, Cluster cluster)
+        public static async Task<FileAccessInfo> DownloadHash(HttpContext context, Cluster cluster, string hash)
         {
-            PluginManager.Instance.TriggerHttpEvent(context, HttpEventType.ClientDownload);
-            // 处理用户下载
-            FileAccessInfo fai = default;
-            var pairs = Utils.GetQueryStrings(context.Request.Path.Value?.Split('?').Last());
-            string? hash = context.Request.Path.Value?.Split('/').LastOrDefault()?.Split('?').First();
-            string? s = pairs.GetValueOrDefault("s");
-            string? e = pairs.GetValueOrDefault("e");
+            context.Request.Query.TryGetValue("s", out StringValues s);
+            context.Request.Query.TryGetValue("e", out StringValues e);
 
-            bool valid = Utils.CheckSign(hash, cluster.clusterInfo.ClusterSecret, s, e);
+            bool isValid = Utils.CheckSign(hash, cluster.clusterInfo.ClusterSecret, s.FirstOrDefault(), e.FirstOrDefault());
 
-            if (valid && hash != null && s != null && e != null)
+            if (!cluster.storage.Exists(Utils.HashToFileName(hash)))
             {
-                if (!cluster.storage.Exists(Utils.HashToFileName(hash)))
+                LogAccess(context);
+                context.Response.StatusCode = 404;
+            }
+
+            // 获取文件信息
+            using var stream = cluster.storage.ReadFileStream(Utils.HashToFileName(hash));
+            long fileSize = cluster.storage.GetFileSize(Utils.HashToFileName(hash));
+
+            // 检查是否支持断点续传
+            var isRangeRequest = context.Request.Headers.ContainsKey("Range");
+            if (isRangeRequest)
+            {
+                // 解析 Range 头部，获取断点续传的起始位置和结束位置
+                var rangeHeader = context.Request.Headers["Range"].ToString();
+                var (startByte, endByte) = GetRange(rangeHeader, fileSize);
+
+                // 设置响应头部
+                context.Response.StatusCode = 206; // Partial Content
+                context.Response.Headers.Append("Accept-Ranges", "bytes");
+                context.Response.Headers.Append("Content-Range", $"bytes {startByte}-{endByte}/{fileSize}");
+                // context.Response.Headers.Append("Content-Type", MimeTypesMap.GetMimeType(fullPath));
+                context.Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{Path.GetFileName(hash)}\"");
+
+                // 计算要读取的字节数
+                var totalBytesToRead = endByte - startByte + 1;
+
+                using (Stream file = cluster.storage.ReadFileStream(Utils.HashToFileName(hash)))
                 {
-                    await cluster.FetchFileFromCenter(hash, force: true);
-                }
+                    context.Response.Headers["Content-Length"] = totalBytesToRead.ToString();
 
-                long from, to;
-                try
-                {
-                    if (context.Request.Headers.ContainsKey("range"))
+                    file.Seek(startByte, SeekOrigin.Begin);
+                    byte[] buffer = new byte[4096];
+                    for (; file.Position < endByte;)
                     {
-                        // 206 处理部分
-                        context.Response.StatusCode = 206;
-                        (from, to) = ToRangeByte(context.Request.Headers["range"].FirstOrDefault()?.Split("=").Last().Split("-"));
-                        if (to < from && to != -1) (from, to) = (to, from);
-                        long length = 0;
-
-                        using (Stream file = cluster.storage.ReadFileStream(Utils.HashToFileName(hash)))
-                        {
-                            if (to == -1) to = file.Length;
-
-                            length = (to - from + 1);
-                            context.Response.Headers["Content-Length"] = length.ToString();
-
-                            file.Seek(from, SeekOrigin.Begin);
-                            byte[] buffer = new byte[4096];
-                            for (; file.Position < to;)
-                            {
-                                int count = file.Read(buffer, 0, buffer.Length);
-                                if (file.Position > to && file.Position - count < to) await context.Response.Body.WriteAsync(buffer[..(int)(count - file.Position + to + 1)]);
-                                else if (count != buffer.Length) await context.Response.Body.WriteAsync(buffer[..(count)]);
-                                else await context.Response.Body.WriteAsync(buffer);
-                            }
-                            context.Response.Headers["Content-Range"] = $"{from}-{to}/{file.Length}";
-                        }
-
-
-                        context.Response.Headers["x-bmclapi-hash"] = hash;
-                        context.Response.Headers["Accept-Ranges"] = "bytes";
-                        context.Response.Headers["Content-Type"] = "application/octet-stream";
-                        context.Response.Headers["Connection"] = "closed";
-                        fai = new FileAccessInfo
-                        {
-                            hits = 1,
-                            bytes = length
-                        };
-                        ClusterRequiredData.DataStatistician.DownloadCount(fai);
-                    }
-                    else
-                    {
-                        fai = await cluster.storage.HandleRequest(Utils.HashToFileName(hash), context);
-                        ClusterRequiredData.DataStatistician.DownloadCount(fai);
+                        int count = file.Read(buffer, 0, buffer.Length);
+                        if (file.Position > endByte && file.Position - count < endByte) await context.Response.Body.WriteAsync(buffer[..(int)(count - file.Position + endByte + 1)]);
+                        else if (count != buffer.Length) await context.Response.Body.WriteAsync(buffer[..(count)]);
+                        else await context.Response.Body.WriteAsync(buffer);
                     }
                 }
-                catch (Exception ex)
+                LogAccess(context);
+                return new FileAccessInfo
                 {
-                    Logger.Instance.LogError(ex.ExceptionToDetail());
-                    Logger.Instance.LogError(context.Request.Path);
-                    //Logger.Instance.LogError(ex.StackTrace);
-                    context.Response.StatusCode = 404;
-                }
+                    hits = 1,
+                    bytes = totalBytesToRead
+                };
             }
             else
             {
-                context.Response.StatusCode = 403;
-                context.Response.Headers.Remove("Content-Length");
-                await context.Response.WriteAsync($"Access to \"{context.Request.Path}\" has been blocked due to your request timeout or invalidity.");
+                // 设置响应头部
+                context.Response.Headers.Append("Accept-Ranges", "bytes");
+                context.Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{Path.GetFileName(hash)}\"");
+                //context.Response.Headers.Append("Content-Type", MimeTypesMap.GetMimeType(fullPath));
+                context.Response.Headers.Append("Content-Range", $"bytes {0}-{fileSize - 1}/{fileSize}");
+                LogAccess(context);
+                return await cluster.storage.HandleRequest(Utils.HashToFileName(hash), context);
             }
-            LogAccess(context);
-            return fai;
         }
 
-        private static (long from, long to) ToRangeByte(string[]? rangeHeader)
+
+        private static (long startByte, long endByte) GetRange(string rangeHeader, long fileSize)
         {
-            int from, to;
-            if (string.IsNullOrWhiteSpace(rangeHeader?.FirstOrDefault()))
-                from = 0;
-            else
-                from = Convert.ToInt32(rangeHeader?.FirstOrDefault());
-            if (string.IsNullOrWhiteSpace(rangeHeader?.LastOrDefault()))
-                to = -1;
-            else
-                to = Convert.ToInt32(rangeHeader?.LastOrDefault());
-            return (from, to);
+            if (rangeHeader.Length <= 6) return (0, fileSize);
+            var ranges = rangeHeader[6..].Split("-");
+            try
+            {
+                if (ranges[1].Length > 0)
+                {
+                    return (long.Parse(ranges[0]), long.Parse(ranges[1]));
+                }
+            }
+            catch (Exception)
+            {
+                return (long.Parse(ranges[0]), fileSize - 1);
+            }
+
+            return (long.Parse(ranges[0]), fileSize - 1);
         }
 
         public static async Task Api(HttpContext context, string query, Cluster cluster)
         {
-            PluginManager.Instance.TriggerHttpEvent(context, HttpEventType.ClientOtherRequest);
             context.Response.Headers["content-type"] = "application/json";
             context.Response.Headers["access-control-allow-origin"] = "*";
             context.Response.StatusCode = 200;
