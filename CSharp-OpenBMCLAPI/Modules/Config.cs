@@ -49,8 +49,6 @@ namespace CSharpOpenBMCLAPI.Modules
         [YamlMember(Description = "[开发变量]\n指示是否不执行快速上线，若为 true 则每次都不执行", Order = 10)]
         public bool noFastEnable;
 
-        [YamlMember(Description = "[开发变量]\n是否使用开发环境（需要自己模拟用户请求）", Order = 10)]
-        public bool StagingMode;
 
         [YamlMember(Description = "指示是否禁用访问日志输出", Order = 1)]
         public bool disableAccessLog;
@@ -63,6 +61,9 @@ namespace CSharpOpenBMCLAPI.Modules
 
         [YamlIgnore]
         public string cacheDirectory { get => Path.Combine(this.clusterWorkingDirectory, "cache"); }
+
+        [YamlMember(Description = "[开发变量]\n主控地址", Order = 10)]
+        public string CenterServerAddress { get; internal set; }
 
         [YamlMember(Description = "指示登录存储池需要的凭据，如果存储池不需要则可以忽略", Order = 1)]
         public StorageUser storageUser;
@@ -87,10 +88,10 @@ namespace CSharpOpenBMCLAPI.Modules
 
             this.disableAccessLog = false;
             this.noEnable = false;
-            this.StagingMode = false;
             this.storageUser = new StorageUser();
             this.maxCachedMemory = 1024;
             this.downloadFileThreads = 0;
+            this.CenterServerAddress = "https://openbmclapi.bangbang93.com/";
         }
     }
 }
