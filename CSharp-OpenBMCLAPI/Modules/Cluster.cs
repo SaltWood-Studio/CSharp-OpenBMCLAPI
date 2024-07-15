@@ -192,8 +192,6 @@ namespace CSharpOpenBMCLAPI.Modules
             // 测速路由
             application.MapGet("/measure/{size}", async (HttpContext context, int size) => await HttpServiceProvider.Measure(context, this, size));
 
-            application.MapGet("/api/{name}", async (HttpContext context, string name) => await HttpServiceProvider.Api(context, name, this));
-
             // 因为暂时禁用面板而注释掉
 
             // JS 文件提供
@@ -344,14 +342,6 @@ namespace CSharpOpenBMCLAPI.Modules
                     hits = this.counter.hits,
                     bytes = this.counter.bytes
                 });
-
-            using (var file = File.Create("totals.bson"))
-            {
-                lock (ClusterRequiredData.DataStatistician)
-                {
-                    file.Write(Utils.BsonSerializeObject(ClusterRequiredData.DataStatistician));
-                }
-            }
         }
 
         private void _keepAliveMessageParser(SocketIOResponse resp)

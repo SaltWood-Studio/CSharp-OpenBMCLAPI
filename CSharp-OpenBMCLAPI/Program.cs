@@ -1,5 +1,4 @@
 ﻿using CSharpOpenBMCLAPI.Modules;
-using CSharpOpenBMCLAPI.Modules.Statistician;
 using Newtonsoft.Json;
 using System.Reflection;
 using TeraIO.Runnable;
@@ -63,19 +62,6 @@ namespace CSharpOpenBMCLAPI
                 ClusterRequiredData.Config = GetConfig();
 
                 int returns = 0;
-
-                if (File.Exists(bsonFilePath))
-                {
-                    DataStatistician t = Utils.BsonDeserializeObject<DataStatistician>(File.ReadAllBytes(bsonFilePath)).ThrowIfNull();
-                    ClusterRequiredData.DataStatistician = t;
-                }
-                else
-                {
-                    using (var file = File.Create(bsonFilePath))
-                    {
-                        file.Write(Utils.BsonSerializeObject(ClusterRequiredData.DataStatistician));
-                    }
-                }
 
                 const string environment = "working/.env.json";
 
