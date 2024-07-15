@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -44,14 +45,13 @@ namespace CSharpOpenBMCLAPI.Modules
             // 生成 signature
             var signature = Convert.ToHexString(new HMACSHA256(Encoding.UTF8.GetBytes(CLUSTER_SECRET)).ComputeHash(Encoding.UTF8.GetBytes(challenge.challenge))).ToLower();
 
-            // 构建请求体
-            Dictionary<string, string> requestBody = new()
+            // 构造请求体
+            HttpContent httpContent = JsonContent.Create(new
             {
-                ["clusterId"] = CLUSTER_ID,
-                ["challenge"] = challenge.challenge,
-                ["signature"] = signature
-            };
-            HttpContent httpContent = new StringContent(JsonConvert.SerializeObject(requestBody), new MediaTypeHeaderValue("application/json"));
+                clusterId = CLUSTER_ID,
+                challenge.challenge,
+                signature
+            });
 
             resp = await client.PostAsync($"openbmclapi-agent/token", httpContent);
             string tokenJson = await resp.Content.ReadAsStringAsync();

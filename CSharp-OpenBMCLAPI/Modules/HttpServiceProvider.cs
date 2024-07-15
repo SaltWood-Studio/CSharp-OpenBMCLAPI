@@ -74,6 +74,7 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 LogAccess(context);
                 context.Response.StatusCode = 404;
+                return new FileAccessInfo();
             }
 
             // 获取文件信息

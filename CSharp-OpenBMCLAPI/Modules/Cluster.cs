@@ -219,10 +219,15 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns>
         /// 转换完成的 PFX 证书
         /// </returns>
-        protected X509Certificate2 LoadAndConvertCert()
+        protected X509Certificate2? LoadAndConvertCert()
         {
-            X509Certificate2 cert = X509Certificate2.CreateFromPemFile(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pem"),
+            (string certPath, string keyPath) = (Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pem"),
                 Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/key.pem"));
+            if (!File.Exists(certPath) || !File.Exists(keyPath))
+            {
+                return null;
+            }
+            X509Certificate2 cert = X509Certificate2.CreateFromPemFile(certPath, keyPath);
             //return cert;
             byte[] pfxCert = cert.Export(X509ContentType.Pfx);
             Logger.Instance.LogDebug($"将 PEM 格式的证书转换为 PFX 格式");
