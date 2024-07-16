@@ -121,7 +121,7 @@ namespace CSharpOpenBMCLAPI.Modules
             await RequestCertification();
 
 
-            if (!ClusterRequiredData.Config.noEnable) await Enable();
+            if (!ClusterRequiredData.Config.NoEnable) await Enable();
 
             Logger.Instance.LogSystem($"工作进程 {guid} 在 <{ClusterRequiredData.Config.HOST}:{ClusterRequiredData.Config.PORT}> 提供服务");
 
@@ -283,8 +283,8 @@ namespace CSharpOpenBMCLAPI.Modules
                 host = ClusterRequiredData.Config.HOST,
                 port = ClusterRequiredData.Config.PORT,
                 version = ClusterRequiredData.Config.clusterVersion,
-                byoc = ClusterRequiredData.Config.bringYourOwnCertficate,
-                noFastEnable = ClusterRequiredData.Config.noFastEnable,
+                byoc = ClusterRequiredData.Config.BringYourOwnCertficate,
+                noFastEnable = ClusterRequiredData.Config.NoFastEnable,
                 flavor = new
                 {
                     runtime = Utils.GetRuntime(),
@@ -386,7 +386,7 @@ namespace CSharpOpenBMCLAPI.Modules
             var content = await resp.Content.ReadAsStringAsync();
             this.Configuration = JsonConvert.DeserializeObject<Configuration>(content);
             Logger.Instance.LogDebug($"同步策略：{this.Configuration.Sync.Source}，线程数：{this.Configuration.Sync.Concurrency}");
-            this.requiredData.maxThreadCount = Math.Max(ClusterRequiredData.Config.downloadFileThreads, this.Configuration.Sync.Concurrency);
+            this.requiredData.maxThreadCount = Math.Max(ClusterRequiredData.Config.DownloadFileThreads, this.Configuration.Sync.Concurrency);
             this.requiredData.SemaphoreSlim = new SemaphoreSlim(this.requiredData.maxThreadCount);
         }
 
@@ -721,9 +721,9 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             // File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/cert.pem"));
             // File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/key.pem"));
-            if (ClusterRequiredData.Config.bringYourOwnCertficate)
+            if (ClusterRequiredData.Config.BringYourOwnCertficate)
             {
-                Logger.Instance.LogDebug($"{nameof(ClusterRequiredData.Config.bringYourOwnCertficate)} 为 true，跳过请求证书……");
+                Logger.Instance.LogDebug($"{nameof(ClusterRequiredData.Config.BringYourOwnCertficate)} 为 true，跳过请求证书……");
                 return;
             }
             string certPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pem");
