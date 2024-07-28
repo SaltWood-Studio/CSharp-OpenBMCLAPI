@@ -693,7 +693,13 @@ namespace CSharpOpenBMCLAPI.Modules
                 (resp, urls) = GetRedirectUrls(path[1..]);
                 if (resp == null) throw new Exception("Response is null.");
                 if (resp.StatusCode < HttpStatusCode.BadRequest && resp.StatusCode >= HttpStatusCode.OK)
-                this.storage.WriteFileStream(Utils.HashToFileName(hash), await resp.Content.ReadAsStreamAsync());
+                {
+                    this.storage.WriteFileStream(Utils.HashToFileName(hash), await resp.Content.ReadAsStreamAsync());
+                }
+                else
+                {
+                    throw new Exception($"Response code {resp.StatusCode}, 2xx or 3xx expected.");
+                }
             }
             catch (Exception ex)
             {
