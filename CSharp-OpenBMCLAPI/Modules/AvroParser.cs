@@ -35,6 +35,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 };
                 this._files.Add(file);
             }
+            this._stream.ReadByte();
             return this._files;
         }
 

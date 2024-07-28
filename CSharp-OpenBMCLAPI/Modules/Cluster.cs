@@ -631,7 +631,10 @@ namespace CSharpOpenBMCLAPI.Modules
             HttpClient requestClient = new HttpClient(new HttpClientHandler
             {
                 AllowAutoRedirect = false
-            });
+            })
+            {
+                BaseAddress = HttpRequest.client.BaseAddress
+            };
 
             try
             {
@@ -687,7 +690,7 @@ namespace CSharpOpenBMCLAPI.Modules
             List<string> urls = new List<string>();
             try
             {
-                (resp, urls) = GetRedirectUrls($"https://bmclapi2.bangbang93.com{path}");
+                (resp, urls) = GetRedirectUrls(path[1..]);
                 if (resp == null) throw new Exception("Response is null.");
                 this.storage.WriteFileStream(Utils.HashToFileName(hash), await resp.Content.ReadAsStreamAsync());
             }
