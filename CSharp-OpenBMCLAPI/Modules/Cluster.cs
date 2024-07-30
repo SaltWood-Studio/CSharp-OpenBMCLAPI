@@ -646,7 +646,7 @@ namespace CSharpOpenBMCLAPI.Modules
                     response = requestClient.Send(request);
 
                     // 检查响应状态码
-                    if ((int)response.StatusCode >= 300 && (int)response.StatusCode < 400)
+                    if (response.StatusCode < HttpStatusCode.BadRequest && response.StatusCode > HttpStatusCode.OK)
                     {
                         // 获取重定向的URL
                         response.Headers.TryGetValues("Location", out IEnumerable<string>? _values);
