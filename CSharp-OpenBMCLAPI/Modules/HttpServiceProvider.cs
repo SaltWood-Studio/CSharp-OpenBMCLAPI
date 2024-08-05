@@ -1,8 +1,6 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
-using Newtonsoft.Json;
-using System;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
@@ -40,6 +38,7 @@ namespace CSharpOpenBMCLAPI.Modules
             if (valid)
             {
                 context.Response.StatusCode = 200;
+                context.Response.Headers.ContentLength = size * 1024 * 1024;
                 byte[] buffer = new byte[1024];
                 for (int i = 0; i < size; i++)
                 {
@@ -127,6 +126,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 context.Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{Path.GetFileName(hash)}\"");
                 //context.Response.Headers.Append("Content-Type", MimeTypesMap.GetMimeType(fullPath));
                 context.Response.Headers.Append("Content-Range", $"bytes {0}-{fileSize - 1}/{fileSize}");
+                context.Response.ContentLength = fileSize;
                 LogAccess(context);
                 return await cluster.storage.HandleRequest(Utils.HashToFileName(hash), context);
             }

@@ -5,15 +5,14 @@ using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using ShellProgressBar;
 using SocketIOClient;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using TeraIO.Runnable;
 using ZstdSharp;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
