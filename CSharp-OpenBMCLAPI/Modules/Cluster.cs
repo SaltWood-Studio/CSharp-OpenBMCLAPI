@@ -624,7 +624,7 @@ namespace CSharpOpenBMCLAPI.Modules
             }
         }
 
-        internal (HttpResponseMessage?, List<string>) GetRedirectUrls(string url)
+        internal (HttpResponseMessage?, List<string>, Exception?) GetRedirectUrls(string url)
         {
             var redirectUrls = new List<string>();
             HttpResponseMessage? response = null;
@@ -665,10 +665,12 @@ namespace CSharpOpenBMCLAPI.Modules
                         break;
                     }
                 }
-                return (response, redirectUrls);
+                return (response, redirectUrls, null);
             }
-            catch { }
-            return (response, redirectUrls);
+            catch (Exception ex)
+            {
+                return (response, redirectUrls, ex);
+            }
         }
 
         /// <summary>
@@ -687,10 +689,12 @@ namespace CSharpOpenBMCLAPI.Modules
 
             this.requiredData.SemaphoreSlim.Wait();
             HttpResponseMessage? resp = null;
+            Exception? exception;
             List<string> urls = new List<string>();
             try
             {
-                (resp, urls) = GetRedirectUrls(path[1..]);
+                (resp, urls, exception) = GetRedirectUrls(path[1..]);
+                if (exception != null) throw new AggregateException(exception);
                 if (resp == null) throw new Exception("Response is null.");
                 if (resp.StatusCode < HttpStatusCode.BadRequest && resp.StatusCode >= HttpStatusCode.OK)
                 {
@@ -711,7 +715,9 @@ namespace CSharpOpenBMCLAPI.Modules
                         error = JsonConvert.SerializeObject(new
                         {
                             message = ex.Message,
-                            type = ex.GetType().FullName
+                            type = ex.GetType().FullName,
+                            fullMessage = ex.ExceptionToDetail(),
+                            stacktrace = ex.StackTrace
                         })
                     });
                 }
