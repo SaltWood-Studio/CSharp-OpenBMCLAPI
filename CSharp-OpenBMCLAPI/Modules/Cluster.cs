@@ -218,6 +218,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// </returns>
         protected X509Certificate2? LoadAndConvertCert()
         {
+            if (ClusterRequiredData.Config.NoCertificate) return null;
             (string certPath, string keyPath) = (Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pem"),
                 Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/key.pem"));
             if (!File.Exists(certPath) || !File.Exists(keyPath))

@@ -74,6 +74,9 @@ namespace CSharpOpenBMCLAPI.Modules
         [YamlMember(Description = "[开发变量]\n关闭签名校验", Order = 10)]
         public bool NoSignatureVerifying { get; internal set; }
 
+        [YamlMember(Description = "[开发变量]\n关闭证书（HTTP）", Order = 10)]
+        public bool NoCertificate { get; internal set; }
+
         public Config()
         {
             this.startupCheckMode = FileVerificationMode.SizeOnly;
@@ -96,6 +99,7 @@ namespace CSharpOpenBMCLAPI.Modules
             this.DownloadFileThreads = 0;
             this.CenterServerAddress = "https://openbmclapi.bangbang93.com/";
             this.NoSignatureVerifying = false;
+            this.NoCertificate = false;
         }
     }
 }
