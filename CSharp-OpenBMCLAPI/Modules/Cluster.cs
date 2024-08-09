@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Newtonsoft.Json;
 using ShellProgressBar;
 using SocketIOClient;
@@ -11,6 +12,7 @@ using System.Net.Http.Json;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
+using System.Threading.RateLimiting;
 using TeraIO.Runnable;
 using ZstdSharp;
 
@@ -175,11 +177,15 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 options.ListenAnyIP(ClusterRequiredData.Config.PORT, cert != null ? configure =>
                 {
+                    configure.Protocols = HttpProtocols.Http1AndHttp2AndHttp3;
                     configure.UseHttps(cert);
                 }
                 : configure => { });
             });
             application = builder.Build();
+
+            if (cert != null) application.UseHttpsRedirection();
+            application.UseRouting();
 
             // 下载路由
             application.MapGet("/download/{hash}", async (HttpContext context, string hash) =>

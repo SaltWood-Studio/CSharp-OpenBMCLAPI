@@ -17,7 +17,7 @@ namespace CSharpOpenBMCLAPI.Modules
             if (!ClusterRequiredData.Config.DisableAccessLog)
             {
                 context.Request.Headers.TryGetValue("user-agent", out StringValues value);
-                Logger.Instance.LogInfo($"{context.Request.Method} {context.Request.Path.Value} <{context.Response.StatusCode}> - [{context.Connection.RemoteIpAddress}] {value.FirstOrDefault()}");
+                Logger.Instance.LogInfo($"{context.Request.Method} {context.Request.Path.Value} {context.Request.Protocol} <{context.Response.StatusCode}> - [{context.Connection.RemoteIpAddress}] {value.FirstOrDefault()}");
             }
         }
 
