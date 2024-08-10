@@ -1,6 +1,7 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Storage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
+using System.Text;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
@@ -68,6 +69,14 @@ namespace CSharpOpenBMCLAPI.Modules
             context.Request.Query.TryGetValue("e", out StringValues e);
 
             bool isValid = Utils.CheckSign(hash, cluster.clusterInfo.ClusterSecret, s.FirstOrDefault(), e.FirstOrDefault());
+
+            if (!isValid)
+            {
+                LogAccess(context);
+                context.Response.StatusCode = 403;
+                await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes("Forbidden"));
+                return new FileAccessInfo();
+            }
 
             if (!cluster.storage.Exists(Utils.HashToFileName(hash)))
             {
