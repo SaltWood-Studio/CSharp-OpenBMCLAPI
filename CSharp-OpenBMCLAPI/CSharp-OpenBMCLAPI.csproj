@@ -12,7 +12,7 @@
     <PackageReference Include="log4net" Version="2.0.17" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Newtonsoft.Json.Bson" Version="1.0.2" />
-    <PackageReference Include="SaltWood.TeraIO" Version="1.0.4" />
+    <PackageReference Include="SaltWood.TeraIO" Version="1.1.0" />
     <PackageReference Include="ShellProgressBar" Version="5.2.0" />
     <PackageReference Include="SocketIOClient" Version="3.1.1" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />

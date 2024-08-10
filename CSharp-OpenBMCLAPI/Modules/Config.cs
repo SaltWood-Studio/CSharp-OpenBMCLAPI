@@ -32,6 +32,14 @@ namespace CSharpOpenBMCLAPI.Modules
         [YamlMember(Description = "指示节点的工作路径", Order = 1)]
         public string clusterWorkingDirectory;
 
+        [YamlMember(Description = """
+            节点存储模式，可用值：
+            - File，此时 clusterFileDirectory 为存储位置
+            - WebDav，此时 StorageUser 指示验证用户名和密码，clusterFileDirectory 填写 WebDav 地址
+            - Alist，此时 StorageUser 指示验证用户名和密码，clusterFileDirectory 填写 Alist 地址
+            """, Order = 1)]
+        public StorageType StorageType { get; set; }
+
         [YamlIgnore]
         [YamlMember(Description = "指示节点端的版本，不应由用户更改")]
         public string clusterVersion;
@@ -100,6 +108,8 @@ namespace CSharpOpenBMCLAPI.Modules
             this.CenterServerAddress = "https://openbmclapi.bangbang93.com/";
             this.NoSignatureVerifying = false;
             this.NoCertificate = false;
+
+            this.StorageType = StorageType.File;
         }
     }
 }

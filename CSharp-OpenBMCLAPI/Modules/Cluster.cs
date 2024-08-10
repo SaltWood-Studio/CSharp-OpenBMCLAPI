@@ -58,7 +58,21 @@ namespace CSharpOpenBMCLAPI.Modules
             client = HttpRequest.client;
             client.DefaultRequestHeaders.Authorization = new("Bearer", requiredData.Token?.Token.token);
 
-            this.storage = new FileStorage(ClusterRequiredData.Config.clusterFileDirectory);
+            switch (ClusterRequiredData.Config.StorageType)
+            {
+                case StorageType.File:
+                    this.storage = new FileStorage(ClusterRequiredData.Config.clusterFileDirectory);
+                    break;
+                case StorageType.WebDav:
+                    this.storage = new WebDavStorage();
+                    break;
+                case StorageType.Alist:
+                    this.storage = new AlistStorage();
+                    break;
+                default:
+                    throw new ArgumentException($"Argument out of range. {ClusterRequiredData.Config.StorageType}");
+            }
+            if (ClusterRequiredData.Config.maxCachedMemory != 0) this.storage = new CachedStorage(this.storage);
             this.files = new List<ApiFileInfo>();
             this.counter = new();
             this.socket = InitializeSocket();

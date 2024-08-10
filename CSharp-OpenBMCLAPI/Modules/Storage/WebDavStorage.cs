@@ -92,9 +92,9 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
             lock (writeLock) // 由于多线程会炸所以加一个互斥锁
             {
                 this.client.Delete(GetAbsolutePath(hashPath)).Wait();
-                this.client.Lock(GetAbsolutePath(hashPath)).Wait();
+                using WebDavFileLock fileLock = this.client.Lock(GetAbsolutePath(hashPath)).Result;
                 this.client.PutFile(GetAbsolutePath(hashPath), buffer).Wait();
-                this.client.Unlock(GetAbsolutePath(hashPath)).Wait();
+                this.client.Unlock(fileLock).Wait();
             }
         }
 
@@ -103,9 +103,9 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
             lock (writeLock) // 由于多线程会炸所以加一个互斥锁
             {
                 this.client.Delete(GetAbsolutePath(hashPath)).Wait();
-                this.client.Lock(GetAbsolutePath(hashPath)).Wait();
+                using WebDavFileLock fileLock = this.client.Lock(GetAbsolutePath(hashPath)).Result;
                 this.client.PutFile(GetAbsolutePath(hashPath), stream).Wait();
-                this.client.Unlock(GetAbsolutePath(hashPath)).Wait();
+                this.client.Unlock(fileLock).Wait();
             }
         }
     }
