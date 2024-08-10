@@ -184,9 +184,6 @@ namespace CSharpOpenBMCLAPI.Modules
             });
             application = builder.Build();
 
-            if (cert != null) application.UseHttpsRedirection();
-            application.UseRouting();
-
             // 下载路由
             application.MapGet("/download/{hash}", async (HttpContext context, string hash) =>
             {
