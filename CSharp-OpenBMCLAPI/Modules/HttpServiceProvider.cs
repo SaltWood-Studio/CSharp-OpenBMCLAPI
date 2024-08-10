@@ -86,13 +86,13 @@ namespace CSharpOpenBMCLAPI.Modules
             }
 
             // 获取文件信息
-            using var stream = cluster.storage.ReadFileStream(Utils.HashToFileName(hash));
             long fileSize = cluster.storage.GetFileSize(Utils.HashToFileName(hash));
 
             // 检查是否支持断点续传
             var isRangeRequest = context.Request.Headers.ContainsKey("Range");
             if (isRangeRequest)
             {
+                using var stream = cluster.storage.ReadFileStream(Utils.HashToFileName(hash));
                 // 解析 Range 头部，获取断点续传的起始位置和结束位置
                 var rangeHeader = context.Request.Headers["Range"].ToString();
                 var (startByte, endByte) = GetRange(rangeHeader, fileSize);
@@ -107,20 +107,18 @@ namespace CSharpOpenBMCLAPI.Modules
                 // 计算要读取的字节数
                 var totalBytesToRead = endByte - startByte + 1;
 
-                using (Stream file = cluster.storage.ReadFileStream(Utils.HashToFileName(hash)))
-                {
-                    context.Response.Headers["Content-Length"] = totalBytesToRead.ToString();
+                context.Response.Headers["Content-Length"] = totalBytesToRead.ToString();
 
-                    file.Seek(startByte, SeekOrigin.Begin);
-                    byte[] buffer = new byte[4096];
-                    for (; file.Position < endByte;)
-                    {
-                        int count = file.Read(buffer, 0, buffer.Length);
-                        if (file.Position > endByte && file.Position - count < endByte) await context.Response.Body.WriteAsync(buffer[..(int)(count - file.Position + endByte + 1)]);
-                        else if (count != buffer.Length) await context.Response.Body.WriteAsync(buffer[..(count)]);
-                        else await context.Response.Body.WriteAsync(buffer);
-                    }
+                stream.Seek(startByte, SeekOrigin.Begin);
+                byte[] buffer = new byte[4096];
+                for (; stream.Position < endByte;)
+                {
+                    int count = stream.Read(buffer, 0, buffer.Length);
+                    if (stream.Position > endByte && stream.Position - count < endByte) await context.Response.Body.WriteAsync(buffer[..(int)(count - stream.Position + endByte + 1)]);
+                    else if (count != buffer.Length) await context.Response.Body.WriteAsync(buffer[..(count)]);
+                    else await context.Response.Body.WriteAsync(buffer);
                 }
+                
                 LogAccess(context);
                 return new FileAccessInfo
                 {
@@ -140,7 +138,6 @@ namespace CSharpOpenBMCLAPI.Modules
                 return await cluster.storage.HandleRequest(Utils.HashToFileName(hash), context);
             }
         }
-
 
         private static (long startByte, long endByte) GetRange(string rangeHeader, long fileSize)
         {
