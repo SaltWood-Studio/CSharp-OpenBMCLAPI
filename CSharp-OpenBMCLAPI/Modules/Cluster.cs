@@ -119,7 +119,7 @@ namespace CSharpOpenBMCLAPI.Modules
             await CheckFiles();
             Logger.Instance.LogInfo();
 
-            await RequestCertification();
+            await Requestcertificate();
 
 
             if (!ClusterRequiredData.Config.NoEnable) await Enable();
@@ -225,8 +225,8 @@ namespace CSharpOpenBMCLAPI.Modules
         protected X509Certificate2? LoadAndConvertCert()
         {
             if (ClusterRequiredData.Config.NoCertificate) return null;
-            (string certPath, string keyPath) = (Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pem"),
-                Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/key.pem"));
+            (string certPath, string keyPath) = (Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certificates/cert.pem"),
+                Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certificates/key.pem"));
             if (!File.Exists(certPath) || !File.Exists(keyPath))
             {
                 return null;
@@ -235,7 +235,7 @@ namespace CSharpOpenBMCLAPI.Modules
             //return cert;
             byte[] pfxCert = cert.Export(X509ContentType.Pfx);
             Logger.Instance.LogDebug($"将 PEM 格式的证书转换为 PFX 格式");
-            using (var file = File.Create(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pfx")))
+            using (var file = File.Create(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certificates/cert.pfx")))
             {
                 file.Write(pfxCert);
             }
@@ -739,19 +739,19 @@ namespace CSharpOpenBMCLAPI.Modules
         /// 请求证书
         /// </summary>
         /// <returns></returns>
-        public async Task RequestCertification()
+        public async Task Requestcertificate()
         {
-            // File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/cert.pem"));
-            // File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certifications/key.pem"));
+            // File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certificates/cert.pem"));
+            // File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certificates/key.pem"));
             if (ClusterRequiredData.Config.BringYourOwnCertficate)
             {
                 Logger.Instance.LogDebug($"{nameof(ClusterRequiredData.Config.BringYourOwnCertficate)} 为 true，跳过请求证书……");
                 return;
             }
-            string certPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/cert.pem");
-            string keyPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications/key.pem");
+            string certPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certificates/cert.pem");
+            string keyPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certificates/key.pem");
 
-            Directory.CreateDirectory(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certifications"));
+            Directory.CreateDirectory(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certificates"));
             await socket.EmitAsync("request-cert", (SocketIOResponse resp) =>
             {
                 var data = resp;
