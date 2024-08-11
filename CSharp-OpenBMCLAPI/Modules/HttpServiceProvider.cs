@@ -122,8 +122,8 @@ namespace CSharpOpenBMCLAPI.Modules
                 LogAccess(context);
                 return new FileAccessInfo
                 {
-                    hits = 1,
-                    bytes = totalBytesToRead
+                    Hits = 1,
+                    Bytes = totalBytesToRead
                 };
             }
             else

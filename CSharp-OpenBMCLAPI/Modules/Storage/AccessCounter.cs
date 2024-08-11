@@ -5,9 +5,10 @@
     /// </summary>
     public struct AccessCounter
     {
-        public long hits;
-        public long bytes;
         private object objectLock;
+
+        public long Hits { get; private set; }
+        public long Bytes { get; private set; }
 
         public AccessCounter()
         {
@@ -22,8 +23,8 @@
         {
             lock (this.objectLock)
             {
-                hits += fai.hits;
-                bytes += fai.bytes;
+                Hits += fai.Hits;
+                Bytes += fai.Bytes;
             }
         }
 
@@ -32,8 +33,8 @@
         /// </summary>
         public void Reset()
         {
-            hits = 0;
-            bytes = 0;
+            Hits = 0;
+            Bytes = 0;
         }
     }
 }

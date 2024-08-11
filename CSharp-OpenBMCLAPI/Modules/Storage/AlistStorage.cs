@@ -95,8 +95,8 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
             await context.Response.Body.WriteAsync(Array.Empty<byte>());
             return new FileAccessInfo
             {
-                hits = 1,
-                bytes = GetFileSize(hashPath)
+                Hits = 1,
+                Bytes = GetFileSize(hashPath)
             };
         }
 

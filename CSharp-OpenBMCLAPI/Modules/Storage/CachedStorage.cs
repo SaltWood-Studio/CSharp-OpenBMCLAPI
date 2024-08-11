@@ -57,8 +57,8 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
                 this[hashPath] = new CachedFile(bytes);
                 return new FileAccessInfo
                 {
-                    hits = 1,
-                    bytes = bytes.LongLength
+                    Hits = 1,
+                    Bytes = bytes.LongLength
                 };
             }
             else
@@ -66,8 +66,8 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
                 await context.Response.Body.WriteAsync(this[hashPath].Content);
                 return new FileAccessInfo
                 {
-                    hits = 1,
-                    bytes = GetFileSize(hashPath)
+                    Hits = 1,
+                    Bytes = GetFileSize(hashPath)
                 };
             }
         }

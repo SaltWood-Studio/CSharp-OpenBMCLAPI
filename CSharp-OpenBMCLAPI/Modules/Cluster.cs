@@ -356,8 +356,8 @@ namespace CSharpOpenBMCLAPI.Modules
                 new
                 {
                     time = time,
-                    hits = this.counter.hits,
-                    bytes = this.counter.bytes
+                    hits = this.counter.Hits,
+                    bytes = this.counter.Bytes
                 });
         }
 
@@ -371,7 +371,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 if (enabled)
                 {
                     string? time = returns.Last().GetString();
-                    Logger.Instance.LogSystem($"保活成功 at {time}，served {Utils.GetLength(this.counter.bytes)}({this.counter.bytes} bytes)/{this.counter.hits} hits");
+                    Logger.Instance.LogSystem($"保活成功 at {time}，served {Utils.GetLength(this.counter.Bytes)}({this.counter.Bytes} bytes)/{this.counter.Hits} hits");
                 }
                 else
                 {

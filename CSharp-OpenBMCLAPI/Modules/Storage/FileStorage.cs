@@ -111,8 +111,8 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
 
             return new FileAccessInfo()
             {
-                hits = 1,
-                bytes = fileInfo.Length
+                Hits = 1,
+                Bytes = fileInfo.Length
             };
         }
 

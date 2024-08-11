@@ -5,25 +5,25 @@
     /// </summary>
     public struct FileAccessInfo
     {
-        public long hits;
-        public long bytes;
+        public long Hits { get; set; }
+        public long Bytes { get; set; }
 
         public static FileAccessInfo operator +(FileAccessInfo left, FileAccessInfo right) => new()
         {
-            hits = left.hits + right.bytes,
-            bytes = left.bytes + right.bytes,
+            Hits = left.Hits + right.Bytes,
+            Bytes = left.Bytes + right.Bytes,
         };
 
         public static FileAccessInfo operator -(FileAccessInfo left, FileAccessInfo right) => new()
         {
-            hits = left.hits - right.bytes,
-            bytes = left.bytes - right.bytes,
+            Hits = left.Hits - right.Bytes,
+            Bytes = left.Bytes - right.Bytes,
         };
 
         public static FileAccessInfo operator *(FileAccessInfo left, int right) => new()
         {
-            hits = left.hits * right,
-            bytes = left.bytes * right,
+            Hits = left.Hits * right,
+            Bytes = left.Bytes * right,
         };
     }
 }
