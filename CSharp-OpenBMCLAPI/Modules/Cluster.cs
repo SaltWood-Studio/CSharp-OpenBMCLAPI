@@ -133,7 +133,7 @@ namespace CSharpOpenBMCLAPI.Modules
             await CheckFiles();
             Logger.Instance.LogInfo();
 
-            await Requestcertificate();
+            await RequestCertificate();
 
 
             if (!ClusterRequiredData.Config.NoEnable) await Enable();
@@ -750,7 +750,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// 请求证书
         /// </summary>
         /// <returns></returns>
-        public async Task Requestcertificate()
+        public async Task RequestCertificate()
         {
             // File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certificates/cert.pem"));
             // File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certificates/key.pem"));
