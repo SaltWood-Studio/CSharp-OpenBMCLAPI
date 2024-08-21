@@ -41,8 +41,8 @@ namespace CSharpOpenBMCLAPI.Modules
 
         public long ReadLong()
         {
-            int b = this._stream.ReadByte();
-            int n = b & 0x7F;
+            long b = this._stream.ReadByte();
+            long n = b & 0x7F;
             int shift = 7;
             while ((b & 0x80) != 0)
             {
