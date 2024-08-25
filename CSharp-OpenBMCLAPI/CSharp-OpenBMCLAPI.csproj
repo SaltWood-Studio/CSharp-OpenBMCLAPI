@@ -14,7 +14,7 @@
     <PackageReference Include="Newtonsoft.Json.Bson" Version="1.0.2" />
     <PackageReference Include="SaltWood.TeraIO" Version="1.0.4" />
     <PackageReference Include="ShellProgressBar" Version="5.2.0" />
-    <PackageReference Include="SocketIOClient" Version="3.1.1" />
+    <PackageReference Include="SocketIOClient" Version="3.1.2" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
     <PackageReference Include="YamlDotNet" Version="15.3.0" />
     <PackageReference Include="ZstdSharp.Port" Version="0.8.1" />
