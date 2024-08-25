@@ -17,7 +17,7 @@ RUN dotnet build --configuration Release --output /app/build
 RUN dotnet publish --configuration Release --output /app/publish
 
 # 使用Ubuntu镜像作为运行阶段的基础镜像
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 # 安装.NET运行时依赖项
 RUN apt-get update && \
