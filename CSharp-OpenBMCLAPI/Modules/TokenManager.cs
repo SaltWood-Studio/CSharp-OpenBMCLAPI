@@ -14,9 +14,9 @@ namespace CSharpOpenBMCLAPI.Modules
         private Task? _updateTask;
 
         private Token token;
-        private object _writeLocker = new object();
+        private object _writerLock = new object();
 
-        public Token Token { get { lock (_writeLocker) return token; } }
+        public Token Token { get { lock (_writerLock) return token; } }
 
         public string Bearer { get => $"Bearer {Token.token}"; }
 
@@ -56,7 +56,7 @@ namespace CSharpOpenBMCLAPI.Modules
             string tokenJson = await resp.Content.ReadAsStringAsync();
 
             // 锁定 token，以免其他线程同时进行读取出现问题
-            lock (this._writeLocker)
+            lock (this._writerLock)
             {
                 this.token = JsonConvert.DeserializeObject<Token>(tokenJson).ThrowIfNull();
 

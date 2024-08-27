@@ -44,7 +44,7 @@ namespace CSharpOpenBMCLAPI.Modules
                     {
                         try
                         {
-                            var message = JsonConvert.DeserializeAnonymousType(i.ToString(), new { message = "" });
+                            var message = JsonConvert.DeserializeAnonymousType(i.ToString(), new { message = string.Empty });
                             if (message != null)
                             {
                                 Logger.Instance.LogInfo(message.message);
