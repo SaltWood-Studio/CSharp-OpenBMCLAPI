@@ -22,7 +22,7 @@ FROM ubuntu:24.04
 # 安装.NET运行时依赖项
 RUN apt-get update && \
     apt-get install -y wget && \
-    wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && \
+    wget https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && \
     dpkg -i packages-microsoft-prod.deb && \
     apt-get update && \
     apt-get install -y aspnetcore-runtime-8.0 && \
