@@ -275,6 +275,10 @@ namespace CSharpOpenBMCLAPI.Modules
                     this.Enable().Wait();
                 }
             });
+            this.socket.On("warden-error", (r) =>
+            {
+                Logger.Instance.LogError($"收到主控的巡检错误：{r}");
+            });
         }
 
         /// <summary>
