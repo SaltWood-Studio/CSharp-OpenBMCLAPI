@@ -1,5 +1,5 @@
 # 使用微软提供的.NET SDK镜像作为构建阶段的基础镜像
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 
 # 设置工作目录
 WORKDIR /app
