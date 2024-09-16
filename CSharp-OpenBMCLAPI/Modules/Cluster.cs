@@ -434,6 +434,8 @@ namespace CSharpOpenBMCLAPI.Modules
                 this.files = updatedFiles;
             }
 
+            Console.WriteLine($"总文件大小：{Utils.GetLength(this.files.Sum(f => f.size))}，总文件数：{this.files.Count}");
+
             object countLock = new();
 
             var options = new ProgressBarOptions

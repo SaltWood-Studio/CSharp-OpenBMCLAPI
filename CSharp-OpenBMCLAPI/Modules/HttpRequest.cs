@@ -14,7 +14,9 @@
                 BaseAddress = new Uri(ClusterRequiredData.Config.CenterServerAddress)
             };
             // 添加UserAgent，用于标识请求来源
-            client.DefaultRequestHeaders.Add("User-Agent", $"openbmclapi-cluster/{ClusterRequiredData.Config.clusterVersion} (CSharp-OpenBMCLAPI; dotnet CLR v{Environment.Version}; {Environment.OSVersion}, {System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture}; {System.Globalization.CultureInfo.InstalledUICulture.Name})");
+            string ua = $"openbmclapi-cluster/{ClusterRequiredData.Config.clusterVersion} (CSharp-OpenBMCLAPI; .NET runtime v{Environment.Version}; {Environment.OSVersion}, {System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture}; {System.Globalization.CultureInfo.InstalledUICulture.Name})"
+            client.DefaultRequestHeaders.Add("User-Agent", ua);
+            Console.WriteLine($"User-Agent: {ua}");
         }
     }
 }
