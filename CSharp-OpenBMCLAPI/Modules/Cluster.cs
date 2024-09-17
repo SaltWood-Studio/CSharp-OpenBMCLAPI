@@ -434,6 +434,12 @@ namespace CSharpOpenBMCLAPI.Modules
                 this.files = updatedFiles;
             }
 
+            if (this.Configuration.Sync.Concurrency < requiredData.maxThreadCount)
+            {
+                Logger.Instance.LogWarn($"WARNING: 同步策略的线程数小于下载文件线程数，强制覆写线程数为 {requiredData.maxThreadCount}");
+                Logger.Instance.LogWarn($"WARNING: 覆写同步线程数为开发测试功能，无必要请勿使用！");
+            }
+
             Console.WriteLine($"总文件大小：{Utils.GetLength(this.files.Sum(f => f.size))}，总文件数：{this.files.Count}");
 
             object countLock = new();
@@ -650,6 +656,7 @@ namespace CSharpOpenBMCLAPI.Modules
         internal (HttpResponseMessage?, List<string>, Exception?) GetRedirectUrls(string url)
         {
             var redirectUrls = new List<string>();
+            redirectUrls.Add(url);
             HttpResponseMessage? response = null;
             HttpClient requestClient = new HttpClient(new HttpClientHandler
             {
