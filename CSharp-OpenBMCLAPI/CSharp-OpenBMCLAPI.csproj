@@ -15,7 +15,7 @@
     <PackageReference Include="SaltWood.TeraIO" Version="1.1.0" />
     <PackageReference Include="ShellProgressBar" Version="5.2.0" />
     <PackageReference Include="SocketIOClient" Version="3.1.2" />
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.1" />
     <PackageReference Include="YamlDotNet" Version="16.1.0" />
     <PackageReference Include="ZstdSharp.Port" Version="0.8.1" />
   </ItemGroup>
