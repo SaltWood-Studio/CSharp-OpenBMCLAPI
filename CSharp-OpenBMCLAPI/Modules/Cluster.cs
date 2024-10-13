@@ -656,7 +656,9 @@ namespace CSharpOpenBMCLAPI.Modules
         internal (HttpResponseMessage?, List<string>, Exception?) GetRedirectUrls(string url)
         {
             var redirectUrls = new List<string>();
-            redirectUrls.Add(url);
+            UriBuilder builder = new UriBuilder(this.client.BaseAddress?.ToString() ?? string.Empty);
+            builder.Path = url;
+            redirectUrls.Add(builder.ToString());
             HttpResponseMessage? response = null;
             HttpClient requestClient = new HttpClient(new HttpClientHandler
             {
