@@ -122,7 +122,6 @@ namespace CSharpOpenBMCLAPI.Modules
             int returns = 0;
 
             this.storage.Initialize();
-            InitializeService();
 
             // 检查文件
             // if (!ClusterRequiredData.Config.noEnable)
@@ -134,6 +133,7 @@ namespace CSharpOpenBMCLAPI.Modules
             Logger.Instance.LogInfo();
 
             await RequestCertificate();
+            InitializeService();
 
 
             if (!ClusterRequiredData.Config.NoEnable) await Enable();
@@ -777,29 +777,41 @@ namespace CSharpOpenBMCLAPI.Modules
             string certPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certificates/cert.pem");
             string keyPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certificates/key.pem");
 
+            TaskCompletionSource tcs = new TaskCompletionSource();
+
             Directory.CreateDirectory(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certificates"));
             await socket.EmitAsync("request-cert", (SocketIOResponse resp) =>
             {
-                var data = resp;
-                var json = data.GetValue<JsonElement>(0)[1];
-                JsonElement cert; json.TryGetProperty("cert", out cert);
-                JsonElement key; json.TryGetProperty("key", out key);
-
-                string? certString = cert.GetString();
-                string? keyString = key.GetString();
-
-                using (var file = File.Create(certPath))
+                try
                 {
-                    if (certString != null) file.Write(Encoding.UTF8.GetBytes(certString));
-                }
+                    var data = resp;
+                    var json = data.GetValue<JsonElement>(0)[1];
+                    JsonElement cert; json.TryGetProperty("cert", out cert);
+                    JsonElement key; json.TryGetProperty("key", out key);
 
-                using (var file = File.Create(keyPath))
+                    string? certString = cert.GetString();
+                    string? keyString = key.GetString();
+
+                    using (var file = File.Create(certPath))
+                    {
+                        if (certString != null) file.Write(Encoding.UTF8.GetBytes(certString));
+                    }
+
+                    using (var file = File.Create(keyPath))
+                    {
+                        if (keyString != null) file.Write(Encoding.UTF8.GetBytes(keyString));
+                    }
+
+                    Logger.Instance.LogDebug($"获取证书成功！");
+                    tcs.SetResult();
+                }
+                catch (Exception ex)
                 {
-                    if (keyString != null) file.Write(Encoding.UTF8.GetBytes(keyString));
+                    tcs.SetException(ex);
                 }
-
-                Logger.Instance.LogDebug($"获取证书成功！");
             });
+
+            await tcs.Task;
         }
     }
 }
