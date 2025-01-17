@@ -369,3 +369,5 @@ FodyWeavers.xsd
 # docker 镜像的文件夹
 /working
 /cache
+
+working
