@@ -78,7 +78,11 @@ namespace CSharpOpenBMCLAPI
                 Cluster cluster = new(requiredData);
                 Logger.Instance.LogSystem($"成功创建 Cluster 实例");
                 AppDomain.CurrentDomain.ProcessExit += (sender, e) => Utils.ExitCluster(cluster).Wait();
-                Console.CancelKeyPress += (sender, e) => Utils.ExitCluster(cluster).Wait();
+                Console.CancelKeyPress += (sender, e) =>
+                {
+                    Utils.ExitCluster(cluster).Wait();
+                    Environment.Exit(0);
+                };
 
                 cluster.Start();
                 return returns;
