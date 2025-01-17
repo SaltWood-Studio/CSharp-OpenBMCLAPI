@@ -39,3 +39,5 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: saltwood233/csharp-openbmclapi
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
