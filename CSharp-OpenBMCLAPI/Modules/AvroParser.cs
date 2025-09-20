@@ -3,18 +3,11 @@ using System.Text;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
-    public class AvroParser
+    public class AvroParser(byte[] data)
     {
-        private MemoryStream _stream;
-        private List<ApiFileInfo> _files;
+        private MemoryStream _stream = new(data);
+        private List<ApiFileInfo> _files = new();
         private byte[] data;
-
-        public AvroParser(byte[] data)
-        {
-            this.data = data;
-            this._stream = new MemoryStream(data);
-            this._files = new List<ApiFileInfo>();
-        }
 
         public List<ApiFileInfo> Parse()
         {
@@ -56,7 +49,7 @@ namespace CSharpOpenBMCLAPI.Modules
         public string ReadString()
         {
             byte[] buffer = new byte[this.ReadLong()];
-            this._stream.Read(buffer, 0, buffer.Length);
+            this._stream.ReadExactly(buffer, 0, buffer.Length);
             return Encoding.UTF8.GetString(buffer);
         }
     }

@@ -25,43 +25,42 @@ namespace CSharpOpenBMCLAPI.Modules
     public class Cluster
     {
         internal ClusterInfo clusterInfo;
-        private TokenManager token;
-        private HttpClient client;
+        public readonly TokenManager token;
+        private HttpClient _client;
         public Guid guid;
-        private SocketIOClient.SocketIO socket;
+        private SocketIOClient.SocketIO _socket;
         public bool IsEnabled { get; set; }
         public bool WantEnable { get; set; }
         public Configuration Configuration { get; protected set; }
 
-        internal IStorage storage;
+        internal readonly IStorage storage;
         protected AccessCounter counter;
-        public CancellationTokenSource cancellationSrc = new CancellationTokenSource();
-        internal ClusterRequiredData requiredData;
-        internal List<ApiFileInfo> files;
-        protected WebApplication? application;
+        public readonly CancellationTokenSource cancellationSrc = new();
+        internal PublicData requiredData;
+        private List<ApiFileInfo> files;
+        private WebApplication? application;
 
         //List<Task> tasks = new List<Task>();
 
         /// <summary>
         /// 构造函数，实际上 <seealso cref="Exception"/> 根本不可能被抛出
         /// </summary>
-        /// <param name="info"></param>
-        /// <param name="token"></param>
+        /// <param name="requiredData"></param>
         /// <exception cref="Exception"></exception>
-        public Cluster(ClusterRequiredData requiredData)
+        public Cluster(PublicData requiredData)
         {
             this.requiredData = requiredData;
             this.clusterInfo = requiredData.ClusterInfo;
             this.token = requiredData.Token;
             this.guid = Guid.NewGuid();
 
-            client = HttpRequest.client;
-            client.DefaultRequestHeaders.Authorization = new("Bearer", requiredData.Token?.Token.token);
+            _client = HttpRequest.client;
+            _client.DefaultRequestHeaders.Authorization = new("Bearer", requiredData.Token?.Token.token);
 
-            switch (ClusterRequiredData.Config.StorageType)
+            switch (PublicData.Config.StorageType)
             {
                 case StorageType.File:
-                    this.storage = new FileStorage(ClusterRequiredData.Config.clusterFileDirectory);
+                    this.storage = new FileStorage(PublicData.Config.clusterFileDirectory);
                     break;
                 case StorageType.WebDav:
                     this.storage = new WebDavStorage();
@@ -70,12 +69,12 @@ namespace CSharpOpenBMCLAPI.Modules
                     this.storage = new AlistStorage();
                     break;
                 default:
-                    throw new ArgumentException($"Argument out of range. {ClusterRequiredData.Config.StorageType}");
+                    throw new ArgumentException($"Argument out of range. {PublicData.Config.StorageType}");
             }
-            if (ClusterRequiredData.Config.maxCachedMemory != 0) this.storage = new CachedStorage(this.storage);
+            if (PublicData.Config.maxCachedMemory != 0) this.storage = new CachedStorage(this.storage);
             this.files = new List<ApiFileInfo>();
             this.counter = new();
-            this.socket = InitializeSocket();
+            this._socket = InitializeSocket();
         }
 
         /// <summary>
@@ -96,12 +95,11 @@ namespace CSharpOpenBMCLAPI.Modules
         /// 用于处理报错信息（其实就是打印出来罢了）
         /// </summary>
         /// <param name="resp"></param>
-        public void HandleError(SocketIOResponse resp) => Utils.PrintResponseMessage(resp);
+        private void HandleError(SocketIOResponse resp) => Utils.PrintResponseMessage(resp);
 
         /// <summary>
         /// 重写 <seealso cref="RunnableBase.Run(string[])"/>，Cluster 实例启动（调用 <seealso cref="RunnableBase.Start()"/> 方法时调用）
         /// </summary>
-        /// <param name="args"></param>
         /// <returns></returns>
         public int Start()
         {
@@ -117,7 +115,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// 就是加了 <seealso cref="async"/> 而已，方便运行方法
         /// </summary>
         /// <returns></returns>
-        protected async Task<int> AsyncRun()
+        private async Task<int> AsyncRun()
         {
             int returns = 0;
 
@@ -136,30 +134,22 @@ namespace CSharpOpenBMCLAPI.Modules
             InitializeService();
 
 
-            if (!ClusterRequiredData.Config.NoEnable) await Enable();
+            if (!PublicData.Config.NoEnable) await Enable();
 
-            Logger.Instance.LogSystem($"工作进程 {guid} 在 <{ClusterRequiredData.Config.HOST}:{ClusterRequiredData.Config.PORT}> 提供服务");
+            Logger.Instance.LogSystem($"工作进程 {guid} 在 <{PublicData.Config.HOST}:{PublicData.Config.PORT}> 提供服务");
 
-            Tasks.CheckFile = Task.Run(() =>
+            Tasks.CheckFile = PublicData.Config.skipCheck ? null : new Timer(state =>
             {
-                // 定时检查文件的 Task
-                const int time = 10 * 60 * 1000; // 10 分钟
-                bool skipCheck = ClusterRequiredData.Config.skipCheck;
-                while (!skipCheck)
+                for (int i = 0; i < 36; i++)
                 {
-                    for (int i = 0; i < 36; i++)
-                    {
-                        cancellationSrc.Token.ThrowIfCancellationRequested();
-                        Thread.Sleep(time);
-                        cancellationSrc.Token.ThrowIfCancellationRequested();
-                        FetchFiles(skipCheck, FileVerificationMode.SizeOnly).Wait();
-                    }
                     cancellationSrc.Token.ThrowIfCancellationRequested();
-                    Thread.Sleep(time);
-                    cancellationSrc.Token.ThrowIfCancellationRequested();
-                    FetchFiles(skipCheck, FileVerificationMode.Hash).Wait();
+                    FetchFiles(false, FileVerificationMode.SizeOnly).Wait();
                 }
-            }, cancellationSrc.Token);
+
+                cancellationSrc.Token.ThrowIfCancellationRequested();
+                cancellationSrc.Token.ThrowIfCancellationRequested();
+                FetchFiles(false, FileVerificationMode.Hash).Wait();
+            }, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));
 
             Tasks.KeepAlive = Task.Run(_KeepAlive, cancellationSrc.Token);
 
@@ -189,7 +179,7 @@ namespace CSharpOpenBMCLAPI.Modules
             WebApplicationBuilder builder = WebApplication.CreateBuilder();
             builder.WebHost.UseKestrel(options =>
             {
-                options.ListenAnyIP(ClusterRequiredData.Config.PORT, cert != null ? configure =>
+                options.ListenAnyIP(PublicData.Config.PORT, cert != null ? configure =>
                 {
                     configure.Protocols = HttpProtocols.Http1AndHttp2AndHttp3;
                     configure.UseHttps(cert);
@@ -233,11 +223,11 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns>
         /// 转换完成的 PFX 证书
         /// </returns>
-        protected X509Certificate2? LoadAndConvertCert()
+        private X509Certificate2? LoadAndConvertCert()
         {
-            if (ClusterRequiredData.Config.NoCertificate) return null;
-            (string certPath, string keyPath) = (Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certificates/cert.pem"),
-                Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certificates/key.pem"));
+            if (PublicData.Config.NoCertificate) return null;
+            (string certPath, string keyPath) = (Path.Combine(PublicData.Config.clusterWorkingDirectory, $"certificates/cert.pem"),
+                Path.Combine(PublicData.Config.clusterWorkingDirectory, $"certificates/key.pem"));
             if (!File.Exists(certPath) || !File.Exists(keyPath))
             {
                 return null;
@@ -246,7 +236,7 @@ namespace CSharpOpenBMCLAPI.Modules
             //return cert;
             byte[] pfxCert = cert.Export(X509ContentType.Pfx);
             Logger.Instance.LogDebug($"将 PEM 格式的证书转换为 PFX 格式");
-            using (var file = File.Create(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certificates/cert.pfx")))
+            using (var file = File.Create(Path.Combine(PublicData.Config.clusterWorkingDirectory, $"certificates/cert.pfx")))
             {
                 file.Write(pfxCert);
             }
@@ -258,14 +248,14 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <summary>
         /// 连接 Socket、注册指令处理部分
         /// </summary>
-        public void Connect()
+        private void Connect()
         {
-            this.socket.ConnectAsync().Wait();
+            this._socket.ConnectAsync().Wait();
 
-            this.socket.On("error", error => HandleError(error));
-            this.socket.On("message", msg => Utils.PrintResponseMessage(msg));
-            this.socket.On("connect", (_) => Logger.Instance.LogInfo("与主控连接成功"));
-            this.socket.On("disconnect", (r) =>
+            this._socket.On("error", error => HandleError(error));
+            this._socket.On("message", msg => Utils.PrintResponseMessage(msg));
+            this._socket.On("connect", (_) => Logger.Instance.LogInfo("与主控连接成功"));
+            this._socket.On("disconnect", (r) =>
             {
                 Logger.Instance.LogWarn($"与主控断开连接：{r}");
                 this.IsEnabled = false;
@@ -275,7 +265,7 @@ namespace CSharpOpenBMCLAPI.Modules
                     this.Enable().Wait();
                 }
             });
-            this.socket.On("warden-error", (r) =>
+            this._socket.On("warden-error", (r) =>
             {
                 Logger.Instance.LogError($"收到主控的巡检错误：{r}");
             });
@@ -287,12 +277,12 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         public async Task Enable()
         {
-            if (socket.Connected && IsEnabled)
+            if (_socket.Connected && IsEnabled)
             {
                 Logger.Instance.LogWarn($"试图在节点禁用且连接未断开时调用 Enable");
                 return;
             }
-            await socket.EmitAsync("enable", (SocketIOResponse resp) =>
+            await _socket.EmitAsync("enable", (SocketIOResponse resp) =>
             {
                 this.IsEnabled = true;
                 this.WantEnable = true;
@@ -301,11 +291,11 @@ namespace CSharpOpenBMCLAPI.Modules
                 Logger.Instance.LogSystem($"启用成功");
             }, new
             {
-                host = ClusterRequiredData.Config.HOST,
-                port = ClusterRequiredData.Config.PORT,
-                version = ClusterRequiredData.Config.clusterVersion,
-                byoc = ClusterRequiredData.Config.BringYourOwnCertficate,
-                noFastEnable = ClusterRequiredData.Config.NoFastEnable,
+                host = PublicData.Config.HOST,
+                port = PublicData.Config.PORT,
+                version = PublicData.Config.clusterVersion,
+                byoc = PublicData.Config.BringYourOwnCertficate,
+                noFastEnable = PublicData.Config.NoFastEnable,
                 flavor = new
                 {
                     runtime = Utils.GetRuntime(),
@@ -326,7 +316,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 Logger.Instance.LogWarn($"试图在节点禁用时调用 Disable");
                 return;
             }
-            await socket.EmitAsync("disable", (SocketIOResponse resp) =>
+            await _socket.EmitAsync("disable", (SocketIOResponse resp) =>
             {
                 Utils.PrintResponseMessage(resp);
                 Logger.Instance.LogSystem($"禁用成功");
@@ -351,7 +341,7 @@ namespace CSharpOpenBMCLAPI.Modules
             }
             string time = DateTime.Now.ToStandardTimeString();
             // socket.Connected.Dump();
-            await socket.EmitAsync("keep-alive",
+            await _socket.EmitAsync("keep-alive",
                 (SocketIOResponse resp) =>
                 {
                     _keepAliveMessageParser(resp);
@@ -371,7 +361,7 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 var returns = resp.GetValue<List<JsonElement>>(0);
                 string? message = returns.First().GetString();
-                bool enabled = !(returns.Last().ValueKind == JsonValueKind.False);
+                bool enabled = returns.Last().ValueKind != JsonValueKind.False;
                 if (enabled)
                 {
                     string? time = returns.Last().GetString();
@@ -401,13 +391,13 @@ namespace CSharpOpenBMCLAPI.Modules
         /// 获取 Configuration
         /// </summary>
         /// <returns></returns>
-        public async Task GetConfiguration()
+        private async Task GetConfiguration()
         {
-            var resp = await this.client.GetAsync("openbmclapi/configuration");
+            var resp = await this._client.GetAsync("openbmclapi/configuration");
             var content = await resp.Content.ReadAsStringAsync();
             this.Configuration = JsonConvert.DeserializeObject<Configuration>(content);
             Logger.Instance.LogDebug($"同步策略：{this.Configuration.Sync.Source}，线程数：{this.Configuration.Sync.Concurrency}");
-            this.requiredData.maxThreadCount = Math.Max(ClusterRequiredData.Config.DownloadFileThreads, this.Configuration.Sync.Concurrency);
+            this.requiredData.maxThreadCount = Math.Max(PublicData.Config.DownloadFileThreads, this.Configuration.Sync.Concurrency);
             this.requiredData.SemaphoreSlim = new SemaphoreSlim(this.requiredData.maxThreadCount);
         }
 
@@ -415,13 +405,13 @@ namespace CSharpOpenBMCLAPI.Modules
         /// 默认的检查文件行为
         /// </summary>
         /// <returns></returns>
-        protected async Task CheckFiles() => await CheckFiles(ClusterRequiredData.Config.skipCheck, ClusterRequiredData.Config.startupCheckMode);
+        private async Task CheckFiles() => await CheckFiles(PublicData.Config.skipCheck, PublicData.Config.startupCheckMode);
 
         /// <summary>
         /// 获取文件列表、检查文件、下载文件部分
         /// </summary>
         /// <returns></returns>
-        protected async Task CheckFiles(bool skipCheck, FileVerificationMode mode)
+        private async Task CheckFiles(bool skipCheck, FileVerificationMode mode)
         {
             if (skipCheck || mode == FileVerificationMode.None)
             {
@@ -469,7 +459,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// 获取文件列表、检查文件、下载文件部分
         /// </summary>
         /// <returns></returns>
-        protected async Task FetchFiles(bool skipCheck, FileVerificationMode mode)
+        private async Task FetchFiles(bool skipCheck, FileVerificationMode mode)
         {
             if (skipCheck || mode == FileVerificationMode.None)
             {
@@ -477,7 +467,7 @@ namespace CSharpOpenBMCLAPI.Modules
             }
             Logger.Instance.LogDebug($"文件检查策略：{mode}");
             var updatedFiles = await GetFileList(this.files);
-            if (updatedFiles != null && updatedFiles.Count != 0)
+            if (updatedFiles.Count != 0)
             {
                 this.files = updatedFiles;
             }
@@ -490,10 +480,9 @@ namespace CSharpOpenBMCLAPI.Modules
                 ProgressBarOnBottom = true,
                 ShowEstimatedDuration = true
             };
-            using var pbar = new ProgressBar(files.Count, "Fetch files", options);
+            var pbar = new ProgressBar(files.Count, "Fetch files", options);
 
             Parallel.ForEach(files, file =>
-            //foreach (var file in files)
             {
                 FetchFileFromCenter(file.hash).Wait();
                 lock (countLock)
@@ -501,30 +490,24 @@ namespace CSharpOpenBMCLAPI.Modules
                     pbar.Tick($"Threads: {requiredData.maxThreadCount - requiredData.SemaphoreSlim.CurrentCount}/{requiredData.maxThreadCount}, Files: {pbar.CurrentTick}/{files.Count}");
                 }
             });
-
-            files = null!;
-            countLock = null!;
         }
 
         /// <summary>
         /// 获取完整的文件列表
         /// </summary>
         /// <returns></returns>
-        public async Task<List<ApiFileInfo>> GetFileList()
+        private async Task<List<ApiFileInfo>> GetFileList()
         {
-            HttpResponseMessage resp;
-            resp = await this.client.GetAsync("openbmclapi/files");
+            var resp = await this._client.GetAsync("openbmclapi/files");
             Logger.Instance.LogDebug($"检查文件结果：{resp.StatusCode}");
-
-            List<ApiFileInfo> files;
 
             byte[] bytes = await resp.Content.ReadAsByteArrayAsync();
             UnpackBytes(ref bytes);
 
             AvroParser avro = new AvroParser(bytes);
 
-            files = avro.Parse();
-            return files;
+            var list = avro.Parse();
+            return list;
         }
 
         /// <summary>
@@ -532,19 +515,19 @@ namespace CSharpOpenBMCLAPI.Modules
         /// </summary>
         /// <param name="files"></param>
         /// <returns></returns>
-        public async Task<List<ApiFileInfo>> GetFileList(List<ApiFileInfo>? files)
+        private async Task<List<ApiFileInfo>> GetFileList(List<ApiFileInfo>? files)
         {
             if (files == null) return await GetFileList();
 
             List<ApiFileInfo> updatedFiles;
 
-            if ((files == null) || (files.Count == 0))
+            if (files.Count == 0)
             {
                 return await GetFileList();
             }
             long lastModified = files.Select(f => f.mtime).Max();
 
-            var resp = await this.client.GetAsync($"openbmclapi/files?lastModified={lastModified}");
+            var resp = await this._client.GetAsync($"openbmclapi/files?lastModified={lastModified}");
             Logger.Instance.LogDebug($"检查文件结果：{resp.StatusCode}");
             if (resp.StatusCode == HttpStatusCode.NotModified)
             {
@@ -565,7 +548,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// 检查单个文件
         /// </summary>
         /// <param name="file"></param>
-        void CheckSingleFile(ApiFileInfo file) => CheckSingleFile(file, ClusterRequiredData.Config.startupCheckMode);
+        void CheckSingleFile(ApiFileInfo file) => CheckSingleFile(file, PublicData.Config.startupCheckMode);
 
         /// <summary>
         /// 检查单个文件，并且额外指定检查模式
@@ -588,7 +571,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// 解压从主控下发的文件列表
         /// </summary>
         /// <param name="bytes"></param>
-        protected static void UnpackBytes(ref byte[] bytes)
+        private static void UnpackBytes(ref byte[] bytes)
         {
             Decompressor decompressor = new Decompressor();
             bytes = decompressor.Unwrap(bytes).ToArray();
@@ -602,7 +585,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <param name="size"></param>
         /// <param name="mode"></param>
         /// <returns></returns>
-        protected bool VerifyFile(string hash, long size, FileVerificationMode mode)
+        private bool VerifyFile(string hash, long size, FileVerificationMode mode)
         {
             string path = Utils.HashToFileName(hash);
 
@@ -631,7 +614,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <param name="path"></param>
         /// <param name="force"></param>
         /// <returns></returns>
-        internal async Task FetchFileFromCenter(string hash, bool force = false)
+        private async Task FetchFileFromCenter(string hash, bool force = false)
         {
             string filePath = Utils.HashToFileName(hash);
             if (this.storage.Exists(filePath) && !force)
@@ -642,21 +625,19 @@ namespace CSharpOpenBMCLAPI.Modules
             this.requiredData.SemaphoreSlim.Wait();
             try
             {
-                var resp = await this.client.GetAsync($"openbmclapi/download/{hash}");
+                var resp = await this._client.GetAsync($"openbmclapi/download/{hash}");
                 this.storage.WriteFileStream(Utils.HashToFileName(hash), await resp.Content.ReadAsStreamAsync());
-                resp = null!;
             }
-            catch (Exception) { }
             finally
             {
                 this.requiredData.SemaphoreSlim.Release();
             }
         }
 
-        internal (HttpResponseMessage?, List<string>, Exception?) GetRedirectUrls(string url)
+        private (HttpResponseMessage?, List<string>, Exception?) GetRedirectUrls(string url)
         {
             var redirectUrls = new List<string>();
-            UriBuilder builder = new UriBuilder(this.client.BaseAddress?.ToString() ?? string.Empty);
+            UriBuilder builder = new UriBuilder(this._client.BaseAddress?.ToString() ?? string.Empty);
             builder.Path = url;
             redirectUrls.Add(builder.ToString());
             HttpResponseMessage? response = null;
@@ -709,9 +690,10 @@ namespace CSharpOpenBMCLAPI.Modules
         /// 根据哈希值从主控拉取文件
         /// </summary>
         /// <param name="hash"></param>
+        /// <param name="path"></param>
         /// <param name="force"></param>
         /// <returns></returns>
-        internal async Task DownloadFile(string hash, string path, bool force = false)
+        private async Task DownloadFile(string hash, string path, bool force = false)
         {
             string filePath = Utils.HashToFileName(hash);
             if (this.storage.Exists(filePath) && !force)
@@ -719,13 +701,12 @@ namespace CSharpOpenBMCLAPI.Modules
                 return;
             }
 
-            this.requiredData.SemaphoreSlim.Wait();
-            HttpResponseMessage? resp = null;
-            Exception? exception;
+            await this.requiredData.SemaphoreSlim.WaitAsync();
             List<string> urls = new List<string>();
             try
             {
-                (resp, urls, exception) = GetRedirectUrls(path[1..]);
+                HttpResponseMessage? resp = null;
+                (resp, urls, var exception) = GetRedirectUrls(path[1..]);
                 if (exception != null) throw new AggregateException(exception);
                 if (resp == null) throw new Exception("Response is null.");
                 if (resp.StatusCode < HttpStatusCode.BadRequest && resp.StatusCode >= HttpStatusCode.OK)
@@ -741,7 +722,7 @@ namespace CSharpOpenBMCLAPI.Modules
             {
                 try
                 {
-                    await this.client.PostAsJsonAsync("openbmclapi/report", new
+                    await this._client.PostAsJsonAsync("openbmclapi/report", new
                     {
                         urls = urls,
                         error = JsonConvert.SerializeObject(new
@@ -753,7 +734,7 @@ namespace CSharpOpenBMCLAPI.Modules
                         })
                     });
                 }
-                catch { }
+                catch { /* ignored */ }
             }
             finally
             {
@@ -765,22 +746,22 @@ namespace CSharpOpenBMCLAPI.Modules
         /// 请求证书
         /// </summary>
         /// <returns></returns>
-        public async Task RequestCertificate()
+        private async Task RequestCertificate()
         {
             // File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certificates/cert.pem"));
             // File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certificates/key.pem"));
-            if (ClusterRequiredData.Config.BringYourOwnCertficate)
+            if (PublicData.Config.BringYourOwnCertficate)
             {
-                Logger.Instance.LogDebug($"{nameof(ClusterRequiredData.Config.BringYourOwnCertficate)} 为 true，跳过请求证书……");
+                Logger.Instance.LogDebug($"{nameof(PublicData.Config.BringYourOwnCertficate)} 为 true，跳过请求证书……");
                 return;
             }
-            string certPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certificates/cert.pem");
-            string keyPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certificates/key.pem");
+            string certPath = Path.Combine(PublicData.Config.clusterWorkingDirectory, $"certificates/cert.pem");
+            string keyPath = Path.Combine(PublicData.Config.clusterWorkingDirectory, $"certificates/key.pem");
 
             TaskCompletionSource tcs = new TaskCompletionSource();
 
-            Directory.CreateDirectory(Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, $"certificates"));
-            await socket.EmitAsync("request-cert", (SocketIOResponse resp) =>
+            Directory.CreateDirectory(Path.Combine(PublicData.Config.clusterWorkingDirectory, $"certificates"));
+            await _socket.EmitAsync("request-cert", (SocketIOResponse resp) =>
             {
                 try
                 {

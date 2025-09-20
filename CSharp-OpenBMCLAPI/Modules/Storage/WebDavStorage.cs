@@ -12,10 +12,10 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
 
         public WebDavStorage()
         {
-            this.client = new(ClusterRequiredData.Config.clusterFileDirectory);
+            this.client = new(PublicData.Config.clusterFileDirectory);
             this.baseAddr = "BMCLAPI/cache";
             this.writeLock = new object();
-            this.user = ClusterRequiredData.Config.storageUser;
+            this.user = PublicData.Config.storageUser;
         }
 
         public bool Exists(string hashPath)

@@ -11,7 +11,7 @@ namespace CSharpOpenBMCLAPI
 
         static void Main(string[] args)
         {
-            Logger.Instance.LogSystem($"Starting CSharp-OpenBMCLAPI v{ClusterRequiredData.Config.clusterVersion}");
+            Logger.Instance.LogSystem($"Starting CSharp-OpenBMCLAPI v{PublicData.Config.clusterVersion}");
             Logger.Instance.LogSystem("高性能、低メモリ占有！");
             Logger.Instance.LogSystem($"运行时环境：{Utils.GetRuntime()}");
             Program program = new Program();
@@ -22,7 +22,7 @@ namespace CSharpOpenBMCLAPI
         protected Config GetConfig()
         {
             const string configFileName = "config.yml";
-            string configPath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, configFileName);
+            string configPath = Path.Combine(PublicData.Config.clusterWorkingDirectory, configFileName);
             if (!File.Exists(configPath))
             {
                 Config config = new Config();
@@ -54,11 +54,11 @@ namespace CSharpOpenBMCLAPI
         {
             try
             {
-                Directory.CreateDirectory(ClusterRequiredData.Config.clusterWorkingDirectory);
+                Directory.CreateDirectory(PublicData.Config.clusterWorkingDirectory);
                 Directory.CreateDirectory("working");
                 const string bsonFile = "totals.bson";
-                string bsonFilePath = Path.Combine(ClusterRequiredData.Config.clusterWorkingDirectory, bsonFile);
-                ClusterRequiredData.Config = GetConfig();
+                string bsonFilePath = Path.Combine(PublicData.Config.clusterWorkingDirectory, bsonFile);
+                PublicData.Config = GetConfig();
 
                 int returns = 0;
 
@@ -68,8 +68,8 @@ namespace CSharpOpenBMCLAPI
 
                 // 从 .env.json 读取密钥然后 FetchToken
                 ClusterInfo info = JsonConvert.DeserializeObject<ClusterInfo>(File.ReadAllTextAsync(environment).Result);
-                ClusterRequiredData requiredData = new(info);
-                Logger.Instance.LogSystem($"Cluster id: {info.ClusterID}");
+                PublicData requiredData = new(info);
+                Logger.Instance.LogSystem($"Cluster id: {info.clusterId}");
                 TokenManager token = new TokenManager(info);
                 token.FetchToken().Wait();
 

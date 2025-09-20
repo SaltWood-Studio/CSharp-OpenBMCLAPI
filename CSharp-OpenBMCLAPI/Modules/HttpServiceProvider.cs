@@ -15,7 +15,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         public static void LogAccess(HttpContext context)
         {
-            if (!ClusterRequiredData.Config.DisableAccessLog)
+            if (!PublicData.Config.DisableAccessLog)
             {
                 context.Request.Headers.TryGetValue("user-agent", out StringValues value);
                 Logger.Instance.LogInfo($"{context.Request.Method} {context.Request.Path.Value} {context.Request.Protocol} <{context.Response.StatusCode}> - [{context.Connection.RemoteIpAddress}] {value.FirstOrDefault()}");
@@ -32,7 +32,7 @@ namespace CSharpOpenBMCLAPI.Modules
             context.Request.Query.TryGetValue("s", out StringValues s);
             context.Request.Query.TryGetValue("e", out StringValues e);
             bool valid = Utils.CheckSign(context.Request.Path.Value?.Split('?').First()
-                , cluster.requiredData.ClusterInfo.ClusterSecret
+                , cluster.requiredData.ClusterInfo.clusterSecret
                 , s.FirstOrDefault()
                 , e.FirstOrDefault()
             );
@@ -68,7 +68,7 @@ namespace CSharpOpenBMCLAPI.Modules
             context.Request.Query.TryGetValue("s", out StringValues s);
             context.Request.Query.TryGetValue("e", out StringValues e);
 
-            bool isValid = Utils.CheckSign(hash, cluster.clusterInfo.ClusterSecret, s.FirstOrDefault(), e.FirstOrDefault());
+            bool isValid = Utils.CheckSign(hash, cluster.clusterInfo.clusterSecret, s.FirstOrDefault(), e.FirstOrDefault());
 
             if (!isValid)
             {

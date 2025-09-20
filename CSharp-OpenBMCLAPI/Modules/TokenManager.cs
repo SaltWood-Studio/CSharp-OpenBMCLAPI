@@ -22,8 +22,8 @@ namespace CSharpOpenBMCLAPI.Modules
 
         public TokenManager(ClusterInfo info)
         {
-            this.CLUSTER_ID = info.ClusterID;
-            this.CLUSTER_SECRET = info.ClusterSecret;
+            this.CLUSTER_ID = info.clusterId;
+            this.CLUSTER_SECRET = info.clusterSecret;
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
                 this._updateTask = Task.Run(() =>
                 {
-                    Thread.Sleep(this.token.ttl - ClusterRequiredData.Config.refreshTokenTime);
+                    Thread.Sleep(this.token.ttl - PublicData.Config.refreshTokenTime);
                     RefreshToken();
                 });
             }
