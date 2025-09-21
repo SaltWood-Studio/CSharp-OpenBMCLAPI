@@ -29,4 +29,19 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\.github\CSharp-OpenBMCLAPI.png">
+      <Link>Properties\.github\CSharp-OpenBMCLAPI.png</Link>
+    </Content>
+    <Content Include="..\.github\workflows\on-dev.yml">
+      <Link>Properties\.github\workflows\on-dev.yml</Link>
+    </Content>
+    <Content Include="..\.github\workflows\on-release.yml">
+      <Link>Properties\.github\workflows\on-release.yml</Link>
+    </Content>
+    <Content Include="..\.github\workflows\on-tag.yml">
+      <Link>Properties\.github\workflows\on-tag.yml</Link>
+    </Content>
+  </ItemGroup>
+
 </Project>
