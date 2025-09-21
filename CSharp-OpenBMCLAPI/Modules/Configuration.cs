@@ -2,18 +2,18 @@
 
 namespace CSharpOpenBMCLAPI.Modules
 {
-    public struct Configuration
+    public readonly struct Configuration
     {
         [JsonProperty("sync")]
-        public Sync Sync { get; set; }
+        public Sync Sync { get; init; }
     }
 
-    public struct Sync
+    public readonly struct Sync
     {
         [JsonProperty("source")]
-        public string Source { get; set; }
+        public string Source { get; init; }
 
         [JsonProperty("concurrency")]
-        public int Concurrency { get; set; }
+        public int Concurrency { get; init; }
     }
 }

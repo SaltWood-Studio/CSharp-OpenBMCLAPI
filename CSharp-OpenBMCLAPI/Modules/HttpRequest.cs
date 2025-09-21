@@ -2,9 +2,7 @@
 {
     internal class HttpRequest
     {
-
         public static HttpClient client;
-
 
         static HttpRequest()
         {
