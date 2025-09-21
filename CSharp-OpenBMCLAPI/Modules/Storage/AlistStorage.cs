@@ -14,8 +14,8 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
         {
             this.client = new HttpClient();
             this.baseAddr = "BMCLAPI/cache";
-            this.client.BaseAddress = new Uri(PublicData.Config.clusterFileDirectory);
-            this.user = PublicData.Config.storageUser;
+            this.client.BaseAddress = new Uri(AppContext.Config.clusterFileDirectory);
+            this.user = AppContext.Config.storageUser;
         }
 
         public bool Exists(string hashPath)

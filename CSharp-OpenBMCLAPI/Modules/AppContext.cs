@@ -1,6 +1,6 @@
 ﻿namespace CSharpOpenBMCLAPI.Modules
 {
-    public class PublicData(ClusterInfo info)
+    public class AppContext(ClusterInfo info)
     {
         public static Config Config { get; set; } = new Config();
         public Logger Logger => Logger.Instance;

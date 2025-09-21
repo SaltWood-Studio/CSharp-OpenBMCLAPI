@@ -62,7 +62,7 @@ namespace CSharpOpenBMCLAPI.Modules
 
                 this._updateTask = Task.Run(() =>
                 {
-                    Thread.Sleep(this.token.ttl - PublicData.Config.refreshTokenTime);
+                    Thread.Sleep(this.token.ttl - AppContext.Config.refreshTokenTime);
                     RefreshToken();
                 });
             }

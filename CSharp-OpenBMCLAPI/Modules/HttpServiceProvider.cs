@@ -15,7 +15,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <returns></returns>
         public static void LogAccess(HttpContext context)
         {
-            if (!PublicData.Config.DisableAccessLog)
+            if (!AppContext.Config.DisableAccessLog)
             {
                 context.Request.Headers.TryGetValue("user-agent", out StringValues value);
                 Logger.Instance.LogInfo($"{context.Request.Method} {context.Request.Path.Value} {context.Request.Protocol} <{context.Response.StatusCode}> - [{context.Connection.RemoteIpAddress}] {value.FirstOrDefault()}");
@@ -32,7 +32,7 @@ namespace CSharpOpenBMCLAPI.Modules
             context.Request.Query.TryGetValue("s", out StringValues s);
             context.Request.Query.TryGetValue("e", out StringValues e);
             bool valid = Utils.CheckSign(context.Request.Path.Value?.Split('?').First()
-                , cluster.requiredData.ClusterInfo.clusterSecret
+                , cluster.context.ClusterInfo.clusterSecret
                 , s.FirstOrDefault()
                 , e.FirstOrDefault()
             );

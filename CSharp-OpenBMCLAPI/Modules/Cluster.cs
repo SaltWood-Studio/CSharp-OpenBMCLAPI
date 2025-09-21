@@ -36,7 +36,7 @@ namespace CSharpOpenBMCLAPI.Modules
         internal readonly IStorage storage;
         protected AccessCounter counter;
         public readonly CancellationTokenSource cancellationSrc = new();
-        internal PublicData requiredData;
+        internal AppContext context;
         private List<ApiFileInfo> files;
         private WebApplication? application;
 
@@ -45,22 +45,22 @@ namespace CSharpOpenBMCLAPI.Modules
         /// <summary>
         /// 构造函数，实际上 <seealso cref="Exception"/> 根本不可能被抛出
         /// </summary>
-        /// <param name="requiredData"></param>
+        /// <param name="context"></param>
         /// <exception cref="Exception"></exception>
-        public Cluster(PublicData requiredData)
+        public Cluster(AppContext context)
         {
-            this.requiredData = requiredData;
-            this.clusterInfo = requiredData.ClusterInfo;
-            this.token = requiredData.Token;
+            this.context = context;
+            this.clusterInfo = context.ClusterInfo;
+            this.token = context.Token;
             this.guid = Guid.NewGuid();
 
             _client = HttpRequest.client;
-            _client.DefaultRequestHeaders.Authorization = new("Bearer", requiredData.Token?.Token.token);
+            _client.DefaultRequestHeaders.Authorization = new("Bearer", context.Token?.Token.token);
 
-            switch (PublicData.Config.StorageType)
+            switch (AppContext.Config.StorageType)
             {
                 case StorageType.File:
-                    this.storage = new FileStorage(PublicData.Config.clusterFileDirectory);
+                    this.storage = new FileStorage(AppContext.Config.clusterFileDirectory);
                     break;
                 case StorageType.WebDav:
                     this.storage = new WebDavStorage();
@@ -69,9 +69,9 @@ namespace CSharpOpenBMCLAPI.Modules
                     this.storage = new AlistStorage();
                     break;
                 default:
-                    throw new ArgumentException($"Argument out of range. {PublicData.Config.StorageType}");
+                    throw new ArgumentException($"Argument out of range. {AppContext.Config.StorageType}");
             }
-            if (PublicData.Config.maxCachedMemory != 0) this.storage = new CachedStorage(this.storage);
+            if (AppContext.Config.maxCachedMemory != 0) this.storage = new CachedStorage(this.storage);
             this.files = new List<ApiFileInfo>();
             this.counter = new();
             this._socket = InitializeSocket();
@@ -134,11 +134,11 @@ namespace CSharpOpenBMCLAPI.Modules
             InitializeService();
 
 
-            if (!PublicData.Config.NoEnable) await Enable();
+            if (!AppContext.Config.NoEnable) await Enable();
 
-            Logger.Instance.LogSystem($"工作进程 {guid} 在 <{PublicData.Config.HOST}:{PublicData.Config.PORT}> 提供服务");
+            Logger.Instance.LogSystem($"工作进程 {guid} 在 <{AppContext.Config.HOST}:{AppContext.Config.PORT}> 提供服务");
 
-            Tasks.CheckFile = PublicData.Config.skipCheck ? null : new Timer(state =>
+            Tasks.CheckFile = AppContext.Config.skipCheck ? null : new Timer(state =>
             {
                 for (int i = 0; i < 36; i++)
                 {
@@ -179,7 +179,7 @@ namespace CSharpOpenBMCLAPI.Modules
             WebApplicationBuilder builder = WebApplication.CreateBuilder();
             builder.WebHost.UseKestrel(options =>
             {
-                options.ListenAnyIP(PublicData.Config.PORT, cert != null ? configure =>
+                options.ListenAnyIP(AppContext.Config.PORT, cert != null ? configure =>
                 {
                     configure.Protocols = HttpProtocols.Http1AndHttp2AndHttp3;
                     configure.UseHttps(cert);
@@ -225,9 +225,9 @@ namespace CSharpOpenBMCLAPI.Modules
         /// </returns>
         private X509Certificate2? LoadAndConvertCert()
         {
-            if (PublicData.Config.NoCertificate) return null;
-            (string certPath, string keyPath) = (Path.Combine(PublicData.Config.clusterWorkingDirectory, $"certificates/cert.pem"),
-                Path.Combine(PublicData.Config.clusterWorkingDirectory, $"certificates/key.pem"));
+            if (AppContext.Config.NoCertificate) return null;
+            (string certPath, string keyPath) = (Path.Combine(AppContext.Config.clusterWorkingDirectory, $"certificates/cert.pem"),
+                Path.Combine(AppContext.Config.clusterWorkingDirectory, $"certificates/key.pem"));
             if (!File.Exists(certPath) || !File.Exists(keyPath))
             {
                 return null;
@@ -236,7 +236,7 @@ namespace CSharpOpenBMCLAPI.Modules
             //return cert;
             byte[] pfxCert = cert.Export(X509ContentType.Pfx);
             Logger.Instance.LogDebug($"将 PEM 格式的证书转换为 PFX 格式");
-            using (var file = File.Create(Path.Combine(PublicData.Config.clusterWorkingDirectory, $"certificates/cert.pfx")))
+            using (var file = File.Create(Path.Combine(AppContext.Config.clusterWorkingDirectory, $"certificates/cert.pfx")))
             {
                 file.Write(pfxCert);
             }
@@ -291,11 +291,11 @@ namespace CSharpOpenBMCLAPI.Modules
                 Logger.Instance.LogSystem($"启用成功");
             }, new
             {
-                host = PublicData.Config.HOST,
-                port = PublicData.Config.PORT,
-                version = PublicData.Config.clusterVersion,
-                byoc = PublicData.Config.BringYourOwnCertficate,
-                noFastEnable = PublicData.Config.NoFastEnable,
+                host = AppContext.Config.HOST,
+                port = AppContext.Config.PORT,
+                version = AppContext.Config.clusterVersion,
+                byoc = AppContext.Config.BringYourOwnCertficate,
+                noFastEnable = AppContext.Config.NoFastEnable,
                 flavor = new
                 {
                     runtime = Utils.GetRuntime(),
@@ -397,15 +397,15 @@ namespace CSharpOpenBMCLAPI.Modules
             var content = await resp.Content.ReadAsStringAsync();
             this.Configuration = JsonConvert.DeserializeObject<Configuration>(content);
             Logger.Instance.LogDebug($"同步策略：{this.Configuration.Sync.Source}，线程数：{this.Configuration.Sync.Concurrency}");
-            this.requiredData.maxThreadCount = Math.Max(PublicData.Config.DownloadFileThreads, this.Configuration.Sync.Concurrency);
-            this.requiredData.SemaphoreSlim = new SemaphoreSlim(this.requiredData.maxThreadCount);
+            this.context.maxThreadCount = Math.Max(AppContext.Config.DownloadFileThreads, this.Configuration.Sync.Concurrency);
+            this.context.SemaphoreSlim = new SemaphoreSlim(this.context.maxThreadCount);
         }
 
         /// <summary>
         /// 默认的检查文件行为
         /// </summary>
         /// <returns></returns>
-        private async Task CheckFiles() => await CheckFiles(PublicData.Config.skipCheck, PublicData.Config.startupCheckMode);
+        private async Task CheckFiles() => await CheckFiles(AppContext.Config.skipCheck, AppContext.Config.startupCheckMode);
 
         /// <summary>
         /// 获取文件列表、检查文件、下载文件部分
@@ -424,9 +424,9 @@ namespace CSharpOpenBMCLAPI.Modules
                 this.files = updatedFiles;
             }
 
-            if (this.Configuration.Sync.Concurrency < requiredData.maxThreadCount)
+            if (this.Configuration.Sync.Concurrency < context.maxThreadCount)
             {
-                Logger.Instance.LogWarn($"WARNING: 同步策略的线程数小于下载文件线程数，强制覆写线程数为 {requiredData.maxThreadCount}");
+                Logger.Instance.LogWarn($"WARNING: 同步策略的线程数小于下载文件线程数，强制覆写线程数为 {context.maxThreadCount}");
                 Logger.Instance.LogWarn($"WARNING: 覆写同步线程数为开发测试功能，无必要请勿使用！");
             }
 
@@ -448,7 +448,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 CheckSingleFile(file);
                 lock (countLock)
                 {
-                    pbar.Tick($"Threads: {requiredData.maxThreadCount - requiredData.SemaphoreSlim.CurrentCount}/{requiredData.maxThreadCount}, Files: {pbar.CurrentTick}/{files.Count}");
+                    pbar.Tick($"Threads: {context.maxThreadCount - context.SemaphoreSlim.CurrentCount}/{context.maxThreadCount}, Files: {pbar.CurrentTick}/{files.Count}");
                 }
             });
 
@@ -487,7 +487,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 FetchFileFromCenter(file.hash).Wait();
                 lock (countLock)
                 {
-                    pbar.Tick($"Threads: {requiredData.maxThreadCount - requiredData.SemaphoreSlim.CurrentCount}/{requiredData.maxThreadCount}, Files: {pbar.CurrentTick}/{files.Count}");
+                    pbar.Tick($"Threads: {context.maxThreadCount - context.SemaphoreSlim.CurrentCount}/{context.maxThreadCount}, Files: {pbar.CurrentTick}/{files.Count}");
                 }
             });
         }
@@ -548,7 +548,7 @@ namespace CSharpOpenBMCLAPI.Modules
         /// 检查单个文件
         /// </summary>
         /// <param name="file"></param>
-        void CheckSingleFile(ApiFileInfo file) => CheckSingleFile(file, PublicData.Config.startupCheckMode);
+        void CheckSingleFile(ApiFileInfo file) => CheckSingleFile(file, AppContext.Config.startupCheckMode);
 
         /// <summary>
         /// 检查单个文件，并且额外指定检查模式
@@ -622,7 +622,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 return;
             }
 
-            this.requiredData.SemaphoreSlim.Wait();
+            this.context.SemaphoreSlim.Wait();
             try
             {
                 var resp = await this._client.GetAsync($"openbmclapi/download/{hash}");
@@ -630,7 +630,7 @@ namespace CSharpOpenBMCLAPI.Modules
             }
             finally
             {
-                this.requiredData.SemaphoreSlim.Release();
+                this.context.SemaphoreSlim.Release();
             }
         }
 
@@ -701,7 +701,7 @@ namespace CSharpOpenBMCLAPI.Modules
                 return;
             }
 
-            await this.requiredData.SemaphoreSlim.WaitAsync();
+            await this.context.SemaphoreSlim.WaitAsync();
             List<string> urls = new List<string>();
             try
             {
@@ -738,7 +738,7 @@ namespace CSharpOpenBMCLAPI.Modules
             }
             finally
             {
-                this.requiredData.SemaphoreSlim.Release();
+                this.context.SemaphoreSlim.Release();
             }
         }
 
@@ -750,17 +750,17 @@ namespace CSharpOpenBMCLAPI.Modules
         {
             // File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certificates/cert.pem"));
             // File.Delete(Path.Combine(ClusterRequiredData.Config.clusterFileDirectory, $"certificates/key.pem"));
-            if (PublicData.Config.BringYourOwnCertficate)
+            if (AppContext.Config.BringYourOwnCertficate)
             {
-                Logger.Instance.LogDebug($"{nameof(PublicData.Config.BringYourOwnCertficate)} 为 true，跳过请求证书……");
+                Logger.Instance.LogDebug($"{nameof(AppContext.Config.BringYourOwnCertficate)} 为 true，跳过请求证书……");
                 return;
             }
-            string certPath = Path.Combine(PublicData.Config.clusterWorkingDirectory, $"certificates/cert.pem");
-            string keyPath = Path.Combine(PublicData.Config.clusterWorkingDirectory, $"certificates/key.pem");
+            string certPath = Path.Combine(AppContext.Config.clusterWorkingDirectory, $"certificates/cert.pem");
+            string keyPath = Path.Combine(AppContext.Config.clusterWorkingDirectory, $"certificates/key.pem");
 
             TaskCompletionSource tcs = new TaskCompletionSource();
 
-            Directory.CreateDirectory(Path.Combine(PublicData.Config.clusterWorkingDirectory, $"certificates"));
+            Directory.CreateDirectory(Path.Combine(AppContext.Config.clusterWorkingDirectory, $"certificates"));
             await _socket.EmitAsync("request-cert", (SocketIOResponse resp) =>
             {
                 try

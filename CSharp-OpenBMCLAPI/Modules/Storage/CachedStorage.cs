@@ -38,7 +38,7 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
         public CachedStorage(IStorage storage)
         {
             this.storage = storage;
-            if (PublicData.Config.maxCachedMemory == 0) this.cacheEnabled = false;
+            if (AppContext.Config.maxCachedMemory == 0) this.cacheEnabled = false;
         }
 
         public bool Exists(string hashPath)
@@ -146,9 +146,9 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
         public void MemoryWatchdog()
         {
             double memory = GetCachedMemory();
-            if (memory > 0 && memory > PublicData.Config.maxCachedMemory * 1048576)
+            if (memory > 0 && memory > AppContext.Config.maxCachedMemory * 1048576)
             {
-                Logger.Instance.LogWarn($"缓存存储已大于 {PublicData.Config.maxCachedMemory}（当前 {memory / 1048576}），已开始清理缓存");
+                Logger.Instance.LogWarn($"缓存存储已大于 {AppContext.Config.maxCachedMemory}（当前 {memory / 1048576}），已开始清理缓存");
                 int count = 0;
                 do
                 {
@@ -156,7 +156,7 @@ namespace CSharpOpenBMCLAPI.Modules.Storage
                     this.cache.Remove(biggestFileKey);
                     count++;
                 }
-                while (GetCachedMemory() > PublicData.Config.maxCachedMemory || count <= 5); // 限制只有清理到内存低于指定值，并且清理次数大于五次才停止
+                while (GetCachedMemory() > AppContext.Config.maxCachedMemory || count <= 5); // 限制只有清理到内存低于指定值，并且清理次数大于五次才停止
             }
         }
 
