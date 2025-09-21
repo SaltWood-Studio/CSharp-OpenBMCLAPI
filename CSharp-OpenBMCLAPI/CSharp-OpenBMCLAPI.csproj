@@ -9,18 +9,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="log4net" Version="3.0.3" />
+    <PackageReference Include="log4net" Version="3.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.3.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="Newtonsoft.Json.Bson" Version="1.0.3" />
     <PackageReference Include="SaltWood.TeraIO" Version="1.1.0" />
     <PackageReference Include="ShellProgressBar" Version="5.2.0" />
     <PackageReference Include="SocketIOClient" Version="3.1.2" />
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.1" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.0-rc.1.25451.107" />
     <PackageReference Include="System.Private.Uri" Version="4.3.2" />
-    <PackageReference Include="System.Text.Json" Version="9.0.1" />
+    <PackageReference Include="System.Text.Json" Version="10.0.0-rc.1.25451.107" />
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
-    <PackageReference Include="ZstdSharp.Port" Version="0.8.4" />
+    <PackageReference Include="ZstdSharp.Port" Version="0.8.6" />
   </ItemGroup>
 
   <ItemGroup>
