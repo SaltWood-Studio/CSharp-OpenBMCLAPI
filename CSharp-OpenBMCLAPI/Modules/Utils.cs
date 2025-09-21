@@ -9,7 +9,6 @@ using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
-using TeraIO.Runnable;
 
 namespace CSharpOpenBMCLAPI.Modules
 {
@@ -196,11 +195,11 @@ namespace CSharpOpenBMCLAPI.Modules
         public static Dictionary<string, string> GetQueryStrings(string? query)
         {
             Dictionary<string, string> pairs = new();
-            query?.Split('&').ForEach(s =>
+            if (query is null) return pairs;
+            foreach (var s in query.Split('&'))
             {
-                var pair = s.Split('=');
-                pairs[pair[0]] = pair[1];
-            });
+                pairs[s.Split('=').First()] = s.Split('=').Last();
+            }
             return pairs;
         }
 

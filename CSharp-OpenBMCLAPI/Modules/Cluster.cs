@@ -1,7 +1,4 @@
 ﻿using CSharpOpenBMCLAPI.Modules.Storage;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Newtonsoft.Json;
 using ShellProgressBar;
@@ -12,8 +9,6 @@ using System.Net.Http.Json;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
-using System.Threading.RateLimiting;
-using TeraIO.Runnable;
 using ZstdSharp;
 
 namespace CSharpOpenBMCLAPI.Modules
@@ -63,8 +58,7 @@ namespace CSharpOpenBMCLAPI.Modules
                     this.storage = new FileStorage(AppContext.Config.clusterFileDirectory);
                     break;
                 case StorageType.WebDav:
-                    this.storage = new WebDavStorage();
-                    break;
+                    throw new Exception("WebDav storage is deprecated, use Alist instead.");
                 case StorageType.Alist:
                     this.storage = new AlistStorage();
                     break;
